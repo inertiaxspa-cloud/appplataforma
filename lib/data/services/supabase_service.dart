@@ -56,6 +56,7 @@ class SupabaseService {
     final uuid =
         (athlete['supabase_uuid'] as String?) ?? const Uuid().v4();
 
+    // onConflict evita duplicados: si (user_id, local_id) ya existe, actualiza
     await _client.from('athletes').upsert({
       'id':             uuid,
       'user_id':        userId,
@@ -64,7 +65,7 @@ class SupabaseService {
       'sport':          athlete['sport'],
       'body_weight_kg': athlete['body_weight_kg'],
       'notes':          athlete['notes'],
-    });
+    }, onConflict: 'user_id,local_id');
     return uuid;
   }
 
@@ -80,11 +81,12 @@ class SupabaseService {
       'user_id':          userId,
       'athlete_uuid':     athleteUuid,
       'local_athlete_id': session['athlete_id'],
+      'local_id':         session['id'],
       'test_type':        session['test_type'],
       'performed_at':     session['performed_at'],
       'body_weight_kg':   session['body_weight_kg'],
       'platform_count':   session['platform_count'] ?? 1,
-      'result_json':      session['result_json'],
+      'metrics_json':     session['result_json'],   // columna real en DB
       'notes':            session['notes'],
     });
     return uuid;

@@ -335,11 +335,8 @@ async function selectAthlete(id) {
     seenS.add(key);
     return true;
   });
-  // Normalizar: result_json contiene los datos, no metrics_json
-  sessions = sessions.map(s => ({
-    ...s,
-    metrics_json: s.result_json ?? s.metrics_json ?? {}
-  }));
+  // metrics_json es la columna real en Supabase
+  sessions = sessions.map(s => ({ ...s, metrics_json: s.metrics_json ?? {} }));
 
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('athlete-detail').classList.remove('hidden');
