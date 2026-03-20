@@ -16,6 +16,7 @@ class SyncState {
   final DateTime? lastSyncAt;
   final String? errorMessage;
   final String? userEmail;
+  final String? successMessage;
 
   const SyncState({
     required this.status,
@@ -23,6 +24,7 @@ class SyncState {
     this.lastSyncAt,
     this.errorMessage,
     this.userEmail,
+    this.successMessage,
   });
 
   bool get isAuthenticated => userEmail != null;
@@ -34,15 +36,18 @@ class SyncState {
     DateTime?   lastSyncAt,
     String?     errorMessage,
     String?     userEmail,
-    bool clearError = false,
-    bool clearUser  = false,
+    String?     successMessage,
+    bool clearError   = false,
+    bool clearUser    = false,
+    bool clearSuccess = false,
   }) =>
       SyncState(
-        status:       status       ?? this.status,
-        pendingCount: pendingCount ?? this.pendingCount,
-        lastSyncAt:   lastSyncAt   ?? this.lastSyncAt,
-        errorMessage: clearError   ? null : (errorMessage ?? this.errorMessage),
-        userEmail:    clearUser    ? null : (userEmail    ?? this.userEmail),
+        status:         status         ?? this.status,
+        pendingCount:   pendingCount   ?? this.pendingCount,
+        lastSyncAt:     lastSyncAt     ?? this.lastSyncAt,
+        errorMessage:   clearError     ? null : (errorMessage   ?? this.errorMessage),
+        userEmail:      clearUser      ? null : (userEmail      ?? this.userEmail),
+        successMessage: clearSuccess   ? null : (successMessage ?? this.successMessage),
       );
 }
 
@@ -116,11 +121,23 @@ class SyncNotifier extends StateNotifier<SyncState> {
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
       await SupabaseService.instance.signUp(email, password);
+      // Auto-login immediately (works when email confirmation is disabled).
+      try {
+        await SupabaseService.instance.signIn(email, password);
+      } catch (_) {
+        // If signIn fails the user needs to verify email first; auth listener
+        // will handle state when they eventually confirm.
+      }
       if (mounted) {
+        final user = SupabaseService.instance.currentUser;
         state = state.copyWith(
-            status: SyncStatus.idle,
-            errorMessage: null,
-            clearError: true);
+          status:         SyncStatus.idle,
+          userEmail:      user?.email,
+          successMessage: user != null
+              ? '¡Cuenta creada! Sesión iniciada correctamente.'
+              : 'Cuenta creada. Verifica tu email para iniciar sesión.',
+          clearError: true,
+        );
       }
     } on AuthException catch (e) {
       if (mounted) {

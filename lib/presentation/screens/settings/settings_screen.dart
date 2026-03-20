@@ -707,13 +707,21 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
       BuildContext context, SyncState sync, SyncNotifier notifier) {
     final col = context.col;
 
+    String lastSyncText = 'Sincronizado';
+    if (sync.lastSyncAt != null) {
+      try {
+        lastSyncText =
+            'Último sync: ${DateFormat("d MMM, HH:mm", "es").format(sync.lastSyncAt!)}';
+      } catch (_) {
+        lastSyncText =
+            'Último sync: ${sync.lastSyncAt!.toLocal().toString().substring(0, 16)}';
+      }
+    }
+
     final statusLabel = switch (sync.status) {
       SyncStatus.syncing => 'Sincronizando…',
-      SyncStatus.success => sync.lastSyncAt != null
-          ? 'Último sync: ${DateFormat("d MMM, HH:mm", "es").format(sync.lastSyncAt!)}'
-          : 'Sincronizado',
-      SyncStatus.error =>
-          'Error: ${sync.errorMessage ?? "desconocido"}',
+      SyncStatus.success => lastSyncText,
+      SyncStatus.error   => 'Error: ${sync.errorMessage ?? "desconocido"}',
       _ => sync.pendingCount > 0
           ? '${sync.pendingCount} sesión(es) pendiente(s)'
           : 'Sin cambios pendientes',
@@ -730,6 +738,31 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Success banner (shown after register or sync) ──────────────
+          if (sync.successMessage != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withAlpha(25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.success.withAlpha(80)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.check_circle_outline,
+                    color: AppColors.success, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(sync.successMessage!,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.success)),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // ── Account row ────────────────────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -747,8 +780,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                             color: col.textPrimary)),
                     const SizedBox(height: 2),
                     Text(statusLabel,
-                        style: TextStyle(
-                            fontSize: 11, color: statusColor)),
+                        style: TextStyle(fontSize: 11, color: statusColor)),
                   ],
                 ),
               ),
@@ -758,12 +790,13 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                     padding: EdgeInsets.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                 child: const Text('Salir',
-                    style: TextStyle(
-                        color: AppColors.danger, fontSize: 12)),
+                    style: TextStyle(color: AppColors.danger, fontSize: 12)),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+          // ── Sync button ────────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -781,8 +814,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
-                disabledBackgroundColor:
-                    AppColors.primary.withAlpha(128),
+                disabledBackgroundColor: AppColors.primary.withAlpha(128),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
