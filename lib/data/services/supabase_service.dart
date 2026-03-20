@@ -92,7 +92,7 @@ class SupabaseService {
           ? jsonDecode(session['result_json'] as String)
           : session['result_json'],
       'notes':            session['notes'],
-    });
+    }, onConflict: 'user_id,local_id');
     return uuid;
   }
 }

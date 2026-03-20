@@ -160,10 +160,11 @@ class SyncNotifier extends StateNotifier<SyncState> {
   // ── Sync ───────────────────────────────────────────────────────────────────
 
   /// Marca todas las sesiones como 'pending' para forzar re-sincronización.
+  /// No borra supabase_uuid para que el upsert actualice filas existentes
+  /// en lugar de crear nuevas (lo que causaría violaciones de clave única).
   Future<void> resetSyncStatus() async {
     final db = await DatabaseHelper.instance.database;
-    await db.update('test_sessions', {'sync_status': 'pending', 'supabase_uuid': null});
-    await db.update('athletes', {'supabase_uuid': null});
+    await db.rawUpdate("UPDATE test_sessions SET sync_status = 'pending'");
     await _refreshPendingCount();
   }
 
@@ -225,23 +226,33 @@ class SyncNotifier extends StateNotifier<SyncState> {
             where: 'id = ?',
             whereArgs: [row['id']],
           );
-        } catch (_) {
+        } catch (e) {
           // Mark individual session as error and continue with the rest.
-          await db.update('test_sessions', {'sync_status': 'error'},
+          await db.update('test_sessions',
+              {'sync_status': 'error', 'notes': 'sync_error: ${e.toString().substring(0, e.toString().length.clamp(0, 200))}'},
               where: 'id = ?', whereArgs: [row['id']]);
         }
       }
 
-      // Re-count remaining pending.
+      // Re-count remaining and errors.
       final rem = await db.rawQuery(
           "SELECT COUNT(*) AS cnt FROM test_sessions WHERE sync_status = 'pending'");
       final pendingLeft = (rem.first['cnt'] as int?) ?? 0;
+      final errRows = await db.rawQuery(
+          "SELECT COUNT(*) AS cnt FROM test_sessions WHERE sync_status = 'error'");
+      final errorCount = (errRows.first['cnt'] as int?) ?? 0;
+      final synced = rows.length - pendingLeft - errorCount;
 
       if (mounted) {
+        final msg = errorCount > 0
+            ? 'Subidas $synced/${rows.length}. Fallaron $errorCount — revisar conexión.'
+            : 'Sincronización completa ($synced sesiones).';
         state = state.copyWith(
-          status:       SyncStatus.success,
-          pendingCount: pendingLeft,
-          lastSyncAt:   DateTime.now(),
+          status:         errorCount > 0 ? SyncStatus.error : SyncStatus.success,
+          pendingCount:   pendingLeft,
+          lastSyncAt:     DateTime.now(),
+          errorMessage:   errorCount > 0 ? msg : null,
+          successMessage: errorCount == 0 ? msg : null,
         );
       }
     } catch (e) {
