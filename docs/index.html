@@ -287,7 +287,14 @@ async function initDashboard() {
 // ── Athletes ───────────────────────────────────────────────────────────────
 async function loadAthletes() {
   const { data } = await supa.from('athletes').select('*').order('name');
-  athletes = data || [];
+  // Deduplicar por local_id (la app crea duplicados si sincroniza sin uuid guardado)
+  const seen = new Set();
+  athletes = (data || []).filter(a => {
+    const key = a.local_id ?? a.id;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   renderAthleteList();
 }
 
@@ -320,12 +327,26 @@ async function selectAthlete(id) {
     [ath.sport, ath.body_weight_kg ? ath.body_weight_kg+' kg' : null]
     .filter(Boolean).join(' · ') || 'Sin información adicional';
 
+  // Buscar sesiones de TODOS los registros del atleta (puede haber duplicados de athlete_uuid)
+  const athleteIds = athletes.filter(a => (a.local_id ?? a.id) === (athletes.find(x=>x.id===id)?.local_id ?? id)).map(a => a.id);
   const { data } = await supa
     .from('test_sessions')
     .select('*')
-    .eq('athlete_uuid', id)
+    .in('athlete_uuid', athleteIds.length ? athleteIds : [id])
     .order('performed_at', { ascending: false });
-  sessions = data || [];
+  // Deduplicar por local_session_id
+  const seenS = new Set();
+  sessions = (data || []).filter(s => {
+    const key = s.local_session_id ?? s.id;
+    if (seenS.has(key)) return false;
+    seenS.add(key);
+    return true;
+  });
+  // Normalizar: result_json contiene los datos, no metrics_json
+  sessions = sessions.map(s => ({
+    ...s,
+    metrics_json: s.result_json ?? s.metrics_json ?? {}
+  }));
 
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('athlete-detail').classList.remove('hidden');
@@ -340,8 +361,8 @@ async function selectAthlete(id) {
 function renderKPIs() {
   const jumps  = sessions.filter(s => ['cmj','sj','dj'].includes(s.test_type));
   const imtps  = sessions.filter(s => s.test_type === 'imtp');
-  const best   = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jumpHeightCm??0; return h>b?h:b; }, 0);
-  const bestF  = imtps.reduce((b,s)=>{ const f=s.metrics_json?.peakForceN??0; return f>b?f:b; }, 0);
+  const best   = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jump_height_cm??0; return h>b?h:b; }, 0);
+  const bestF  = imtps.reduce((b,s)=>{ const f=s.metrics_json?.peak_force_n??0; return f>b?f:b; }, 0);
 
   document.getElementById('kpi-row').innerHTML = `
     <div class="metric-card">
@@ -370,14 +391,14 @@ const TYPE_ICONS = {
   cmj:'↑', sj:'⬆', dj:'⤵', multijump:'↕', imtp:'💪', cop:'⚖'
 };
 
-function fmt(v,u='',dec=1){ return v!=null ? v.toFixed(dec)+u : '—'; }
+function fmt(v,u='',dec=1){ return v!=null ? Number(v).toFixed(dec)+u : '—'; }
 function mainMetric(s){
   const m = s.metrics_json||{};
-  if(['cmj','sj'].includes(s.test_type)) return {val:fmt(m.jumpHeightCm,'cm'), lbl:'Altura'};
-  if(s.test_type==='dj')        return {val:fmt(m.rsiMod,'',2),            lbl:'RSI'};
-  if(s.test_type==='multijump') return {val:fmt(m.meanRsiMod,'',2),        lbl:'RSI Medio'};
-  if(s.test_type==='imtp')      return {val:fmt(m.peakForceN&&m.peakForceN/1000,'kN',2), lbl:'F. Máx.'};
-  if(s.test_type==='cop')       return {val:fmt(m.swayAreaMm2,'mm²',0),    lbl:'Oscilación'};
+  if(['cmj','sj'].includes(s.test_type)) return {val:fmt(m.jump_height_cm,'cm'), lbl:'Altura'};
+  if(s.test_type==='dj')        return {val:fmt(m.rsi_mod,'',2),                 lbl:'RSI'};
+  if(s.test_type==='multijump') return {val:fmt(m.mean_rsi_mod,'',2),            lbl:'RSI Medio'};
+  if(s.test_type==='imtp')      return {val:fmt(m.peak_force_n&&m.peak_force_n/1000,'kN',2), lbl:'F. Máx.'};
+  if(s.test_type==='cop')       return {val:fmt(m.path_length_mm,'mm',0),        lbl:'Trayectoria'};
   return {val:'—',lbl:''};
 }
 
@@ -397,9 +418,9 @@ function renderHistory() {
       ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
       : '—';
     const mm   = mainMetric(s);
-    const sym  = m.symmetryPct!=null ? m.symmetryPct.toFixed(1)+'%' : '—';
-    const peak = m.peakForceN!=null  ? (m.peakForceN/9.81).toFixed(1)+' kg' : '—';
-    const bw   = m.bodyWeightN!=null ? (m.bodyWeightN/9.81).toFixed(1)+' kg' : '—';
+    const sym  = m.symmetry_pct!=null ? Number(m.symmetry_pct).toFixed(1)+'%' : '—';
+    const peak = m.peak_force_n!=null ? (m.peak_force_n/9.81).toFixed(1)+' kg' : '—';
+    const bw   = m.body_weight_n!=null ? (m.body_weight_n/9.81).toFixed(1)+' kg' : '—';
     return `
       <tr class="row-hover border-b" style="border-color:#1F2937">
         <td class="px-4 py-3 text-sm" style="color:#8899AA">${date}</td>
@@ -455,7 +476,7 @@ function renderCharts() {
       labels: labels(jumpSessions),
       datasets: [{
         label: 'Altura (cm)',
-        data: jumpSessions.map(s => s.metrics_json?.jumpHeightCm?.toFixed(1) ?? null),
+        data: jumpSessions.map(s => s.metrics_json?.jump_height_cm != null ? Number(s.metrics_json.jump_height_cm).toFixed(1) : null),
         borderColor: '#00C9FF', backgroundColor: '#00C9FF22',
         fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6
       }]
@@ -464,14 +485,14 @@ function renderCharts() {
 
   // Force chart
   const fCtx = document.getElementById('chart-force').getContext('2d');
-  const forceSess = allSorted.filter(s => s.metrics_json?.peakForceN);
+  const forceSess = allSorted.filter(s => s.metrics_json?.peak_force_n);
   charts.force = new Chart(fCtx, {
     ...chartDefaults(),
     data: {
       labels: labels(forceSess),
       datasets: [{
         label: 'Fuerza Máx. (N)',
-        data: forceSess.map(s => s.metrics_json.peakForceN?.toFixed(0) ?? null),
+        data: forceSess.map(s => s.metrics_json.peak_force_n != null ? Number(s.metrics_json.peak_force_n).toFixed(0) : null),
         borderColor: '#EF4444', backgroundColor: '#EF444422',
         fill: true, tension: 0.3, pointRadius: 4
       }]
@@ -480,14 +501,14 @@ function renderCharts() {
 
   // RSI chart
   const rCtx = document.getElementById('chart-rsi').getContext('2d');
-  const rsiSess = allSorted.filter(s => s.metrics_json?.rsiMod || s.metrics_json?.meanRsiMod);
+  const rsiSess = allSorted.filter(s => s.metrics_json?.rsi_mod || s.metrics_json?.mean_rsi_mod);
   charts.rsi = new Chart(rCtx, {
     ...chartDefaults(),
     data: {
       labels: labels(rsiSess),
       datasets: [{
         label: 'RSI',
-        data: rsiSess.map(s => (s.metrics_json?.rsiMod ?? s.metrics_json?.meanRsiMod)?.toFixed(2) ?? null),
+        data: rsiSess.map(s => { const v = s.metrics_json?.rsi_mod ?? s.metrics_json?.mean_rsi_mod; return v != null ? Number(v).toFixed(2) : null; }),
         borderColor: '#22C55E', backgroundColor: '#22C55E22',
         fill: true, tension: 0.3, pointRadius: 4
       }]
@@ -496,14 +517,14 @@ function renderCharts() {
 
   // Symmetry chart
   const sCtx = document.getElementById('chart-sym').getContext('2d');
-  const symSess = allSorted.filter(s => s.metrics_json?.symmetryPct != null);
+  const symSess = allSorted.filter(s => s.metrics_json?.symmetry_pct != null);
   charts.sym = new Chart(sCtx, {
     ...chartDefaults(),
     data: {
       labels: labels(symSess),
       datasets: [{
         label: 'Simetría (%)',
-        data: symSess.map(s => s.metrics_json.symmetryPct?.toFixed(1) ?? null),
+        data: symSess.map(s => s.metrics_json.symmetry_pct != null ? Number(s.metrics_json.symmetry_pct).toFixed(1) : null),
         borderColor: '#F59E0B', backgroundColor: '#F59E0B22',
         fill: true, tension: 0.3, pointRadius: 4
       }, {
@@ -529,8 +550,8 @@ function renderSummary() {
     const lbl  = mainMetric(ts[0]).lbl;
     const best  = ts.reduce((b,s)=>{
       const v = type==='cop'
-        ? (s.metrics_json?.swayAreaMm2 ?? Infinity)
-        : (s.metrics_json?.jumpHeightCm ?? s.metrics_json?.peakForceN ?? s.metrics_json?.rsiMod ?? s.metrics_json?.meanRsiMod ?? 0);
+        ? (s.metrics_json?.path_length_mm ?? Infinity)
+        : (s.metrics_json?.jump_height_cm ?? s.metrics_json?.peak_force_n ?? s.metrics_json?.rsi_mod ?? s.metrics_json?.mean_rsi_mod ?? 0);
       return type==='cop' ? Math.min(b,v) : Math.max(b,v);
     }, type==='cop' ? Infinity : 0);
 
