@@ -63,23 +63,39 @@ class SupabaseService {
   // ── Data sync ─────────────────────────────────────────────────────────────
 
   /// Upserts an athlete row. Returns the Supabase UUID used.
+  ///
+  /// Strategy: look up the existing row first so we never change its `id` (PK).
+  /// Changing the PK would break the FK from test_sessions.athlete_uuid and
+  /// cause a 409 Conflict on every subsequent sync attempt.
   Future<String> upsertAthlete(Map<String, dynamic> athlete) async {
     final user = currentUser;
     if (user == null) throw StateError('No hay sesión activa de Supabase.');
-    final userId = user.id;
-    final uuid =
-        (athlete['supabase_uuid'] as String?) ?? const Uuid().v4();
+    final userId  = user.id;
+    final localId = athlete['id'];
 
-    // onConflict evita duplicados: si (user_id, local_id) ya existe, actualiza
+    // 1. Check if the athlete already exists in Supabase.
+    final existing = await _client
+        .from('athletes')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('local_id', localId)
+        .maybeSingle();
+
+    // 2. Use the existing UUID or generate a new one.
+    final uuid = (existing?['id'] as String?) ??
+        (athlete['supabase_uuid'] as String?) ??
+        const Uuid().v4();
+
+    // 3. Upsert by PK — never changes `id`, only updates profile fields.
     await _client.from('athletes').upsert({
       'id':             uuid,
       'user_id':        userId,
-      'local_id':       athlete['id'],
+      'local_id':       localId,
       'name':           athlete['name'],
       'sport':          athlete['sport'],
       'body_weight_kg': athlete['body_weight_kg'],
       'notes':          athlete['notes'],
-    }, onConflict: 'user_id,local_id');
+    });
     return uuid;
   }
 
