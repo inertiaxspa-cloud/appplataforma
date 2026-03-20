@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InertiaX Force — Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ix: {
+              bg:       '#0D0F14',
+              surface:  '#161B22',
+              surfaceH: '#1F2937',
+              border:   '#2D3748',
+              primary:  '#00C9FF',
+              success:  '#22C55E',
+              warning:  '#F59E0B',
+              danger:   '#EF4444',
+              textSec:  '#8899AA',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #0D0F14; color: #E2E8F0; font-family: system-ui, sans-serif; }
+    .card  { background: #161B22; border: 1px solid #2D3748; border-radius: 12px; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px;
+             border-radius: 9999px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+    .badge-cmj       { background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF55; }
+    .badge-sj        { background:#7B2FBE22; color:#A78BFA; border:1px solid #7B2FBE55; }
+    .badge-dj        { background:#F59E0B22; color:#F59E0B; border:1px solid #F59E0B55; }
+    .badge-multijump { background:#22C55E22; color:#22C55E; border:1px solid #22C55E55; }
+    .badge-imtp      { background:#EF444422; color:#EF4444; border:1px solid #EF444455; }
+    .badge-cop       { background:#3B82F622; color:#3B82F6; border:1px solid #3B82F655; }
+    .metric-card { background:#1F2937; border:1px solid #2D3748; border-radius:8px;
+                   padding:12px 16px; text-align:center; }
+    .metric-val  { font-size:22px; font-weight:700; color:#00C9FF; }
+    .metric-lbl  { font-size:10px; color:#8899AA; text-transform:uppercase;
+                   letter-spacing:0.5px; margin-top:2px; }
+    .row-hover:hover { background:#1F2937; cursor:pointer; }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:#161B22; }
+    ::-webkit-scrollbar-thumb { background:#2D3748; border-radius:3px; }
+    input, select { background:#1F2937; border:1px solid #2D3748; color:#E2E8F0;
+                    border-radius:8px; padding:8px 12px; width:100%; outline:none; }
+    input:focus, select:focus { border-color:#00C9FF; }
+    .btn-primary { background:#00C9FF; color:#0D0F14; font-weight:600;
+                   padding:9px 20px; border-radius:8px; border:none; cursor:pointer;
+                   transition:opacity .15s; }
+    .btn-primary:hover { opacity:.85; }
+    .btn-ghost   { background:transparent; border:1px solid #2D3748; color:#8899AA;
+                   padding:7px 16px; border-radius:8px; cursor:pointer; font-size:13px; }
+    .btn-ghost:hover { border-color:#00C9FF; color:#00C9FF; }
+    .sidebar-item { padding:8px 12px; border-radius:8px; cursor:pointer;
+                    display:flex; align-items:center; gap:10px; font-size:13px; }
+    .sidebar-item:hover  { background:#1F2937; }
+    .sidebar-item.active { background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF33; }
+    .tab { padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px;
+           font-weight:500; color:#8899AA; border:1px solid transparent; }
+    .tab:hover  { color:#E2E8F0; }
+    .tab.active { background:#00C9FF22; color:#00C9FF; border-color:#00C9FF44; }
+    #chart-container canvas { max-height:240px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────────────── -->
+<div id="login-page" class="min-h-screen flex items-center justify-center p-4">
+  <div class="card p-8 w-full max-w-sm">
+    <!-- Logo / Brand -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-3"
+           style="background:#00C9FF22; border:1px solid #00C9FF44">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C9FF" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <h1 class="text-xl font-bold text-white">InertiaX Force</h1>
+      <p class="text-xs mt-1" style="color:#8899AA">Dashboard de entrenadores</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs mb-1" style="color:#8899AA">Email</label>
+        <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email"/>
+      </div>
+      <div>
+        <label class="block text-xs mb-1" style="color:#8899AA">Contraseña</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <p id="login-error" class="text-xs hidden" style="color:#EF4444"></p>
+      <button class="btn-primary w-full mt-2" onclick="doLogin()">Iniciar sesión</button>
+      <p class="text-xs text-center mt-3" style="color:#8899AA">
+        ¿No tienes cuenta? Créala desde la app InertiaX Force en tu PC.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ───────────────────────────────────────────────────────────── -->
+<div id="dashboard" class="hidden min-h-screen flex flex-col">
+
+  <!-- Top nav -->
+  <header class="flex items-center justify-between px-6 py-3 border-b" style="border-color:#2D3748; background:#161B22">
+    <div class="flex items-center gap-3">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00C9FF" stroke-width="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <span class="font-bold text-white">InertiaX Force</span>
+      <span class="text-xs px-2 py-0.5 rounded" style="background:#00C9FF22; color:#00C9FF">Dashboard</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="user-email-label" class="text-xs" style="color:#8899AA"></span>
+      <button class="btn-ghost text-xs" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Main layout -->
+  <div class="flex flex-1 overflow-hidden" style="height:calc(100vh - 53px)">
+
+    <!-- Sidebar — athletes -->
+    <aside class="w-60 border-r overflow-y-auto p-3 flex-shrink-0" style="border-color:#2D3748; background:#161B22">
+      <p class="text-xs font-semibold mb-3 px-2" style="color:#8899AA; letter-spacing:0.5px">ATLETAS</p>
+      <div id="athlete-list" class="space-y-1">
+        <p class="text-xs px-2" style="color:#8899AA">Cargando...</p>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+
+      <!-- Empty state -->
+      <div id="empty-state" class="flex flex-col items-center justify-center h-full" style="color:#8899AA">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-4 opacity-40">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <p class="font-medium">Selecciona un atleta</p>
+        <p class="text-sm mt-1">para ver sus resultados</p>
+      </div>
+
+      <!-- Athlete detail -->
+      <div id="athlete-detail" class="hidden">
+
+        <!-- Athlete header -->
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h2 id="ath-name" class="text-2xl font-bold text-white"></h2>
+            <p id="ath-meta" class="text-sm mt-0.5" style="color:#8899AA"></p>
+          </div>
+          <div class="flex gap-2">
+            <button class="tab active" onclick="setTab('history',this)">Historial</button>
+            <button class="tab" onclick="setTab('charts',this)">Gráficos</button>
+            <button class="tab" onclick="setTab('summary',this)">Resumen</button>
+          </div>
+        </div>
+
+        <!-- Summary KPIs -->
+        <div id="kpi-row" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
+
+        <!-- TAB: History -->
+        <div id="tab-history">
+          <div class="card overflow-hidden">
+            <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color:#2D3748">
+              <p class="text-sm font-semibold text-white">Historial de tests</p>
+              <select id="type-filter" class="text-xs" style="width:auto;padding:4px 10px" onchange="renderHistory()">
+                <option value="">Todos</option>
+                <option value="cmj">CMJ</option>
+                <option value="sj">SJ</option>
+                <option value="dj">DJ</option>
+                <option value="multijump">Multi-Salto</option>
+                <option value="imtp">IMTP</option>
+                <option value="cop">Equilibrio</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:#1F2937; border-bottom:1px solid #2D3748">
+                    <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA">FECHA</th>
+                    <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA">TEST</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">RESULTADO PRINCIPAL</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">SIMETRÍA</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">FUERZA MÁX.</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">PESO CUERPO</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Charts -->
+        <div id="tab-charts" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card p-4">
+              <p class="text-sm font-semibold text-white mb-3">Altura de Salto — Evolución</p>
+              <div id="chart-container"><canvas id="chart-height"></canvas></div>
+            </div>
+            <div class="card p-4">
+              <p class="text-sm font-semibold text-white mb-3">Fuerza Máxima — Evolución</p>
+              <div id="chart-container2"><canvas id="chart-force"></canvas></div>
+            </div>
+            <div class="card p-4">
+              <p class="text-sm font-semibold text-white mb-3">RSI — Evolución</p>
+              <div><canvas id="chart-rsi"></canvas></div>
+            </div>
+            <div class="card p-4">
+              <p class="text-sm font-semibold text-white mb-3">Simetría — Evolución</p>
+              <div><canvas id="chart-sym"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Summary -->
+        <div id="tab-summary" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="summary-cards"></div>
+        </div>
+
+      </div><!-- /athlete-detail -->
+    </main>
+  </div>
+</div>
+
+<script>
+// ── Supabase init ──────────────────────────────────────────────────────────
+const SUPA_URL = 'https://rldtkomtclolhbmrphgh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZHRrb210Y2xvbGhibXJwaGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NzQ1OTQsImV4cCI6MjA4OTU1MDU5NH0.uB9S--0zxvmO7UccotZRSen6KLRn4aeOuQe0n8MM5rs';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── State ──────────────────────────────────────────────────────────────────
+let athletes  = [];
+let sessions  = [];
+let selAthId  = null;
+let charts    = {};
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-error');
+  err.classList.add('hidden');
+
+  const { error } = await supa.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = error.message === 'Invalid login credentials'
+      ? 'Email o contraseña incorrectos.'
+      : error.message;
+    err.classList.remove('hidden');
+    return;
+  }
+  await initDashboard();
+}
+
+async function doLogout() {
+  await supa.auth.signOut();
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('login-page').classList.remove('hidden');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function initDashboard() {
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return;
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('user-email-label').textContent = user.email;
+  await loadAthletes();
+}
+
+// ── Athletes ───────────────────────────────────────────────────────────────
+async function loadAthletes() {
+  const { data } = await supa.from('athletes').select('*').order('name');
+  athletes = data || [];
+  renderAthleteList();
+}
+
+function renderAthleteList() {
+  const el = document.getElementById('athlete-list');
+  if (!athletes.length) {
+    el.innerHTML = '<p class="text-xs px-2" style="color:#8899AA">Sin atletas sincronizados.<br>Usa la app para sincronizar.</p>';
+    return;
+  }
+  el.innerHTML = athletes.map(a => `
+    <div class="sidebar-item ${a.id===selAthId?'active':''}" onclick="selectAthlete('${a.id}')">
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+           style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
+        ${a.name.charAt(0).toUpperCase()}
+      </div>
+      <div class="overflow-hidden">
+        <p class="font-medium text-white text-sm truncate">${a.name}</p>
+        <p class="text-xs truncate" style="color:#8899AA">${a.sport||'Sin deporte'}</p>
+      </div>
+    </div>`).join('');
+}
+
+async function selectAthlete(id) {
+  selAthId = id;
+  renderAthleteList();
+
+  const ath = athletes.find(a => a.id === id);
+  document.getElementById('ath-name').textContent = ath.name;
+  document.getElementById('ath-meta').textContent =
+    [ath.sport, ath.body_weight_kg ? ath.body_weight_kg+' kg' : null]
+    .filter(Boolean).join(' · ') || 'Sin información adicional';
+
+  const { data } = await supa
+    .from('test_sessions')
+    .select('*')
+    .eq('athlete_uuid', id)
+    .order('performed_at', { ascending: false });
+  sessions = data || [];
+
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('athlete-detail').classList.remove('hidden');
+
+  renderKPIs();
+  renderHistory();
+  if (!document.getElementById('tab-charts').classList.contains('hidden')) renderCharts();
+  if (!document.getElementById('tab-summary').classList.contains('hidden')) renderSummary();
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const jumps  = sessions.filter(s => ['cmj','sj','dj'].includes(s.test_type));
+  const imtps  = sessions.filter(s => s.test_type === 'imtp');
+  const best   = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jumpHeightCm??0; return h>b?h:b; }, 0);
+  const bestF  = imtps.reduce((b,s)=>{ const f=s.metrics_json?.peakForceN??0; return f>b?f:b; }, 0);
+
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-val">${sessions.length}</div>
+      <div class="metric-lbl">Tests totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${best>0?best.toFixed(1)+'cm':'—'}</div>
+      <div class="metric-lbl">Mejor salto</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${bestF>0?(bestF/1000).toFixed(2)+'kN':'—'}</div>
+      <div class="metric-lbl">Mejor IMTP</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${jumps.length}</div>
+      <div class="metric-lbl">Tests de salto</div>
+    </div>`;
+}
+
+// ── History table ──────────────────────────────────────────────────────────
+const TYPE_LABELS = {
+  cmj:'CMJ', sj:'SJ', dj:'DJ', multijump:'Multi-Salto', imtp:'IMTP', cop:'Equilibrio'
+};
+const TYPE_ICONS = {
+  cmj:'↑', sj:'⬆', dj:'⤵', multijump:'↕', imtp:'💪', cop:'⚖'
+};
+
+function fmt(v,u='',dec=1){ return v!=null ? v.toFixed(dec)+u : '—'; }
+function mainMetric(s){
+  const m = s.metrics_json||{};
+  if(['cmj','sj'].includes(s.test_type)) return {val:fmt(m.jumpHeightCm,'cm'), lbl:'Altura'};
+  if(s.test_type==='dj')        return {val:fmt(m.rsiMod,'',2),            lbl:'RSI'};
+  if(s.test_type==='multijump') return {val:fmt(m.meanRsiMod,'',2),        lbl:'RSI Medio'};
+  if(s.test_type==='imtp')      return {val:fmt(m.peakForceN&&m.peakForceN/1000,'kN',2), lbl:'F. Máx.'};
+  if(s.test_type==='cop')       return {val:fmt(m.swayAreaMm2,'mm²',0),    lbl:'Oscilación'};
+  return {val:'—',lbl:''};
+}
+
+function renderHistory() {
+  const filter = document.getElementById('type-filter').value;
+  const rows = sessions.filter(s => !filter || s.test_type === filter);
+  const tb = document.getElementById('history-tbody');
+
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-sm" style="color:#8899AA">Sin resultados para este filtro</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = rows.map(s => {
+    const m    = s.metrics_json || {};
+    const date = s.performed_at
+      ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
+      : '—';
+    const mm   = mainMetric(s);
+    const sym  = m.symmetryPct!=null ? m.symmetryPct.toFixed(1)+'%' : '—';
+    const peak = m.peakForceN!=null  ? (m.peakForceN/9.81).toFixed(1)+' kg' : '—';
+    const bw   = m.bodyWeightN!=null ? (m.bodyWeightN/9.81).toFixed(1)+' kg' : '—';
+    return `
+      <tr class="row-hover border-b" style="border-color:#1F2937">
+        <td class="px-4 py-3 text-sm" style="color:#8899AA">${date}</td>
+        <td class="px-4 py-3">
+          <span class="badge badge-${s.test_type}">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>
+        </td>
+        <td class="px-4 py-3 text-right">
+          <span class="font-semibold text-white">${mm.val}</span>
+          <span class="text-xs ml-1" style="color:#8899AA">${mm.lbl}</span>
+        </td>
+        <td class="px-4 py-3 text-right text-sm">${sym}</td>
+        <td class="px-4 py-3 text-right text-sm">${peak}</td>
+        <td class="px-4 py-3 text-right text-sm" style="color:#8899AA">${bw}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Charts ─────────────────────────────────────────────────────────────────
+function chartDefaults(label, color) {
+  return {
+    type: 'line',
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+      scales: {
+        x: { ticks: { color:'#8899AA', font:{size:10} }, grid: { color:'#2D3748' } },
+        y: { ticks: { color:'#8899AA', font:{size:10} }, grid: { color:'#2D3748' } }
+      }
+    }
+  };
+}
+
+function renderCharts() {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const jumpSessions = [...sessions]
+    .filter(s => ['cmj','sj'].includes(s.test_type))
+    .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
+
+  const allSorted = [...sessions]
+    .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
+
+  const labels = s => s.map(x => x.performed_at
+    ? new Date(x.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '?');
+
+  // Height chart
+  const hCtx = document.getElementById('chart-height').getContext('2d');
+  charts.height = new Chart(hCtx, {
+    ...chartDefaults(),
+    data: {
+      labels: labels(jumpSessions),
+      datasets: [{
+        label: 'Altura (cm)',
+        data: jumpSessions.map(s => s.metrics_json?.jumpHeightCm?.toFixed(1) ?? null),
+        borderColor: '#00C9FF', backgroundColor: '#00C9FF22',
+        fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6
+      }]
+    }
+  });
+
+  // Force chart
+  const fCtx = document.getElementById('chart-force').getContext('2d');
+  const forceSess = allSorted.filter(s => s.metrics_json?.peakForceN);
+  charts.force = new Chart(fCtx, {
+    ...chartDefaults(),
+    data: {
+      labels: labels(forceSess),
+      datasets: [{
+        label: 'Fuerza Máx. (N)',
+        data: forceSess.map(s => s.metrics_json.peakForceN?.toFixed(0) ?? null),
+        borderColor: '#EF4444', backgroundColor: '#EF444422',
+        fill: true, tension: 0.3, pointRadius: 4
+      }]
+    }
+  });
+
+  // RSI chart
+  const rCtx = document.getElementById('chart-rsi').getContext('2d');
+  const rsiSess = allSorted.filter(s => s.metrics_json?.rsiMod || s.metrics_json?.meanRsiMod);
+  charts.rsi = new Chart(rCtx, {
+    ...chartDefaults(),
+    data: {
+      labels: labels(rsiSess),
+      datasets: [{
+        label: 'RSI',
+        data: rsiSess.map(s => (s.metrics_json?.rsiMod ?? s.metrics_json?.meanRsiMod)?.toFixed(2) ?? null),
+        borderColor: '#22C55E', backgroundColor: '#22C55E22',
+        fill: true, tension: 0.3, pointRadius: 4
+      }]
+    }
+  });
+
+  // Symmetry chart
+  const sCtx = document.getElementById('chart-sym').getContext('2d');
+  const symSess = allSorted.filter(s => s.metrics_json?.symmetryPct != null);
+  charts.sym = new Chart(sCtx, {
+    ...chartDefaults(),
+    data: {
+      labels: labels(symSess),
+      datasets: [{
+        label: 'Simetría (%)',
+        data: symSess.map(s => s.metrics_json.symmetryPct?.toFixed(1) ?? null),
+        borderColor: '#F59E0B', backgroundColor: '#F59E0B22',
+        fill: true, tension: 0.3, pointRadius: 4
+      }, {
+        label: 'Óptimo (100%)',
+        data: symSess.map(() => 100),
+        borderColor: '#2D3748', borderDash: [4,4],
+        pointRadius: 0, fill: false
+      }]
+    }
+  });
+}
+
+// ── Summary ────────────────────────────────────────────────────────────────
+function renderSummary() {
+  const types = ['cmj','sj','dj','multijump','imtp','cop'];
+  const el = document.getElementById('summary-cards');
+
+  el.innerHTML = types.map(type => {
+    const ts = sessions.filter(s => s.test_type === type);
+    if (!ts.length) return '';
+
+    const vals = ts.map(s => mainMetric(s).val).filter(v => v !== '—');
+    const lbl  = mainMetric(ts[0]).lbl;
+    const best  = ts.reduce((b,s)=>{
+      const v = type==='cop'
+        ? (s.metrics_json?.swayAreaMm2 ?? Infinity)
+        : (s.metrics_json?.jumpHeightCm ?? s.metrics_json?.peakForceN ?? s.metrics_json?.rsiMod ?? s.metrics_json?.meanRsiMod ?? 0);
+      return type==='cop' ? Math.min(b,v) : Math.max(b,v);
+    }, type==='cop' ? Infinity : 0);
+
+    const bestFmt = best===Infinity||best===0 ? '—' : type==='imtp'
+      ? (best/1000).toFixed(2)+'kN' : type==='cop'
+      ? best.toFixed(0)+'mm²' : ['dj','multijump'].includes(type)
+      ? best.toFixed(2) : best.toFixed(1)+(type.includes('jump')||type==='cmj'||type==='sj'?'cm':'');
+
+    return `
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="badge badge-${type}">${TYPE_ICONS[type]} ${TYPE_LABELS[type]}</span>
+          <span class="text-xs" style="color:#8899AA">${ts.length} test${ts.length>1?'s':''}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-2">
+          <div>
+            <p class="text-xs mb-1" style="color:#8899AA">Mejor ${lbl}</p>
+            <p class="font-bold text-lg" style="color:#00C9FF">${bestFmt}</p>
+          </div>
+          <div>
+            <p class="text-xs mb-1" style="color:#8899AA">Último test</p>
+            <p class="font-medium text-sm text-white">${ts[0].performed_at
+              ? new Date(ts[0].performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
+              : '—'}</p>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function setTab(name, btn) {
+  ['history','charts','summary'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+  if (name === 'charts') renderCharts();
+  if (name === 'summary') renderSummary();
+}
+
+// ── Bootstrap ──────────────────────────────────────────────────────────────
+(async () => {
+  // Enter key in login
+  ['login-email','login-pass'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => e.key==='Enter' && doLogin()));
+
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    await initDashboard();
+  }
+})();
+</script>
+</body>
+</html>
