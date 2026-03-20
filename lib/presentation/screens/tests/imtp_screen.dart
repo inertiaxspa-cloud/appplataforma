@@ -106,7 +106,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
           icon: const Icon(Icons.close),
           onPressed: () {
             _cancel();
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
         actions: [

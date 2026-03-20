@@ -114,7 +114,19 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     _rawSub?.close();
     _rawSub = _ref.listen<AsyncValue<RawSample>>(rawSampleStreamProvider,
-        (_, next) { next.whenData(_onRawSample); });
+        (_, next) {
+          next.whenData(_onRawSample);
+          // Si se pierde la conexión durante el test, marcarlo como fallido
+          // en lugar de dejarlo congelado en estado 'running'.
+          if (next is AsyncError && state.status == TestStatus.running) {
+            state = state.copyWith(
+              status: TestStatus.failed,
+              statusMessage: 'Conexión perdida. Reconecta el dispositivo.',
+            );
+            _rawSub?.close();
+            _rawSub = null;
+          }
+        });
   }
 
   void _onRawSample(RawSample raw) {

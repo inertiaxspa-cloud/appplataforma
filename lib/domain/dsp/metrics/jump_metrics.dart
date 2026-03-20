@@ -22,6 +22,7 @@ class JumpMetrics {
     required int takeoffIdx, // last sample before airborne
   }) {
     if (takeoffIdx <= startIdx) return 0;
+    if (bodyWeightN <= 0) return 0;
     final mass = bodyWeightN / g;
     double velocity = 0.0;
     for (int i = startIdx + 1; i <= takeoffIdx; i++) {
@@ -45,6 +46,7 @@ class JumpMetrics {
     required double bodyWeightN,
     int startIdx = 0,
   }) {
+    if (bodyWeightN <= 0) return List<double>.filled(forceN.length, 0.0);
     final mass = bodyWeightN / g;
     final vel = List<double>.filled(forceN.length, 0.0);
     for (int i = math.max(1, startIdx); i < forceN.length; i++) {
@@ -80,12 +82,12 @@ class JumpMetrics {
   /// Sayers equation: PP = 60.7·h_cm + 45.3·BW_kg − 2055.
   /// Reference: Sayers et al. (1999).
   static double peakPowerSayers(double heightCm, double bodyWeightKg) =>
-      60.7 * heightCm + 45.3 * bodyWeightKg - 2055;
+      math.max(0.0, 60.7 * heightCm + 45.3 * bodyWeightKg - 2055);
 
   /// Harman equation: PP = 61.9·h_cm + 36.0·BW_kg − 1822.
   /// Reference: Harman et al. (1991).
   static double peakPowerHarman(double heightCm, double bodyWeightKg) =>
-      61.9 * heightCm + 36.0 * bodyWeightKg - 1822;
+      math.max(0.0, 61.9 * heightCm + 36.0 * bodyWeightKg - 1822);
 
   /// Impulse-based peak power: max(F × v) over the propulsive phase.
   static double peakPowerFromImpulse({

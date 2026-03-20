@@ -87,7 +87,11 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     state = state.copyWith(availableTargets: targets, error: null);
   }
 
+  bool _connecting = false;
+
   Future<void> connect(ConnectionTarget target) async {
+    if (_connecting || state.isConnected) return; // prevenir doble conexión
+    _connecting = true;
     try {
       await _ds.open(target);
       state = state.copyWith(
@@ -97,6 +101,8 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
       );
     } catch (e) {
       state = state.copyWith(error: e.toString());
+    } finally {
+      _connecting = false;
     }
   }
 

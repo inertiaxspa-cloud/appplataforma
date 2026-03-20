@@ -11,18 +11,18 @@ class TestsHubScreen extends ConsumerWidget {
   const TestsHubScreen({super.key});
 
   static const _tests = [
-    _TestItem('CMJ', 'Countermovement Jump', Icons.arrow_upward_rounded,
+    _TestItem('CMJ', 'Salto con Contramovimiento', Icons.arrow_upward_rounded,
         '/tests/cmj', AppColors.primary),
-    _TestItem('Squat Jump', 'Salto sin contramovimiento', Icons.sports_rounded,
+    _TestItem('Squat Jump', 'Salto sin Contramovimiento', Icons.sports_rounded,
         '/tests/sj', AppColors.forceRight),
-    _TestItem('Drop Jump', 'Caída y rebote', Icons.download_rounded,
+    _TestItem('Drop Jump', 'Caída y Rebote', Icons.download_rounded,
         '/tests/dj', AppColors.warning),
-    _TestItem('Multi-Salto', 'Saltos consecutivos', Icons.repeat_rounded,
+    _TestItem('Multi-Salto', 'Saltos Consecutivos con RSI', Icons.repeat_rounded,
         '/tests/multijump', AppColors.secondary),
-    _TestItem('Equilibrio / COP', 'Balance y centro de presión',
+    _TestItem('Equilibrio / COP', 'Balance y Centro de Presión',
         Icons.accessibility_new_rounded, '/tests/cop', AppColors.success),
-    _TestItem('IMTP', 'Isometric Mid-Thigh Pull', Icons.fitness_center_rounded,
-        '/tests/imtp', AppColors.danger),
+    _TestItem('IMTP', 'Tracción Isométrica a Media Altura',
+        Icons.fitness_center_rounded, '/tests/imtp', AppColors.danger),
   ];
 
   @override
@@ -89,6 +89,7 @@ class TestsHubScreen extends ConsumerWidget {
                     child: _TestRow(
                       item: _tests[i],
                       enabled: canTest,
+                      isConnected: isConnected,
                     ),
                   ),
                   childCount: _tests.length,
@@ -115,7 +116,8 @@ class _TestItem {
 class _TestRow extends StatelessWidget {
   final _TestItem item;
   final bool enabled;
-  const _TestRow({required this.item, required this.enabled});
+  final bool isConnected;
+  const _TestRow({required this.item, required this.enabled, required this.isConnected});
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +125,18 @@ class _TestRow extends StatelessWidget {
     return Opacity(
       opacity: enabled ? 1.0 : 0.45,
       child: InkWell(
-        onTap: enabled ? () => context.push(item.route) : null,
+        onTap: enabled
+            ? () => context.push(item.route)
+            : () {
+                final msg = !isConnected
+                    ? 'Conecta la plataforma primero'
+                    : 'Calibra la plataforma antes de hacer un test';
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(msg),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ));
+              },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),

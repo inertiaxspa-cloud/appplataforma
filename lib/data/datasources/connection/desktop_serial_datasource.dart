@@ -96,5 +96,6 @@ class DesktopSerialDataSource implements ConnectionDataSource {
     _port = null;
     _reader = null;
     _buffer = Uint8List(0);
+    if (!_lineController.isClosed) await _lineController.close();
   }
 }

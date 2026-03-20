@@ -124,8 +124,15 @@ final _router = GoRouter(
     GoRoute(path: '/tests/multijump', builder: (_, __) => const MultiJumpScreen()),
     GoRoute(path: '/tests/cop',       builder: (_, __) => const CopScreen()),
     GoRoute(path: '/tests/imtp',      builder: (_, __) => const ImtpScreen()),
+    // Ruta para resultados guardados (desde historial) y resultados nuevos (post-test)
     GoRoute(
       path: '/results/:id',
+      builder: (_, state) => ResultDetailScreen(
+        result: state.extra as TestResult,
+      ),
+    ),
+    GoRoute(
+      path: '/results/new',
       builder: (_, state) => ResultDetailScreen(
         result: state.extra as TestResult,
       ),

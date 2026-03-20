@@ -33,8 +33,25 @@ class AthleteListScreen extends ConsumerWidget {
         loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => Center(
-            child: Text('Error: $e',
-                style: const TextStyle(color: AppColors.danger))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+              const SizedBox(height: 12),
+              const Text('No se pudieron cargar los atletas.',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              const Text('Intenta reiniciar la aplicación.',
+                  style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+                onPressed: () => ref.invalidate(athleteNotifierProvider),
+              ),
+            ],
+          ),
+        ),
         data: (list) => list.isEmpty
             ? _EmptyState(onAdd: () => _showFormDialog(context, ref, null))
             : _AthleteList(
@@ -277,12 +294,23 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
 
   Future<void> _save() async {
     if (_nameCtrl.text.trim().isEmpty) return;
+
+    // Validar peso antes de guardar
+    final bwKg = _weightCtrl.text.trim().isEmpty
+        ? null
+        : double.tryParse(_weightCtrl.text.trim());
+    if (_weightCtrl.text.trim().isNotEmpty && (bwKg == null || bwKg <= 0 || bwKg > 500)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Peso inválido. Ingresa un valor entre 1 y 500 kg.')),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
 
     final notifier = widget.ref.read(athleteNotifierProvider.notifier);
     final name  = _nameCtrl.text.trim();
     final sport = _sportCtrl.text.trim().isEmpty ? null : _sportCtrl.text.trim();
-    final bwKg  = double.tryParse(_weightCtrl.text);
 
     if (_isEdit) {
       final updated = widget.existing!.copyWith(

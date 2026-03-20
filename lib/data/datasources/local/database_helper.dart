@@ -293,14 +293,14 @@ class DatabaseHelper {
   /// Returns sessions joined with athlete name for the history list.
   Future<List<Map<String, dynamic>>> getAllSessionsWithAthlete({int? limit}) async {
     final db = await database;
-    final limitClause = limit != null ? 'LIMIT $limit' : '';
-    return db.rawQuery('''
-      SELECT ts.*, a.name AS athlete_name
-      FROM test_sessions ts
-      LEFT JOIN athletes a ON a.id = ts.athlete_id
-      ORDER BY ts.performed_at DESC
-      $limitClause
-    ''');
+    return db.rawQuery(
+      'SELECT ts.*, a.name AS athlete_name '
+      'FROM test_sessions ts '
+      'LEFT JOIN athletes a ON a.id = ts.athlete_id '
+      'ORDER BY ts.performed_at DESC'
+      '${limit != null ? ' LIMIT ?' : ''}',
+      limit != null ? [limit] : [],
+    );
   }
 
   Future<Map<String, dynamic>?> getSession(int id) async {

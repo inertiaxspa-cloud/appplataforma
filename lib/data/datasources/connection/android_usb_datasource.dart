@@ -83,5 +83,6 @@ class AndroidUsbDataSource implements ConnectionDataSource {
     await _port?.close();
     _port = null;
     _lineBuffer = '';
+    if (!_lineController.isClosed) await _lineController.close();
   }
 }

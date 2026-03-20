@@ -98,14 +98,14 @@ class CopMetrics {
 
   /// Range (peak-to-peak) on the X (mediolateral) axis in mm.
   static double rangeMLMm(List<_Point> pts) {
-    if (pts.isEmpty) return 0.0;
+    if (pts.length < 2) return 0.0;
     final xs = pts.map((p) => p.x);
     return xs.reduce(math.max) - xs.reduce(math.min);
   }
 
   /// Range (peak-to-peak) on the Y (anteroposterior) axis in mm.
   static double rangeAPMm(List<_Point> pts) {
-    if (pts.isEmpty) return 0.0;
+    if (pts.length < 2) return 0.0;
     final ys = pts.map((p) => p.y);
     return ys.reduce(math.max) - ys.reduce(math.min);
   }
@@ -173,7 +173,8 @@ class CopMetrics {
       final curr = pts[i].x - mx;
       if (prev * curr < 0) crossings++;
     }
-    return crossings / (2.0 * durationS);
+    final freq = crossings / (2.0 * durationS);
+    return freq.isFinite ? freq : 0.0;
   }
 
   /// Dominant frequency via DFT power spectrum.

@@ -145,9 +145,11 @@ final liveDataProvider =
       ?? CalibrationData.defaultCalibration();
   final processor = SignalProcessor(cal);
   final notifier = LiveDataNotifier(processor);
-  // Use ref.listen (non-deprecated) instead of .stream to receive raw samples
-  ref.listen<AsyncValue<RawSample>>(rawSampleStreamProvider, (_, next) {
+  // Use ref.listen (non-deprecated) instead of .stream to receive raw samples.
+  // Guardar la suscripción y cerrarla al invalidar el provider.
+  final sub = ref.listen<AsyncValue<RawSample>>(rawSampleStreamProvider, (_, next) {
     next.whenData(notifier.onRawSample);
   });
+  ref.onDispose(sub.close);
   return notifier;
 });

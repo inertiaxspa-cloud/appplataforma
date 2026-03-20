@@ -4,12 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InertiaX Force — Dashboard</title>
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <script>
@@ -18,15 +14,9 @@
         extend: {
           colors: {
             ix: {
-              bg:       '#0D0F14',
-              surface:  '#161B22',
-              surfaceH: '#1F2937',
-              border:   '#2D3748',
-              primary:  '#00C9FF',
-              success:  '#22C55E',
-              warning:  '#F59E0B',
-              danger:   '#EF4444',
-              textSec:  '#8899AA',
+              bg:'#0D0F14', surface:'#161B22', surfaceH:'#1F2937',
+              border:'#2D3748', primary:'#00C9FF', success:'#22C55E',
+              warning:'#F59E0B', danger:'#EF4444', textSec:'#8899AA',
             }
           }
         }
@@ -35,10 +25,10 @@
   </script>
 
   <style>
-    body { background-color: #0D0F14; color: #E2E8F0; font-family: system-ui, sans-serif; }
-    .card  { background: #161B22; border: 1px solid #2D3748; border-radius: 12px; }
-    .badge { display: inline-flex; align-items: center; padding: 2px 10px;
-             border-radius: 9999px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+    body { background:#0D0F14; color:#E2E8F0; font-family:system-ui,sans-serif; }
+    .card  { background:#161B22; border:1px solid #2D3748; border-radius:12px; }
+    .badge { display:inline-flex; align-items:center; padding:2px 10px;
+             border-radius:9999px; font-size:11px; font-weight:600; letter-spacing:.3px; }
     .badge-cmj       { background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF55; }
     .badge-sj        { background:#7B2FBE22; color:#A78BFA; border:1px solid #7B2FBE55; }
     .badge-dj        { background:#F59E0B22; color:#F59E0B; border:1px solid #F59E0B55; }
@@ -49,17 +39,16 @@
                    padding:12px 16px; text-align:center; }
     .metric-val  { font-size:22px; font-weight:700; color:#00C9FF; }
     .metric-lbl  { font-size:10px; color:#8899AA; text-transform:uppercase;
-                   letter-spacing:0.5px; margin-top:2px; }
+                   letter-spacing:.5px; margin-top:2px; }
     .row-hover:hover { background:#1F2937; cursor:pointer; }
     ::-webkit-scrollbar { width:6px; height:6px; }
     ::-webkit-scrollbar-track { background:#161B22; }
     ::-webkit-scrollbar-thumb { background:#2D3748; border-radius:3px; }
-    input, select { background:#1F2937; border:1px solid #2D3748; color:#E2E8F0;
-                    border-radius:8px; padding:8px 12px; width:100%; outline:none; }
-    input:focus, select:focus { border-color:#00C9FF; }
+    input,select { background:#1F2937; border:1px solid #2D3748; color:#E2E8F0;
+                   border-radius:8px; padding:8px 12px; width:100%; outline:none; }
+    input:focus,select:focus { border-color:#00C9FF; }
     .btn-primary { background:#00C9FF; color:#0D0F14; font-weight:600;
-                   padding:9px 20px; border-radius:8px; border:none; cursor:pointer;
-                   transition:opacity .15s; }
+                   padding:9px 20px; border-radius:8px; border:none; cursor:pointer; transition:opacity .15s; }
     .btn-primary:hover { opacity:.85; }
     .btn-ghost   { background:transparent; border:1px solid #2D3748; color:#8899AA;
                    padding:7px 16px; border-radius:8px; cursor:pointer; font-size:13px; }
@@ -72,7 +61,24 @@
            font-weight:500; color:#8899AA; border:1px solid transparent; }
     .tab:hover  { color:#E2E8F0; }
     .tab.active { background:#00C9FF22; color:#00C9FF; border-color:#00C9FF44; }
-    #chart-container canvas { max-height:240px; }
+    .date-btn { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;
+                cursor:pointer; border:1px solid #2D3748; color:#8899AA; background:transparent; }
+    .date-btn:hover  { border-color:#00C9FF55; color:#E2E8F0; }
+    .date-btn.active { background:#00C9FF22; color:#00C9FF; border-color:#00C9FF44; }
+    .pr-badge { display:inline-flex; align-items:center; gap:3px; padding:1px 6px;
+                border-radius:4px; font-size:10px; font-weight:700;
+                background:#F59E0B22; color:#F59E0B; border:1px solid #F59E0B44; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:50;
+                     display:flex; align-items:center; justify-content:center; padding:16px; }
+    .modal-box { background:#161B22; border:1px solid #2D3748; border-radius:16px;
+                 max-width:640px; width:100%; max-height:85vh; overflow-y:auto; }
+    .metric-detail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    @media(max-width:480px){ .metric-detail-grid { grid-template-columns:repeat(2,1fr); } }
+    .trend-up   { color:#22C55E; }
+    .trend-down { color:#EF4444; }
+    .trend-flat { color:#8899AA; }
+    canvas { max-height:220px; }
+    .ath-card:hover { border-color:#00C9FF55; transform:translateY(-1px); transition:.15s; cursor:pointer; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -80,13 +86,11 @@
 <!-- ── LOGIN ──────────────────────────────────────────────────────────────── -->
 <div id="login-page" class="min-h-screen flex items-center justify-center p-4">
   <div class="card p-8 w-full max-w-sm">
-    <!-- Logo / Brand -->
     <div class="text-center mb-8">
       <img src="./inertiax_logo.jpg" alt="InertiaX Force"
            style="height:52px; margin:0 auto 12px; filter:invert(1) brightness(1.1);" />
       <p class="text-xs mt-1" style="color:#8899AA">Dashboard de entrenadores</p>
     </div>
-
     <div class="space-y-4">
       <div>
         <label class="block text-xs mb-1" style="color:#8899AA">Email</label>
@@ -105,18 +109,19 @@
   </div>
 </div>
 
-<!-- ── DASHBOARD ───────────────────────────────────────────────────────────── -->
+<!-- ── DASHBOARD ──────────────────────────────────────────────────────────── -->
 <div id="dashboard" class="hidden min-h-screen flex flex-col">
 
   <!-- Top nav -->
-  <header class="flex items-center justify-between px-6 py-3 border-b" style="border-color:#2D3748; background:#161B22">
+  <header class="flex items-center justify-between px-6 py-3 border-b flex-shrink-0"
+          style="border-color:#2D3748; background:#161B22">
     <div class="flex items-center gap-3">
       <img src="./inertiax_logo.jpg" alt="InertiaX"
            style="height:28px; filter:invert(1) brightness(1.1);" />
       <span class="text-xs px-2 py-0.5 rounded" style="background:#00C9FF22; color:#00C9FF">Dashboard</span>
     </div>
     <div class="flex items-center gap-3">
-      <span id="user-email-label" class="text-xs" style="color:#8899AA"></span>
+      <span id="user-email-label" class="text-xs hidden md:block" style="color:#8899AA"></span>
       <button class="btn-ghost text-xs" onclick="doLogout()">Cerrar sesión</button>
     </div>
   </header>
@@ -124,10 +129,29 @@
   <!-- Main layout -->
   <div class="flex flex-1 overflow-hidden" style="height:calc(100vh - 53px)">
 
-    <!-- Sidebar — athletes -->
-    <aside class="w-60 border-r overflow-y-auto p-3 flex-shrink-0" style="border-color:#2D3748; background:#161B22">
-      <p class="text-xs font-semibold mb-3 px-2" style="color:#8899AA; letter-spacing:0.5px">ATLETAS</p>
-      <div id="athlete-list" class="space-y-1">
+    <!-- Sidebar -->
+    <aside class="w-60 border-r overflow-y-auto p-3 flex-shrink-0 flex flex-col gap-3"
+           style="border-color:#2D3748; background:#161B22">
+      <!-- Search -->
+      <div class="relative">
+        <input type="text" id="ath-search" placeholder="Buscar atleta…"
+               style="padding-left:32px; font-size:12px"
+               oninput="filterAthletes(this.value)" />
+        <svg style="position:absolute;left:10px;top:10px;color:#8899AA" width="13" height="13"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </div>
+      <!-- Overview link -->
+      <div class="sidebar-item active" id="sidebar-overview" onclick="showOverview()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span class="font-medium">Resumen general</span>
+      </div>
+      <p class="text-xs font-semibold px-2 mt-1" style="color:#8899AA; letter-spacing:.5px">ATLETAS</p>
+      <div id="athlete-list" class="space-y-1 flex-1">
         <p class="text-xs px-2" style="color:#8899AA">Cargando...</p>
       </div>
     </aside>
@@ -135,51 +159,81 @@
     <!-- Content -->
     <main class="flex-1 overflow-y-auto p-6">
 
-      <!-- Empty state -->
-      <div id="empty-state" class="flex flex-col items-center justify-center h-full" style="color:#8899AA">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-4 opacity-40">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        <p class="font-medium">Selecciona un atleta</p>
-        <p class="text-sm mt-1">para ver sus resultados</p>
+      <!-- ── OVERVIEW PAGE ─────────────────────────────────────────────── -->
+      <div id="overview-page">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-2xl font-bold text-white">Resumen general</h2>
+            <p class="text-sm mt-0.5" style="color:#8899AA">Todos los atletas sincronizados</p>
+          </div>
+          <button class="btn-ghost text-xs" onclick="loadAthletes()">↺ Actualizar</button>
+        </div>
+        <!-- Global KPIs -->
+        <div id="overview-kpis" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
+        <!-- Recent activity -->
+        <div class="card overflow-hidden mb-6">
+          <div class="px-4 py-3 border-b" style="border-color:#2D3748">
+            <p class="text-sm font-semibold text-white">Actividad reciente</p>
+          </div>
+          <div id="recent-activity">
+            <p class="text-sm px-4 py-6 text-center" style="color:#8899AA">Sin actividad</p>
+          </div>
+        </div>
+        <!-- Athlete cards -->
+        <p class="text-xs font-semibold mb-3" style="color:#8899AA; letter-spacing:.5px">TODOS LOS ATLETAS</p>
+        <div id="overview-athletes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
       </div>
 
-      <!-- Athlete detail -->
+      <!-- ── ATHLETE DETAIL ──────────────────────────────────────────── -->
       <div id="athlete-detail" class="hidden">
 
         <!-- Athlete header -->
-        <div class="flex items-start justify-between mb-6">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
-            <h2 id="ath-name" class="text-2xl font-bold text-white"></h2>
-            <p id="ath-meta" class="text-sm mt-0.5" style="color:#8899AA"></p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost text-xs px-2 py-1" onclick="showOverview()">← Volver</button>
+              <h2 id="ath-name" class="text-2xl font-bold text-white"></h2>
+            </div>
+            <p id="ath-meta" class="text-sm mt-0.5 ml-16" style="color:#8899AA"></p>
           </div>
-          <div class="flex gap-2">
-            <button class="tab active" onclick="setTab('history',this)">Historial</button>
-            <button class="tab" onclick="setTab('charts',this)">Gráficos</button>
-            <button class="tab" onclick="setTab('summary',this)">Resumen</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Date filter -->
+            <div class="flex gap-1">
+              <button class="date-btn" onclick="setDateFilter(7,this)">7d</button>
+              <button class="date-btn" onclick="setDateFilter(30,this)">30d</button>
+              <button class="date-btn" onclick="setDateFilter(90,this)">90d</button>
+              <button class="date-btn active" onclick="setDateFilter(0,this)">Todo</button>
+            </div>
+            <button class="btn-ghost text-xs" onclick="exportCSV()">⬇ CSV</button>
+            <div class="flex gap-1">
+              <button class="tab active" onclick="setTab('history',this)">Historial</button>
+              <button class="tab" onclick="setTab('charts',this)">Gráficos</button>
+              <button class="tab" onclick="setTab('summary',this)">Resumen</button>
+            </div>
           </div>
         </div>
 
-        <!-- Summary KPIs -->
-        <div id="kpi-row" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
+        <!-- KPI row -->
+        <div id="kpi-row" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6"></div>
 
         <!-- TAB: History -->
         <div id="tab-history">
           <div class="card overflow-hidden">
-            <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color:#2D3748">
+            <div class="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-2"
+                 style="border-color:#2D3748">
               <p class="text-sm font-semibold text-white">Historial de tests</p>
-              <select id="type-filter" class="text-xs" style="width:auto;padding:4px 10px" onchange="renderHistory()">
-                <option value="">Todos</option>
-                <option value="cmj">CMJ</option>
-                <option value="sj">SJ</option>
-                <option value="dj">DJ</option>
-                <option value="multijump">Multi-Salto</option>
-                <option value="imtp">IMTP</option>
-                <option value="cop">Equilibrio</option>
-              </select>
+              <div class="flex items-center gap-2">
+                <select id="type-filter" style="width:auto;padding:4px 10px;font-size:12px"
+                        onchange="renderHistory()">
+                  <option value="">Todos los tipos</option>
+                  <option value="cmj">CMJ</option>
+                  <option value="sj">SJ</option>
+                  <option value="dj">DJ</option>
+                  <option value="multijump">Multi-Salto</option>
+                  <option value="imtp">IMTP</option>
+                  <option value="cop">Equilibrio</option>
+                </select>
+              </div>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
@@ -188,9 +242,9 @@
                     <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA">FECHA</th>
                     <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA">TEST</th>
                     <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">RESULTADO PRINCIPAL</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">TENDENCIA</th>
                     <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">SIMETRÍA</th>
-                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">FUERZA MÁX.</th>
-                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">PESO CUERPO</th>
+                    <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">F. MÁX.</th>
                   </tr>
                 </thead>
                 <tbody id="history-tbody"></tbody>
@@ -204,19 +258,19 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="card p-4">
               <p class="text-sm font-semibold text-white mb-3">Altura de Salto — Evolución</p>
-              <div id="chart-container"><canvas id="chart-height"></canvas></div>
+              <canvas id="chart-height"></canvas>
             </div>
             <div class="card p-4">
               <p class="text-sm font-semibold text-white mb-3">Fuerza Máxima — Evolución</p>
-              <div id="chart-container2"><canvas id="chart-force"></canvas></div>
+              <canvas id="chart-force"></canvas>
             </div>
             <div class="card p-4">
               <p class="text-sm font-semibold text-white mb-3">RSI — Evolución</p>
-              <div><canvas id="chart-rsi"></canvas></div>
+              <canvas id="chart-rsi"></canvas>
             </div>
             <div class="card p-4">
               <p class="text-sm font-semibold text-white mb-3">Simetría — Evolución</p>
-              <div><canvas id="chart-sym"></canvas></div>
+              <canvas id="chart-sym"></canvas>
             </div>
           </div>
         </div>
@@ -231,35 +285,52 @@
   </div>
 </div>
 
+<!-- ── SESSION DETAIL MODAL ──────────────────────────────────────────────── -->
+<div id="session-modal" class="modal-overlay hidden" onclick="closeModal(event)">
+  <div class="modal-box p-6" onclick="event.stopPropagation()">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div id="modal-title" class="text-lg font-bold text-white"></div>
+        <div id="modal-subtitle" class="text-sm mt-0.5" style="color:#8899AA"></div>
+      </div>
+      <button onclick="closeModal()" style="color:#8899AA;font-size:20px;line-height:1;background:none;border:none;cursor:pointer">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
 <script>
-// ── Supabase init ──────────────────────────────────────────────────────────
+// ── Supabase ────────────────────────────────────────────────────────────────
 const SUPA_URL = 'https://rldtkomtclolhbmrphgh.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZHRrb210Y2xvbGhibXJwaGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NzQ1OTQsImV4cCI6MjA4OTU1MDU5NH0.uB9S--0zxvmO7UccotZRSen6KLRn4aeOuQe0n8MM5rs';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// ── State ──────────────────────────────────────────────────────────────────
-let athletes  = [];
-let sessions  = [];
-let selAthId  = null;
-let charts    = {};
+// ── State ───────────────────────────────────────────────────────────────────
+let athletes = [], allAthletes = [], sessions = [], allSessions = [];
+let selAthId = null, charts = {}, dateFilterDays = 0;
+let athleteAllUuids = {};
 
-// ── Auth ───────────────────────────────────────────────────────────────────
+// ── Constants ───────────────────────────────────────────────────────────────
+const TYPE_LABELS = { cmj:'CMJ', sj:'SJ', dj:'DJ', multijump:'Multi-Salto', imtp:'IMTP', cop:'Equilibrio' };
+const TYPE_ICONS  = { cmj:'↑', sj:'⬆', dj:'⤵', multijump:'↕', imtp:'💪', cop:'⚖' };
+const TYPE_COLORS = { cmj:'#00C9FF', sj:'#A78BFA', dj:'#F59E0B', multijump:'#22C55E', imtp:'#EF4444', cop:'#3B82F6' };
+
+function fmt(v,u='',dec=1){ return v!=null && v!=='' ? Number(v).toFixed(dec)+u : '—'; }
+
+// ── Auth ────────────────────────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const err   = document.getElementById('login-error');
   err.classList.add('hidden');
-
   try {
     const { data, error } = await supa.auth.signInWithPassword({ email, password: pass });
     if (error) {
       err.textContent = error.message === 'Invalid login credentials'
-        ? 'Email o contraseña incorrectos.'
-        : 'Error: ' + error.message;
+        ? 'Email o contraseña incorrectos.' : 'Error: ' + error.message;
       err.classList.remove('hidden');
       return;
     }
-    // Usar el usuario directo de la respuesta, sin llamada extra
     showDashboard(data.user);
     await loadAthletes();
   } catch(e) {
@@ -274,7 +345,6 @@ async function doLogout() {
   document.getElementById('login-page').classList.remove('hidden');
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
 function showDashboard(user) {
   document.getElementById('login-page').classList.add('hidden');
   document.getElementById('dashboard').classList.remove('hidden');
@@ -288,15 +358,11 @@ async function initDashboard() {
   await loadAthletes();
 }
 
-// ── Athletes ───────────────────────────────────────────────────────────────
-// Mapa local_id → lista de todos los UUIDs históricos (para buscar sesiones)
-let athleteAllUuids = {};
-
+// ── Athletes ─────────────────────────────────────────────────────────────────
 async function loadAthletes() {
   const { data } = await supa.from('athletes').select('*').order('name');
   const all = data || [];
 
-  // Agrupar todos los UUIDs por local_id
   athleteAllUuids = {};
   all.forEach(a => {
     const key = a.local_id ?? a.id;
@@ -304,89 +370,278 @@ async function loadAthletes() {
     athleteAllUuids[key].push(a.id);
   });
 
-  // Deduplicar para sidebar: mostrar solo 1 por local_id
   const seen = new Set();
-  athletes = all.filter(a => {
+  allAthletes = all.filter(a => {
     const key = a.local_id ?? a.id;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+  athletes = allAthletes;
+
+  // Cargar TODAS las sesiones para el overview
+  const { data: allS } = await supa
+    .from('test_sessions').select('*')
+    .order('performed_at', { ascending: false });
+  allSessions = parseSessions(allS || []);
+
+  renderAthleteList();
+  renderOverview();
+}
+
+function parseSessions(raw) {
+  return raw.map(s => {
+    let m = s.metrics_json ?? {};
+    if (typeof m === 'string') { try { m = JSON.parse(m); } catch(_) { m = {}; } }
+    return { ...s, metrics_json: m };
+  });
+}
+
+function filterAthletes(q) {
+  const lower = q.toLowerCase();
+  athletes = lower
+    ? allAthletes.filter(a => a.name.toLowerCase().includes(lower) || (a.sport||'').toLowerCase().includes(lower))
+    : allAthletes;
   renderAthleteList();
 }
 
 function renderAthleteList() {
   const el = document.getElementById('athlete-list');
   if (!athletes.length) {
-    el.innerHTML = '<p class="text-xs px-2" style="color:#8899AA">Sin atletas sincronizados.<br>Usa la app para sincronizar.</p>';
+    el.innerHTML = '<p class="text-xs px-2" style="color:#8899AA">Sin resultados</p>';
     return;
   }
-  el.innerHTML = athletes.map(a => `
+  el.innerHTML = athletes.map(a => {
+    const athSess = allSessions.filter(s => {
+      const localKey = a.local_id ?? a.id;
+      const uuids = athleteAllUuids[localKey] ?? [a.id];
+      return uuids.includes(s.athlete_uuid);
+    });
+    const lastType = athSess[0]?.test_type;
+    return `
     <div class="sidebar-item ${a.id===selAthId?'active':''}" onclick="selectAthlete('${a.id}')">
       <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
            style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
         ${a.name.charAt(0).toUpperCase()}
       </div>
-      <div class="overflow-hidden">
+      <div class="overflow-hidden flex-1">
         <p class="font-medium text-white text-sm truncate">${a.name}</p>
-        <p class="text-xs truncate" style="color:#8899AA">${a.sport||'Sin deporte'}</p>
+        <p class="text-xs truncate" style="color:#8899AA">${a.sport||'Sin deporte'} · ${athSess.length} tests</p>
       </div>
-    </div>`).join('');
+      ${lastType ? `<span class="badge badge-${lastType}" style="font-size:9px;padding:1px 5px">${TYPE_ICONS[lastType]||''}</span>` : ''}
+    </div>`;
+  }).join('');
 }
 
-async function selectAthlete(id) {
-  selAthId = id;
+// ── Overview ─────────────────────────────────────────────────────────────────
+function showOverview() {
+  selAthId = null;
+  document.getElementById('overview-page').classList.remove('hidden');
+  document.getElementById('athlete-detail').classList.add('hidden');
+  document.getElementById('sidebar-overview').classList.add('active');
   renderAthleteList();
+  renderOverview();
+}
 
-  const ath = athletes.find(a => a.id === id);
-  document.getElementById('ath-name').textContent = ath.name;
+function renderOverview() {
+  // Global KPIs
+  const totalTests  = allSessions.length;
+  const uniqueAths  = new Set(allSessions.map(s => s.athlete_uuid)).size;
+  const last30 = allSessions.filter(s => {
+    if (!s.performed_at) return false;
+    return (Date.now() - new Date(s.performed_at)) < 30*86400000;
+  });
+  const jumps = allSessions.filter(s => ['cmj','sj','dj'].includes(s.test_type));
+  const bestH = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jump_height_cm??0; return h>b?h:b; },0);
+
+  document.getElementById('overview-kpis').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-val">${allAthletes.length}</div>
+      <div class="metric-lbl">Atletas</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${totalTests}</div>
+      <div class="metric-lbl">Tests totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${last30.length}</div>
+      <div class="metric-lbl">Tests (30d)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${bestH>0?bestH.toFixed(1)+'cm':'—'}</div>
+      <div class="metric-lbl">Mejor salto global</div>
+    </div>`;
+
+  // Recent activity (last 10 sessions)
+  const recent = allSessions.slice(0,10);
+  const actEl = document.getElementById('recent-activity');
+  if (!recent.length) {
+    actEl.innerHTML = '<p class="text-sm px-4 py-6 text-center" style="color:#8899AA">Sin actividad reciente</p>';
+  } else {
+    actEl.innerHTML = recent.map(s => {
+      const ath = allAthletes.find(a => {
+        const localKey = a.local_id ?? a.id;
+        return (athleteAllUuids[localKey] ?? [a.id]).includes(s.athlete_uuid);
+      });
+      const date = s.performed_at ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const mm   = mainMetric(s);
+      return `
+      <div class="flex items-center gap-3 px-4 py-3 border-b row-hover"
+           style="border-color:#1F2937" onclick="selectAthlete('${ath?.id||''}')">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+             style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
+          ${(ath?.name||'?').charAt(0).toUpperCase()}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate">${ath?.name||'Atleta desconocido'}</p>
+          <p class="text-xs" style="color:#8899AA">${date}</p>
+        </div>
+        <span class="badge badge-${s.test_type}">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>
+        <span class="text-sm font-semibold" style="color:#00C9FF;min-width:60px;text-align:right">${mm.val}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Athlete cards
+  const athCardsEl = document.getElementById('overview-athletes');
+  if (!allAthletes.length) {
+    athCardsEl.innerHTML = `
+      <div class="col-span-3 card p-8 text-center" style="color:#8899AA">
+        <p class="font-medium mb-1">Sin atletas sincronizados</p>
+        <p class="text-sm">Usa la app InertiaX Force para sincronizar datos.</p>
+      </div>`;
+    return;
+  }
+
+  athCardsEl.innerHTML = allAthletes.map(a => {
+    const localKey = a.local_id ?? a.id;
+    const uuids = athleteAllUuids[localKey] ?? [a.id];
+    const athS = allSessions.filter(s => uuids.includes(s.athlete_uuid));
+    const jumpsA = athS.filter(s => ['cmj','sj','dj'].includes(s.test_type));
+    const bestJump = jumpsA.reduce((b,s)=>{ const h=s.metrics_json?.jump_height_cm??0; return h>b?h:b; }, 0);
+    const lastTest = athS[0];
+    const lastDate = lastTest?.performed_at
+      ? new Date(lastTest.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+
+    return `
+    <div class="card p-4 ath-card" onclick="selectAthlete('${a.id}')">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0"
+             style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
+          ${a.name.charAt(0).toUpperCase()}
+        </div>
+        <div class="overflow-hidden">
+          <p class="font-semibold text-white truncate">${a.name}</p>
+          <p class="text-xs truncate" style="color:#8899AA">${a.sport||'Sin deporte'}${a.body_weight_kg?' · '+a.body_weight_kg+' kg':''}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div style="background:#0D0F14; border-radius:6px; padding:8px; text-align:center">
+          <p class="font-bold text-sm" style="color:#00C9FF">${athS.length}</p>
+          <p style="font-size:10px; color:#8899AA">tests</p>
+        </div>
+        <div style="background:#0D0F14; border-radius:6px; padding:8px; text-align:center">
+          <p class="font-bold text-sm" style="color:#22C55E">${bestJump>0?bestJump.toFixed(1)+'cm':'—'}</p>
+          <p style="font-size:10px; color:#8899AA">mejor salto</p>
+        </div>
+        <div style="background:#0D0F14; border-radius:6px; padding:8px; text-align:center">
+          <p class="font-bold text-sm text-white" style="font-size:11px">${lastDate}</p>
+          <p style="font-size:10px; color:#8899AA">último test</p>
+        </div>
+      </div>
+      ${lastTest ? `<div class="mt-3 pt-3 border-t flex items-center gap-2" style="border-color:#2D3748">
+        <span class="badge badge-${lastTest.test_type}" style="font-size:10px">${TYPE_ICONS[lastTest.test_type]||''} ${TYPE_LABELS[lastTest.test_type]||''}</span>
+        <span class="text-xs font-semibold" style="color:#00C9FF">${mainMetric(lastTest).val}</span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Athlete detail ───────────────────────────────────────────────────────────
+async function selectAthlete(id) {
+  if (!id) return;
+  selAthId = id;
+  document.getElementById('sidebar-overview').classList.remove('active');
+  renderAthleteList();
+  document.getElementById('overview-page').classList.add('hidden');
+  document.getElementById('athlete-detail').classList.remove('hidden');
+
+  const ath = allAthletes.find(a => a.id === id);
+  document.getElementById('ath-name').textContent = ath?.name || '—';
   document.getElementById('ath-meta').textContent =
-    [ath.sport, ath.body_weight_kg ? ath.body_weight_kg+' kg' : null]
+    [ath?.sport, ath?.body_weight_kg ? ath.body_weight_kg+' kg' : null]
     .filter(Boolean).join(' · ') || 'Sin información adicional';
 
-  // Obtener TODOS los UUIDs históricos para este atleta (evita perder sesiones de syncs anteriores)
   const localKey = ath?.local_id ?? id;
   const allUuids = athleteAllUuids[localKey] ?? [id];
   const { data } = await supa
-    .from('test_sessions')
-    .select('*')
+    .from('test_sessions').select('*')
     .in('athlete_uuid', allUuids)
     .order('performed_at', { ascending: false });
-  // Deduplicar por local_session_id
-  const seenS = new Set();
-  sessions = (data || []).filter(s => {
-    const key = s.local_session_id ?? s.id;
-    if (seenS.has(key)) return false;
-    seenS.add(key);
-    return true;
-  });
-  // Parsear metrics_json si llegó como string (doble serialización legacy)
-  sessions = sessions.map(s => {
-    let m = s.metrics_json ?? {};
-    if (typeof m === 'string') { try { m = JSON.parse(m); } catch(_) { m = {}; } }
-    return { ...s, metrics_json: m };
-  });
 
-  document.getElementById('empty-state').classList.add('hidden');
-  document.getElementById('athlete-detail').classList.remove('hidden');
+  const seenS = new Set();
+  sessions = parseSessions((data||[]).filter(s => {
+    const key = s.local_id ?? s.id;
+    if (seenS.has(key)) return false;
+    seenS.add(key); return true;
+  }));
+
+  // Reset date filter
+  dateFilterDays = 0;
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.date-btn:last-of-type')?.classList.add('active');
 
   renderKPIs();
   renderHistory();
-  if (!document.getElementById('tab-charts').classList.contains('hidden')) renderCharts();
-  if (!document.getElementById('tab-summary').classList.contains('hidden')) renderSummary();
+  // Reset to history tab
+  setTab('history', document.querySelector('.tab.active') || document.querySelector('.tab'));
 }
 
-// ── KPIs ───────────────────────────────────────────────────────────────────
+// ── Date filter ───────────────────────────────────────────────────────────────
+function setDateFilter(days, btn) {
+  dateFilterDays = days;
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKPIs();
+  renderHistory();
+  const chartsTab = document.getElementById('tab-charts');
+  if (!chartsTab.classList.contains('hidden')) renderCharts();
+  const summaryTab = document.getElementById('tab-summary');
+  if (!summaryTab.classList.contains('hidden')) renderSummary();
+}
+
+function filteredSessions() {
+  if (!dateFilterDays) return sessions;
+  const cutoff = Date.now() - dateFilterDays * 86400000;
+  return sessions.filter(s => s.performed_at && new Date(s.performed_at) >= cutoff);
+}
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
 function renderKPIs() {
-  const jumps  = sessions.filter(s => ['cmj','sj','dj'].includes(s.test_type));
-  const imtps  = sessions.filter(s => s.test_type === 'imtp');
-  const best   = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jump_height_cm??0; return h>b?h:b; }, 0);
-  const bestF  = imtps.reduce((b,s)=>{ const f=s.metrics_json?.peak_force_n??0; return f>b?f:b; }, 0);
+  const fs = filteredSessions();
+  const jumps = fs.filter(s => ['cmj','sj','dj'].includes(s.test_type));
+  const imtps = fs.filter(s => s.test_type === 'imtp');
+  const best  = jumps.reduce((b,s)=>{ const h=s.metrics_json?.jump_height_cm??0; return h>b?h:b; }, 0);
+  const bestF = imtps.reduce((b,s)=>{ const f=s.metrics_json?.peak_force_n??0; return f>b?f:b; }, 0);
+
+  // Tendency: compare last vs second-to-last CMJ/SJ
+  const jumpsSorted = [...jumps].sort((a,b)=>new Date(b.performed_at)-new Date(a.performed_at));
+  let trendHtml = '';
+  if (jumpsSorted.length >= 2) {
+    const last = jumpsSorted[0].metrics_json?.jump_height_cm;
+    const prev = jumpsSorted[1].metrics_json?.jump_height_cm;
+    if (last && prev) {
+      const diff = last - prev;
+      const sign = diff > 0 ? '+' : '';
+      const cls  = diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : 'trend-flat';
+      trendHtml = `<span class="${cls}" style="font-size:12px;font-weight:600">${sign}${diff.toFixed(1)}cm</span>`;
+    }
+  }
 
   document.getElementById('kpi-row').innerHTML = `
     <div class="metric-card">
-      <div class="metric-val">${sessions.length}</div>
-      <div class="metric-lbl">Tests totales</div>
+      <div class="metric-val">${fs.length}</div>
+      <div class="metric-lbl">Tests${dateFilterDays?` (${dateFilterDays}d)`:''}</div>
     </div>
     <div class="metric-card">
       <div class="metric-val">${best>0?best.toFixed(1)+'cm':'—'}</div>
@@ -398,38 +653,64 @@ function renderKPIs() {
     </div>
     <div class="metric-card">
       <div class="metric-val">${jumps.length}</div>
-      <div class="metric-lbl">Tests de salto</div>
+      <div class="metric-lbl">Tests salto</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val" style="font-size:18px">${trendHtml||'—'}</div>
+      <div class="metric-lbl">Tendencia salto</div>
     </div>`;
 }
 
-// ── History table ──────────────────────────────────────────────────────────
-const TYPE_LABELS = {
-  cmj:'CMJ', sj:'SJ', dj:'DJ', multijump:'Multi-Salto', imtp:'IMTP', cop:'Equilibrio'
-};
-const TYPE_ICONS = {
-  cmj:'↑', sj:'⬆', dj:'⤵', multijump:'↕', imtp:'💪', cop:'⚖'
-};
-
-function fmt(v,u='',dec=1){ return v!=null ? Number(v).toFixed(dec)+u : '—'; }
-function mainMetric(s){
+// ── Main metric helper ───────────────────────────────────────────────────────
+function mainMetric(s) {
   const m = s.metrics_json||{};
-  if(['cmj','sj'].includes(s.test_type)) return {val:fmt(m.jump_height_cm,'cm'), lbl:'Altura'};
-  if(s.test_type==='dj')        return {val:fmt(m.rsi_mod,'',2),                 lbl:'RSI'};
-  if(s.test_type==='multijump') return {val:fmt(m.mean_rsi_mod,'',2),            lbl:'RSI Medio'};
-  if(s.test_type==='imtp')      return {val:fmt(m.peak_force_n&&m.peak_force_n/1000,'kN',2), lbl:'F. Máx.'};
-  if(s.test_type==='cop')       return {val:fmt(m.path_length_mm,'mm',0),        lbl:'Trayectoria'};
-  return {val:'—',lbl:''};
+  if (['cmj','sj'].includes(s.test_type)) return { val:fmt(m.jump_height_cm,'cm'), raw:m.jump_height_cm };
+  if (s.test_type==='dj')        return { val:fmt(m.rsi_mod,'',2),                   raw:m.rsi_mod };
+  if (s.test_type==='multijump') return { val:fmt(m.mean_rsi_mod,'',2),              raw:m.mean_rsi_mod };
+  if (s.test_type==='imtp')      return { val:fmt(m.peak_force_n!=null?m.peak_force_n/1000:null,'kN',2), raw:m.peak_force_n };
+  if (s.test_type==='cop')       return { val:fmt(m.path_length_mm,'mm',0),          raw:m.path_length_mm };
+  return { val:'—', raw:null };
 }
 
+// ── Personal Record detection ────────────────────────────────────────────────
+function computePRs() {
+  const prMap = {}; // test_type → best raw value
+  // For CoP lower is better
+  sessions.forEach(s => {
+    const mm = mainMetric(s);
+    if (mm.raw == null) return;
+    const isCop = s.test_type === 'cop';
+    if (prMap[s.test_type] === undefined) {
+      prMap[s.test_type] = mm.raw;
+    } else {
+      prMap[s.test_type] = isCop
+        ? Math.min(prMap[s.test_type], mm.raw)
+        : Math.max(prMap[s.test_type], mm.raw);
+    }
+  });
+  return prMap;
+}
+
+// ── History table ─────────────────────────────────────────────────────────────
 function renderHistory() {
   const filter = document.getElementById('type-filter').value;
-  const rows = sessions.filter(s => !filter || s.test_type === filter);
+  const fs = filteredSessions();
+  const rows = fs.filter(s => !filter || s.test_type === filter);
   const tb = document.getElementById('history-tbody');
 
   if (!rows.length) {
     tb.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-sm" style="color:#8899AA">Sin resultados para este filtro</td></tr>`;
     return;
   }
+
+  const prMap = computePRs();
+
+  // Build map: test_type → sorted sessions (for trend calculation)
+  const byType = {};
+  sessions.forEach(s => {
+    if (!byType[s.test_type]) byType[s.test_type] = [];
+    byType[s.test_type].push(s);
+  });
 
   tb.innerHTML = rows.map(s => {
     const m    = s.metrics_json || {};
@@ -439,35 +720,161 @@ function renderHistory() {
     const mm   = mainMetric(s);
     const sym  = m.symmetry_pct!=null ? Number(m.symmetry_pct).toFixed(1)+'%' : '—';
     const peak = m.peak_force_n!=null ? (m.peak_force_n/9.81).toFixed(1)+' kg' : '—';
-    const bw   = m.body_weight_n!=null ? (m.body_weight_n/9.81).toFixed(1)+' kg' : '—';
+
+    // PR badge
+    const isCop = s.test_type === 'cop';
+    const isPR  = mm.raw != null && prMap[s.test_type] != null &&
+      (isCop ? mm.raw <= prMap[s.test_type] : mm.raw >= prMap[s.test_type]);
+    const prBadge = isPR ? `<span class="pr-badge ml-1">★ PR</span>` : '';
+
+    // Trend vs previous test of same type
+    const typeList = byType[s.test_type] || [];
+    const idx = typeList.findIndex(x => x.id === s.id);
+    let trendHtml = '<span class="trend-flat">—</span>';
+    if (idx >= 0 && idx < typeList.length - 1) {
+      const prevRaw = mainMetric(typeList[idx+1]).raw;
+      if (mm.raw != null && prevRaw != null) {
+        const diff = isCop ? prevRaw - mm.raw : mm.raw - prevRaw;
+        if (Math.abs(diff) > 0.01) {
+          const sign = diff > 0 ? '▲' : '▼';
+          const cls  = diff > 0 ? 'trend-up' : 'trend-down';
+          trendHtml  = `<span class="${cls}">${sign} ${Math.abs(diff).toFixed(1)}</span>`;
+        } else {
+          trendHtml = `<span class="trend-flat">= igual</span>`;
+        }
+      }
+    }
+
     return `
-      <tr class="row-hover border-b" style="border-color:#1F2937">
-        <td class="px-4 py-3 text-sm" style="color:#8899AA">${date}</td>
-        <td class="px-4 py-3">
-          <span class="badge badge-${s.test_type}">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>
-        </td>
-        <td class="px-4 py-3 text-right">
-          <span class="font-semibold text-white">${mm.val}</span>
-          <span class="text-xs ml-1" style="color:#8899AA">${mm.lbl}</span>
-        </td>
-        <td class="px-4 py-3 text-right text-sm">${sym}</td>
-        <td class="px-4 py-3 text-right text-sm">${peak}</td>
-        <td class="px-4 py-3 text-right text-sm" style="color:#8899AA">${bw}</td>
-      </tr>`;
+    <tr class="row-hover border-b" style="border-color:#1F2937"
+        onclick="openSessionModal('${s.id}')">
+      <td class="px-4 py-3 text-sm" style="color:#8899AA">${date}</td>
+      <td class="px-4 py-3">
+        <span class="badge badge-${s.test_type}">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>
+      </td>
+      <td class="px-4 py-3 text-right">
+        <span class="font-semibold text-white">${mm.val}</span>
+        ${prBadge}
+      </td>
+      <td class="px-4 py-3 text-right text-xs">${trendHtml}</td>
+      <td class="px-4 py-3 text-right text-sm">${sym}</td>
+      <td class="px-4 py-3 text-right text-sm">${peak}</td>
+    </tr>`;
   }).join('');
 }
 
-// ── Charts ─────────────────────────────────────────────────────────────────
-function chartDefaults(label, color) {
+// ── Session detail modal ─────────────────────────────────────────────────────
+function openSessionModal(sessionId) {
+  const s = sessions.find(x => x.id === sessionId);
+  if (!s) return;
+  const m = s.metrics_json || {};
+  const date = s.performed_at
+    ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '—';
+
+  document.getElementById('modal-title').innerHTML =
+    `<span class="badge badge-${s.test_type} mr-2">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>`;
+  document.getElementById('modal-subtitle').textContent = date;
+
+  // Build metrics per test type
+  let metricsHtml = '';
+  const row = (label, val) => `
+    <div style="background:#0D0F14; border-radius:8px; padding:10px 12px">
+      <p class="text-xs mb-1" style="color:#8899AA">${label}</p>
+      <p class="font-bold" style="color:#00C9FF;font-size:16px">${val}</p>
+    </div>`;
+
+  if (['cmj','sj'].includes(s.test_type)) {
+    metricsHtml = [
+      row('Altura de salto', fmt(m.jump_height_cm,'cm')),
+      row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/9.81:null,' kg',1)),
+      row('Impulso neto', fmt(m.net_impulse_ns,'N·s',1)),
+      row('Vel. despegue', fmt(m.takeoff_velocity_ms,' m/s',2)),
+      row('Potencia pico', fmt(m.peak_power_w,'W',0)),
+      row('Pot. relativa', fmt(m.relative_peak_power_wkg,' W/kg',2)),
+      row('Simetría', fmt(m.symmetry_pct,'%')),
+      row('RSI Modificado', fmt(m.rsi_mod,'',2)),
+      row('Tiempo vuelo', fmt(m.flight_time_ms,'ms',0)),
+      row('Tiempo contracción', fmt(m.contraction_time_ms,'ms',0)),
+      row('Peso corporal', fmt(m.body_weight_n!=null?m.body_weight_n/9.81:null,' kg',1)),
+    ].join('');
+  } else if (s.test_type === 'dj') {
+    metricsHtml = [
+      row('Altura de salto', fmt(m.jump_height_cm,'cm')),
+      row('RSI Modificado', fmt(m.rsi_mod,'',2)),
+      row('Tiempo contacto', fmt(m.contact_time_ms,'ms',0)),
+      row('Tiempo vuelo', fmt(m.flight_time_ms,'ms',0)),
+      row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/9.81:null,' kg',1)),
+      row('Simetría', fmt(m.symmetry_pct,'%')),
+    ].join('');
+  } else if (s.test_type === 'multijump') {
+    metricsHtml = [
+      row('RSI Medio', fmt(m.mean_rsi_mod,'',2)),
+      row('Altura media', fmt(m.mean_height_cm,'cm')),
+      row('Mejor altura', fmt(m.best_height_cm,'cm')),
+      row('Nº saltos', m.jump_count ?? '—'),
+      row('T. contacto medio', fmt(m.mean_contact_ms,'ms',0)),
+      row('T. vuelo medio', fmt(m.mean_flight_ms,'ms',0)),
+    ].join('');
+  } else if (s.test_type === 'imtp') {
+    metricsHtml = [
+      row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/1000:null,'kN',2)),
+      row('Fuerza pico / BW', fmt(m.peak_force_bw,'× BW',2)),
+      row('RFD 0-100ms', fmt(m.rfd_0_100_n_s,'N/s',0)),
+      row('RFD 0-200ms', fmt(m.rfd_0_200_n_s,'N/s',0)),
+      row('Fuerza a 100ms', fmt(m.force_at_100ms_n,'N',0)),
+      row('Fuerza a 200ms', fmt(m.force_at_200ms_n,'N',0)),
+      row('Simetría', fmt(m.symmetry_pct,'%')),
+    ].join('');
+  } else if (s.test_type === 'cop') {
+    metricsHtml = [
+      row('Trayectoria CoP', fmt(m.path_length_mm,'mm',0)),
+      row('Área elipse 95%', fmt(m.area_ellipse_mm2,'mm²',0)),
+      row('Vel. media', fmt(m.mean_velocity_mm_s,'mm/s',1)),
+      row('Rango ML', fmt(m.range_ml_mm,'mm',1)),
+      row('Rango AP', fmt(m.range_ap_mm,'mm',1)),
+      row('Frec. dominante', fmt(m.dominant_freq_hz,'Hz',2)),
+      row('Condición', m.condition ?? '—'),
+      row('Postura', m.stance ?? '—'),
+    ].join('');
+  }
+
+  const notes = s.notes ? `<div class="mt-4 p-3 rounded-lg" style="background:#1F2937">
+    <p class="text-xs font-semibold mb-1" style="color:#8899AA">NOTAS</p>
+    <p class="text-sm text-white">${s.notes}</p>
+  </div>` : '';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="metric-detail-grid">${metricsHtml}</div>
+    ${notes}
+    <p class="text-xs mt-4 text-center" style="color:#2D3748">ID: ${s.id}</p>`;
+
+  document.getElementById('session-modal').classList.remove('hidden');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('session-modal')) {
+    document.getElementById('session-modal').classList.add('hidden');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('session-modal').classList.add('hidden');
+});
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+function chartCfg(label, color) {
   return {
     type: 'line',
     options: {
       responsive: true,
-      plugins: { legend: { display: false },
-                 tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+      },
       scales: {
-        x: { ticks: { color:'#8899AA', font:{size:10} }, grid: { color:'#2D3748' } },
-        y: { ticks: { color:'#8899AA', font:{size:10} }, grid: { color:'#2D3748' } }
+        x: { ticks:{ color:'#8899AA', font:{size:10} }, grid:{ color:'#2D3748' } },
+        y: { ticks:{ color:'#8899AA', font:{size:10} }, grid:{ color:'#2D3748' } }
       }
     }
   };
@@ -476,159 +883,207 @@ function chartDefaults(label, color) {
 function renderCharts() {
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
+  const fs = filteredSessions();
+  const lbl = s => s.performed_at
+    ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '?';
 
-  const jumpSessions = [...sessions]
-    .filter(s => ['cmj','sj'].includes(s.test_type))
+  // Height (CMJ + SJ)
+  const jumpS = [...fs].filter(s=>['cmj','sj'].includes(s.test_type))
     .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
+  charts.height = new Chart(document.getElementById('chart-height'), {
+    ...chartCfg(),
+    data: {
+      labels: jumpS.map(lbl),
+      datasets: [{
+        label:'Altura (cm)',
+        data: jumpS.map(s=>s.metrics_json?.jump_height_cm!=null?+Number(s.metrics_json.jump_height_cm).toFixed(1):null),
+        borderColor:'#00C9FF', backgroundColor:'#00C9FF15',
+        fill:true, tension:.3, pointRadius:4, pointHoverRadius:6,
+        pointBackgroundColor: jumpS.map(s => {
+          const prMap = computePRs();
+          const mm = mainMetric(s);
+          return mm.raw != null && mm.raw >= prMap[s.test_type] ? '#F59E0B' : '#00C9FF';
+        })
+      }]
+    }
+  });
 
-  const allSorted = [...sessions]
+  // Force
+  const forceS = [...fs].filter(s=>s.metrics_json?.peak_force_n)
     .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
-
-  const labels = s => s.map(x => x.performed_at
-    ? new Date(x.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '?');
-
-  // Height chart
-  const hCtx = document.getElementById('chart-height').getContext('2d');
-  charts.height = new Chart(hCtx, {
-    ...chartDefaults(),
+  charts.force = new Chart(document.getElementById('chart-force'), {
+    ...chartCfg(),
     data: {
-      labels: labels(jumpSessions),
-      datasets: [{
-        label: 'Altura (cm)',
-        data: jumpSessions.map(s => s.metrics_json?.jump_height_cm != null ? Number(s.metrics_json.jump_height_cm).toFixed(1) : null),
-        borderColor: '#00C9FF', backgroundColor: '#00C9FF22',
-        fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6
+      labels: forceS.map(lbl),
+      datasets:[{
+        label:'F. Máx. (N)', data:forceS.map(s=>+Number(s.metrics_json.peak_force_n).toFixed(0)),
+        borderColor:'#EF4444', backgroundColor:'#EF444415',
+        fill:true, tension:.3, pointRadius:4
       }]
     }
   });
 
-  // Force chart
-  const fCtx = document.getElementById('chart-force').getContext('2d');
-  const forceSess = allSorted.filter(s => s.metrics_json?.peak_force_n);
-  charts.force = new Chart(fCtx, {
-    ...chartDefaults(),
+  // RSI
+  const rsiS = [...fs].filter(s=>s.metrics_json?.rsi_mod||s.metrics_json?.mean_rsi_mod)
+    .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
+  charts.rsi = new Chart(document.getElementById('chart-rsi'), {
+    ...chartCfg(),
     data: {
-      labels: labels(forceSess),
-      datasets: [{
-        label: 'Fuerza Máx. (N)',
-        data: forceSess.map(s => s.metrics_json.peak_force_n != null ? Number(s.metrics_json.peak_force_n).toFixed(0) : null),
-        borderColor: '#EF4444', backgroundColor: '#EF444422',
-        fill: true, tension: 0.3, pointRadius: 4
+      labels: rsiS.map(lbl),
+      datasets:[{
+        label:'RSI', data:rsiS.map(s=>{ const v=s.metrics_json?.rsi_mod??s.metrics_json?.mean_rsi_mod; return v!=null?+Number(v).toFixed(2):null; }),
+        borderColor:'#22C55E', backgroundColor:'#22C55E15',
+        fill:true, tension:.3, pointRadius:4
       }]
     }
   });
 
-  // RSI chart
-  const rCtx = document.getElementById('chart-rsi').getContext('2d');
-  const rsiSess = allSorted.filter(s => s.metrics_json?.rsi_mod || s.metrics_json?.mean_rsi_mod);
-  charts.rsi = new Chart(rCtx, {
-    ...chartDefaults(),
+  // Symmetry
+  const symS = [...fs].filter(s=>s.metrics_json?.symmetry_pct!=null)
+    .sort((a,b)=>new Date(a.performed_at)-new Date(b.performed_at));
+  charts.sym = new Chart(document.getElementById('chart-sym'), {
+    ...chartCfg(),
     data: {
-      labels: labels(rsiSess),
-      datasets: [{
-        label: 'RSI',
-        data: rsiSess.map(s => { const v = s.metrics_json?.rsi_mod ?? s.metrics_json?.mean_rsi_mod; return v != null ? Number(v).toFixed(2) : null; }),
-        borderColor: '#22C55E', backgroundColor: '#22C55E22',
-        fill: true, tension: 0.3, pointRadius: 4
-      }]
-    }
-  });
-
-  // Symmetry chart
-  const sCtx = document.getElementById('chart-sym').getContext('2d');
-  const symSess = allSorted.filter(s => s.metrics_json?.symmetry_pct != null);
-  charts.sym = new Chart(sCtx, {
-    ...chartDefaults(),
-    data: {
-      labels: labels(symSess),
-      datasets: [{
-        label: 'Simetría (%)',
-        data: symSess.map(s => s.metrics_json.symmetry_pct != null ? Number(s.metrics_json.symmetry_pct).toFixed(1) : null),
-        borderColor: '#F59E0B', backgroundColor: '#F59E0B22',
-        fill: true, tension: 0.3, pointRadius: 4
-      }, {
-        label: 'Óptimo (100%)',
-        data: symSess.map(() => 100),
-        borderColor: '#2D3748', borderDash: [4,4],
-        pointRadius: 0, fill: false
-      }]
+      labels: symS.map(lbl),
+      datasets:[
+        {
+          label:'Simetría (%)', data:symS.map(s=>+Number(s.metrics_json.symmetry_pct).toFixed(1)),
+          borderColor:'#F59E0B', backgroundColor:'#F59E0B15',
+          fill:true, tension:.3, pointRadius:4
+        },
+        {
+          label:'Óptimo (100%)', data:symS.map(()=>100),
+          borderColor:'#2D3748', borderDash:[4,4], pointRadius:0, fill:false
+        }
+      ]
     }
   });
 }
 
-// ── Summary ────────────────────────────────────────────────────────────────
+// ── Summary ───────────────────────────────────────────────────────────────────
 function renderSummary() {
+  const fs = filteredSessions();
   const types = ['cmj','sj','dj','multijump','imtp','cop'];
   const el = document.getElementById('summary-cards');
 
-  el.innerHTML = types.map(type => {
-    const ts = sessions.filter(s => s.test_type === type);
+  const cards = types.map(type => {
+    const ts = fs.filter(s => s.test_type === type);
     if (!ts.length) return '';
 
-    const vals = ts.map(s => mainMetric(s).val).filter(v => v !== '—');
-    const lbl  = mainMetric(ts[0]).lbl;
-    const best  = ts.reduce((b,s)=>{
-      const v = type==='cop'
-        ? (s.metrics_json?.path_length_mm ?? Infinity)
-        : (s.metrics_json?.jump_height_cm ?? s.metrics_json?.peak_force_n ?? s.metrics_json?.rsi_mod ?? s.metrics_json?.mean_rsi_mod ?? 0);
-      return type==='cop' ? Math.min(b,v) : Math.max(b,v);
-    }, type==='cop' ? Infinity : 0);
+    const isCop = type === 'cop';
+    const sorted = [...ts].sort((a,b)=>new Date(b.performed_at)-new Date(a.performed_at));
+    const best = ts.reduce((b,s) => {
+      const v = mainMetric(s).raw ?? (isCop ? Infinity : 0);
+      return isCop ? Math.min(b,v) : Math.max(b,v);
+    }, isCop ? Infinity : 0);
 
-    const bestFmt = best===Infinity||best===0 ? '—' : type==='imtp'
-      ? (best/1000).toFixed(2)+'kN' : type==='cop'
-      ? best.toFixed(0)+'mm²' : ['dj','multijump'].includes(type)
-      ? best.toFixed(2) : best.toFixed(1)+(type.includes('jump')||type==='cmj'||type==='sj'?'cm':'');
+    const formatBest = v => {
+      if (v === Infinity || v === 0) return '—';
+      if (type==='imtp') return (v/1000).toFixed(2)+'kN';
+      if (type==='cop')  return v.toFixed(0)+'mm';
+      if (['dj','multijump'].includes(type)) return v.toFixed(2);
+      return v.toFixed(1)+'cm';
+    };
+
+    // Last 3 results
+    const last3 = sorted.slice(0,3).map(s => {
+      const mm = mainMetric(s);
+      const d  = s.performed_at ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '—';
+      return `<div class="flex items-center justify-between text-xs py-1" style="border-bottom:1px solid #2D3748">
+        <span style="color:#8899AA">${d}</span>
+        <span class="font-semibold text-white">${mm.val}</span>
+      </div>`;
+    }).join('');
+
+    // Avg of last 5
+    const last5 = sorted.slice(0,5);
+    const avg5 = last5.reduce((s,x)=>{const v=mainMetric(x).raw; return v!=null?s+v:s;},0) / (last5.filter(x=>mainMetric(x).raw!=null).length||1);
 
     return `
-      <div class="card p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span class="badge badge-${type}">${TYPE_ICONS[type]} ${TYPE_LABELS[type]}</span>
-          <span class="text-xs" style="color:#8899AA">${ts.length} test${ts.length>1?'s':''}</span>
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="badge badge-${type}">${TYPE_ICONS[type]} ${TYPE_LABELS[type]}</span>
+        <span class="text-xs" style="color:#8899AA">${ts.length} test${ts.length>1?'s':''}</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <p class="text-xs mb-1" style="color:#8899AA">Mejor</p>
+          <p class="font-bold text-lg" style="color:#F59E0B">${formatBest(best)} <span class="pr-badge">★ PR</span></p>
         </div>
-        <div class="grid grid-cols-2 gap-3 mt-2">
-          <div>
-            <p class="text-xs mb-1" style="color:#8899AA">Mejor ${lbl}</p>
-            <p class="font-bold text-lg" style="color:#00C9FF">${bestFmt}</p>
-          </div>
-          <div>
-            <p class="text-xs mb-1" style="color:#8899AA">Último test</p>
-            <p class="font-medium text-sm text-white">${ts[0].performed_at
-              ? new Date(ts[0].performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
-              : '—'}</p>
-          </div>
+        <div>
+          <p class="text-xs mb-1" style="color:#8899AA">Prom. últimos 5</p>
+          <p class="font-bold text-lg" style="color:#00C9FF">${formatBest(avg5)}</p>
         </div>
-      </div>`;
-  }).join('');
+      </div>
+      <p class="text-xs font-semibold mb-2" style="color:#8899AA">ÚLTIMOS RESULTADOS</p>
+      ${last3}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  el.innerHTML = cards || `<div class="col-span-2 card p-8 text-center" style="color:#8899AA">
+    Sin datos para el período seleccionado.</div>`;
 }
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 function setTab(name, btn) {
-  ['history','charts','summary'].forEach(t => {
-    document.getElementById('tab-'+t).classList.add('hidden');
-  });
+  ['history','charts','summary'].forEach(t =>
+    document.getElementById('tab-'+t).classList.add('hidden'));
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.remove('hidden');
-  btn.classList.add('active');
-  if (name === 'charts') renderCharts();
-  if (name === 'summary') renderSummary();
+  if (btn) btn.classList.add('active');
+  if (name==='charts')  renderCharts();
+  if (name==='summary') renderSummary();
 }
 
-// ── Bootstrap ──────────────────────────────────────────────────────────────
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const ath = allAthletes.find(a => a.id === selAthId);
+  const fs  = filteredSessions();
+  const filter = document.getElementById('type-filter').value;
+  const rows   = fs.filter(s => !filter || s.test_type === filter);
+
+  const headers = ['Fecha','Test','Resultado','Unidad','Simetría%','F.Máx N','F.Máx kg','BW kg','Notas'];
+  const lines = [headers.join(',')];
+
+  rows.forEach(s => {
+    const m   = s.metrics_json || {};
+    const mm  = mainMetric(s);
+    const date = s.performed_at ? new Date(s.performed_at).toISOString().split('T')[0] : '';
+    const unit = s.test_type==='imtp'?'kN':s.test_type==='cop'?'mm':'cm';
+    lines.push([
+      date,
+      TYPE_LABELS[s.test_type]||s.test_type,
+      mm.raw!=null?Number(mm.raw).toFixed(2):'',
+      unit,
+      m.symmetry_pct!=null?Number(m.symmetry_pct).toFixed(1):'',
+      m.peak_force_n!=null?Number(m.peak_force_n).toFixed(0):'',
+      m.peak_force_n!=null?(m.peak_force_n/9.81).toFixed(1):'',
+      m.body_weight_n!=null?(m.body_weight_n/9.81).toFixed(1):'',
+      (s.notes||'').replace(/,/g,' '),
+    ].join(','));
+  });
+
+  const blob = new Blob([lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(ath?.name||'atleta').replace(/\s/g,'_')}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
 (async () => {
-  // Verificar que Supabase cargó correctamente
-  if (typeof supabase === 'undefined' || !supa) {
+  if (typeof supabase === 'undefined') {
     document.getElementById('login-error').textContent = 'Error: librería Supabase no cargó.';
     document.getElementById('login-error').classList.remove('hidden');
     return;
   }
 
-  // Enter key in login
   ['login-email','login-pass'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => e.key==='Enter' && doLogin()));
 
   try {
-    const { data: { session } } = await supa.auth.getSession();
-    if (session) await initDashboard();
+    const { data:{ session } } = await supa.auth.getSession();
+    if (session) { showDashboard(session.user); await loadAthletes(); }
   } catch(e) {
     document.getElementById('login-error').textContent = 'Error de conexión: ' + e.message;
     document.getElementById('login-error').classList.remove('hidden');

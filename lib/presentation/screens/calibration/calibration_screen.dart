@@ -47,8 +47,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
   // ── Batch-collection buffers ───────────────────────────────────────────────
   // Collecting at full hardware rate (up to 1000 Hz).
-  // 800 samples ≈ 0.8 s → SEM ≈ raw_std / √800 ≈ 0.08 % → excellent precision.
-  static const int _collectSamples = 800;
+  // 2000 samples ≈ 2 s → SEM ≈ raw_std / √2000 ≈ 0.05 % → mayor precisión.
+  static const int _collectSamples = 2000;
   _CalPhase _phase = _CalPhase.idle;
   final List<double> _cAML = [], _cAMR = [], _cASL = [], _cASR = [];
 

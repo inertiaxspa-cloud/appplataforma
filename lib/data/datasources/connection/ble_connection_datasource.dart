@@ -122,6 +122,7 @@ class BleConnectionDataSource implements ConnectionDataSource {
     } catch (_) {}
     _device  = null;
     _buffer.clear();
+    if (!_lineController.isClosed) await _lineController.close();
   }
 
   // ── Send command ──────────────────────────────────────────────────────────

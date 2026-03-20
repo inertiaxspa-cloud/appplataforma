@@ -70,6 +70,11 @@ class CalibrationEngine {
     }
 
     final gain = count > 0 ? gainSum / count : 1.0;
+    if (gain <= 0 || gain.isInfinite || gain.isNaN) {
+      throw Exception(
+          'Calibración inválida: ganancia calculada = $gain. '
+          'Verifica que los pesos y lecturas ADC sean correctos.');
+    }
     return {'A_ML': gain, 'A_MR': gain, 'A_SL': gain, 'A_SR': gain};
   }
 

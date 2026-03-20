@@ -49,11 +49,24 @@ class SupabaseService {
 
   Future<void> signOut() async => _client.auth.signOut();
 
+  static dynamic _parseMetricsJson(dynamic value) {
+    if (value is String) {
+      try {
+        return jsonDecode(value);
+      } catch (_) {
+        return null; // JSON corrupto — no bloquear la sincronización
+      }
+    }
+    return value;
+  }
+
   // ── Data sync ─────────────────────────────────────────────────────────────
 
   /// Upserts an athlete row. Returns the Supabase UUID used.
   Future<String> upsertAthlete(Map<String, dynamic> athlete) async {
-    final userId = currentUser!.id;
+    final user = currentUser;
+    if (user == null) throw StateError('No hay sesión activa de Supabase.');
+    final userId = user.id;
     final uuid =
         (athlete['supabase_uuid'] as String?) ?? const Uuid().v4();
 
@@ -73,10 +86,14 @@ class SupabaseService {
   /// Upserts a test session. Returns the Supabase UUID used.
   Future<String> upsertSession(
       Map<String, dynamic> session, String? athleteUuid) async {
-    final userId = currentUser!.id;
+    final user = currentUser;
+    if (user == null) throw StateError('No hay sesión activa de Supabase.');
+    final userId = user.id;
     final uuid =
         (session['supabase_uuid'] as String?) ?? const Uuid().v4();
 
+    // Upsert por clave primaria (id = UUID). No usar onConflict porque
+    // test_sessions no tiene restricción UNIQUE en (user_id, local_id).
     await _client.from('test_sessions').upsert({
       'id':               uuid,
       'user_id':          userId,
@@ -87,12 +104,9 @@ class SupabaseService {
       'performed_at':     session['performed_at'],
       'body_weight_kg':   session['body_weight_kg'],
       'platform_count':   session['platform_count'] ?? 1,
-      // Decodificar el string JSON para guardarlo como JSONB real en Supabase
-      'metrics_json': session['result_json'] is String
-          ? jsonDecode(session['result_json'] as String)
-          : session['result_json'],
-      'notes':            session['notes'],
-    }, onConflict: 'user_id,local_id');
+      'metrics_json': _parseMetricsJson(session['result_json']),
+      'notes': session['notes'],
+    });
     return uuid;
   }
 }

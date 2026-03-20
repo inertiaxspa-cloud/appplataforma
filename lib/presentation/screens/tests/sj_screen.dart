@@ -43,7 +43,7 @@ class SjScreen extends ConsumerWidget {
           icon: const Icon(Icons.close),
           onPressed: () {
             ref.read(testStateProvider.notifier).stopTest();
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
         actions: [

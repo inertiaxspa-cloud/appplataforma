@@ -44,9 +44,22 @@ class HistoryScreen extends ConsumerWidget {
       ),
       body: sessionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(
-          child: Text('Error: $e',
-              style: const TextStyle(color: AppColors.danger)),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+              const SizedBox(height: 12),
+              const Text('No se pudo cargar el historial.',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+                onPressed: () => ref.invalidate(sessionHistoryProvider),
+              ),
+            ],
+          ),
         ),
         data: (sessions) {
           if (sessions.isEmpty) return const _EmptyHistory();
@@ -145,7 +158,16 @@ class _SessionTile extends StatelessWidget {
             try {
               final result = TestResult.fromJson(resultJson);
               context.push('/results/${session['id']}', extra: result);
-            } catch (_) {}
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('No se pudo cargar el resultado: $e'),
+                    backgroundColor: Colors.red.shade700,
+                  ),
+                );
+              }
+            }
           }
         },
         child: Padding(

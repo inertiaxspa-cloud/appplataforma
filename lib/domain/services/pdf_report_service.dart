@@ -581,8 +581,10 @@ class PdfReportService {
   static pw.Widget _forceCurve(
       List<double> forceN, List<double> timeS, double? bwN) {
     const maxPts = 300;
+    if (forceN.isEmpty || timeS.isEmpty) return pw.SizedBox();
     final fDs = _downsample(forceN, maxPts);
     final tDs = _downsample(timeS,  maxPts);
+    if (fDs.isEmpty || tDs.isEmpty) return pw.SizedBox();
 
     final t0   = tDs.first;
     final tMax = (tDs.last - t0).clamp(0.001, double.infinity);

@@ -55,6 +55,7 @@ class SyncState {
 
 class SyncNotifier extends StateNotifier<SyncState> {
   StreamSubscription<AuthState>? _authSub;
+  bool _syncing = false; // guard contra llamadas concurrentes
 
   SyncNotifier()
       : super(const SyncState(status: SyncStatus.unauthenticated)) {
@@ -170,7 +171,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
   /// Pushes all sessions with sync_status='pending' or 'error' to Supabase.
   Future<void> syncPending() async {
-    if (!state.isAuthenticated || state.isBusy) return;
+    if (!state.isAuthenticated || _syncing) return;
+    _syncing = true;
     // También reintentar sesiones con error previo
     final db0 = await DatabaseHelper.instance.database;
     await db0.update('test_sessions', {'sync_status': 'pending'},
@@ -227,9 +229,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
             whereArgs: [row['id']],
           );
         } catch (e) {
-          // Mark individual session as error and continue with the rest.
+          // Mark individual session as error; no tocar notes del usuario.
           await db.update('test_sessions',
-              {'sync_status': 'error', 'notes': 'sync_error: ${e.toString().substring(0, e.toString().length.clamp(0, 200))}'},
+              {'sync_status': 'error'},
               where: 'id = ?', whereArgs: [row['id']]);
         }
       }
@@ -260,6 +262,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
         state = state.copyWith(
             status: SyncStatus.error, errorMessage: e.toString());
       }
+    } finally {
+      _syncing = false;
     }
   }
 
