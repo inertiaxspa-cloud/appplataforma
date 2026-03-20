@@ -62,7 +62,6 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const _BottomNav(),
     );
   }
 }
@@ -75,25 +74,11 @@ class _Header extends StatelessWidget {
     final col = context.col;
     return Row(
       children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: 'INERTIA',
-                style: TextStyle(
-                  fontSize: 26, fontWeight: FontWeight.w800,
-                  color: col.textPrimary, letterSpacing: 2,
-                ),
-              ),
-              const TextSpan(
-                text: 'X',
-                style: TextStyle(
-                  fontSize: 26, fontWeight: FontWeight.w800,
-                  color: AppColors.primary, letterSpacing: 2,
-                ),
-              ),
-            ],
-          ),
+        Image.asset(
+          'assets/images/inertiax_logo.jpg',
+          height: 28,
+          color: Colors.white,
+          colorBlendMode: BlendMode.srcIn,
         ),
         const Spacer(),
         IconButton(
@@ -381,41 +366,3 @@ class _TestCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _BottomNav extends ConsumerWidget {
-  const _BottomNav();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      items: const [
-        BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Inicio'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.people_outlined),
-            activeIcon: Icon(Icons.people),
-            label: 'Atletas'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Historial'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Ajustes'),
-      ],
-      onTap: (idx) {
-        switch (idx) {
-          case 0: context.go('/');
-          case 1: context.go('/athletes');
-          case 2: context.go('/history');
-          case 3: context.go('/settings');
-        }
-      },
-    );
-  }
-}
