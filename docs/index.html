@@ -179,6 +179,20 @@
             <p class="text-sm px-4 py-6 text-center" style="color:#8899AA">Sin actividad</p>
           </div>
         </div>
+        <!-- Ranking -->
+        <div class="card overflow-hidden mb-6">
+          <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color:#2D3748">
+            <p class="text-sm font-semibold text-white">🏆 Ranking</p>
+            <select id="ranking-type" style="width:auto;padding:4px 10px;font-size:12px"
+                    onchange="renderRanking()">
+              <option value="cmj">CMJ — Altura</option>
+              <option value="sj">SJ — Altura</option>
+              <option value="dj">DJ — RSI</option>
+              <option value="imtp">IMTP — Fuerza pico</option>
+            </select>
+          </div>
+          <div id="ranking-table"></div>
+        </div>
         <!-- Athlete cards -->
         <p class="text-xs font-semibold mb-3" style="color:#8899AA; letter-spacing:.5px">TODOS LOS ATLETAS</p>
         <div id="overview-athletes" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
@@ -204,6 +218,7 @@
               <button class="date-btn" onclick="setDateFilter(90,this)">90d</button>
               <button class="date-btn active" onclick="setDateFilter(0,this)">Todo</button>
             </div>
+            <button class="btn-ghost text-xs" onclick="openEditAthlete()">✏ Editar</button>
             <button class="btn-ghost text-xs" onclick="exportCSV()">⬇ CSV</button>
             <div class="flex gap-1">
               <button class="tab active" onclick="setTab('history',this)">Historial</button>
@@ -282,6 +297,32 @@
 
       </div><!-- /athlete-detail -->
     </main>
+  </div>
+</div>
+
+<!-- ── EDIT ATHLETE MODAL ────────────────────────────────────────────────── -->
+<div id="edit-modal" class="modal-overlay hidden" onclick="closeEditModal(event)">
+  <div class="modal-box p-6" style="max-width:400px" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <p class="text-base font-bold text-white">Editar atleta</p>
+      <button onclick="closeEditModal()" style="color:#8899AA;font-size:20px;line-height:1;background:none;border:none;cursor:pointer">✕</button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs mb-1" style="color:#8899AA">Nombre</label>
+        <input type="text" id="edit-name" placeholder="Nombre completo" />
+      </div>
+      <div>
+        <label class="block text-xs mb-1" style="color:#8899AA">Deporte</label>
+        <input type="text" id="edit-sport" placeholder="Fútbol, Atletismo…" />
+      </div>
+      <div>
+        <label class="block text-xs mb-1" style="color:#8899AA">Peso corporal (kg)</label>
+        <input type="number" id="edit-weight" placeholder="75.0" step="0.1" min="1" max="500" />
+      </div>
+      <p id="edit-error" class="text-xs hidden" style="color:#EF4444"></p>
+      <button class="btn-primary w-full" onclick="saveEditAthlete()">Guardar cambios</button>
+    </div>
   </div>
 </div>
 
@@ -387,6 +428,7 @@ async function loadAthletes() {
 
   renderAthleteList();
   renderOverview();
+  renderRanking();
 }
 
 function parseSessions(raw) {
@@ -441,6 +483,7 @@ function showOverview() {
   document.getElementById('sidebar-overview').classList.add('active');
   renderAthleteList();
   renderOverview();
+  renderRanking();
 }
 
 function renderOverview() {
@@ -522,16 +565,21 @@ function renderOverview() {
     const lastTest = athS[0];
     const lastDate = lastTest?.performed_at
       ? new Date(lastTest.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const lastSym  = lastTest?.metrics_json?.symmetry_pct;
+    const asymAlert = lastSym != null && Number(lastSym) < 90;
 
     return `
-    <div class="card p-4 ath-card" onclick="selectAthlete('${a.id}')">
+    <div class="card p-4 ath-card" style="${asymAlert?'border-color:#EF444466':''}" onclick="selectAthlete('${a.id}')">
       <div class="flex items-center gap-3 mb-3">
         <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0"
              style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
           ${a.name.charAt(0).toUpperCase()}
         </div>
         <div class="overflow-hidden">
-          <p class="font-semibold text-white truncate">${a.name}</p>
+          <div class="flex items-center gap-2">
+            <p class="font-semibold text-white truncate">${a.name}</p>
+            ${asymAlert ? '<span style="font-size:11px;color:#EF4444;font-weight:700">⚠ Asimetría</span>' : ''}
+          </div>
           <p class="text-xs truncate" style="color:#8899AA">${a.sport||'Sin deporte'}${a.body_weight_kg?' · '+a.body_weight_kg+' kg':''}</p>
         </div>
       </div>
@@ -718,7 +766,9 @@ function renderHistory() {
       ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
       : '—';
     const mm   = mainMetric(s);
-    const sym  = m.symmetry_pct!=null ? Number(m.symmetry_pct).toFixed(1)+'%' : '—';
+    const symRaw = m.symmetry_pct != null ? Number(m.symmetry_pct) : null;
+    const sym    = symRaw != null ? symRaw.toFixed(1)+'%' : '—';
+    const symCls = symRaw != null && symRaw < 90 ? 'style="color:#EF4444;font-weight:600"' : '';
     const peak = m.peak_force_n!=null ? (m.peak_force_n/9.81).toFixed(1)+' kg' : '—';
 
     // PR badge
@@ -757,7 +807,7 @@ function renderHistory() {
         ${prBadge}
       </td>
       <td class="px-4 py-3 text-right text-xs">${trendHtml}</td>
-      <td class="px-4 py-3 text-right text-sm">${sym}</td>
+      <td class="px-4 py-3 text-right text-sm" ${symCls}>${sym}${symRaw!=null&&symRaw<90?' ⚠':''}</td>
       <td class="px-4 py-3 text-right text-sm">${peak}</td>
     </tr>`;
   }).join('');
@@ -859,7 +909,10 @@ function closeModal(e) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('session-modal').classList.add('hidden');
+  if (e.key === 'Escape') {
+    document.getElementById('session-modal').classList.add('hidden');
+    document.getElementById('edit-modal').classList.add('hidden');
+  }
 });
 
 // ── Charts ───────────────────────────────────────────────────────────────────
@@ -1068,6 +1121,118 @@ function exportCSV() {
   a.href = URL.createObjectURL(blob);
   a.download = `${(ath?.name||'atleta').replace(/\s/g,'_')}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
+}
+
+// ── Ranking ──────────────────────────────────────────────────────────────────
+function renderRanking() {
+  const type = document.getElementById('ranking-type')?.value || 'cmj';
+  const el   = document.getElementById('ranking-table');
+  if (!el) return;
+
+  // Build best per athlete
+  const isCop  = type === 'cop';
+  const entries = allAthletes.map(a => {
+    const localKey = a.local_id ?? a.id;
+    const uuids    = athleteAllUuids[localKey] ?? [a.id];
+    const ts = allSessions.filter(s => uuids.includes(s.athlete_uuid) && s.test_type === type);
+    if (!ts.length) return null;
+    const best = ts.reduce((b, s) => {
+      const v = mainMetric(s).raw;
+      if (v == null) return b;
+      return isCop ? Math.min(b, v) : Math.max(b, v);
+    }, isCop ? Infinity : -Infinity);
+    if (!isFinite(best)) return null;
+    return { ath: a, best, count: ts.length };
+  }).filter(Boolean);
+
+  entries.sort((a, b) => isCop ? a.best - b.best : b.best - a.best);
+
+  if (!entries.length) {
+    el.innerHTML = '<p class="text-sm px-4 py-6 text-center" style="color:#8899AA">Sin datos para este test</p>';
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  const fmtBest = (v) => {
+    if (type === 'imtp') return (v/1000).toFixed(2) + ' kN';
+    if (['dj','multijump'].includes(type)) return v.toFixed(2);
+    return v.toFixed(1) + ' cm';
+  };
+
+  el.innerHTML = `
+    <table class="w-full text-sm">
+      <thead>
+        <tr style="background:#1F2937; border-bottom:1px solid #2D3748">
+          <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA; width:40px">#</th>
+          <th class="text-left px-4 py-2 text-xs font-semibold" style="color:#8899AA">ATLETA</th>
+          <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">MEJOR</th>
+          <th class="text-right px-4 py-2 text-xs font-semibold" style="color:#8899AA">TESTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${entries.map((e, i) => `
+        <tr class="row-hover border-b" style="border-color:#1F2937" onclick="selectAthlete('${e.ath.id}')">
+          <td class="px-4 py-3 text-center" style="font-size:16px">${medals[i] || (i+1)}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                   style="background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF44">
+                ${e.ath.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p class="font-medium text-white">${e.ath.name}</p>
+                <p class="text-xs" style="color:#8899AA">${e.ath.sport || '—'}</p>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right font-bold" style="color:#F59E0B">${fmtBest(e.best)}</td>
+          <td class="px-4 py-3 text-right text-xs" style="color:#8899AA">${e.count}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── Edit Athlete ──────────────────────────────────────────────────────────────
+function openEditAthlete() {
+  const ath = allAthletes.find(a => a.id === selAthId);
+  if (!ath) return;
+  document.getElementById('edit-name').value   = ath.name || '';
+  document.getElementById('edit-sport').value  = ath.sport || '';
+  document.getElementById('edit-weight').value = ath.body_weight_kg || '';
+  document.getElementById('edit-error').classList.add('hidden');
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal(e) {
+  if (!e || e.target === document.getElementById('edit-modal'))
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+async function saveEditAthlete() {
+  const errEl  = document.getElementById('edit-error');
+  const name   = document.getElementById('edit-name').value.trim();
+  const sport  = document.getElementById('edit-sport').value.trim();
+  const weight = parseFloat(document.getElementById('edit-weight').value);
+  errEl.classList.add('hidden');
+
+  if (!name) { errEl.textContent = 'El nombre no puede estar vacío.'; errEl.classList.remove('hidden'); return; }
+  if (document.getElementById('edit-weight').value && (isNaN(weight) || weight < 1 || weight > 500)) {
+    errEl.textContent = 'Peso inválido (1–500 kg).'; errEl.classList.remove('hidden'); return;
+  }
+
+  const updates = { name, sport: sport || null, body_weight_kg: isNaN(weight) ? null : weight };
+  const { error } = await supa.from('athletes').update(updates).eq('id', selAthId);
+  if (error) { errEl.textContent = 'Error: ' + error.message; errEl.classList.remove('hidden'); return; }
+
+  document.getElementById('edit-modal').classList.add('hidden');
+  // Update local state
+  const ath = allAthletes.find(a => a.id === selAthId);
+  if (ath) { ath.name = name; ath.sport = sport || null; ath.body_weight_kg = isNaN(weight) ? null : weight; }
+  // Refresh header
+  document.getElementById('ath-name').textContent = name;
+  document.getElementById('ath-meta').textContent =
+    [sport, !isNaN(weight) ? weight + ' kg' : null].filter(Boolean).join(' · ') || 'Sin información adicional';
+  renderAthleteList();
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
