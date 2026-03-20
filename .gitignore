@@ -39,3 +39,4 @@ lib/core/config/supabase_config.dart
 *.swp
 .DS_Store
 Thumbs.db
+InertiaX_Analisis.exe
