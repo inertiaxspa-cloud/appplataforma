@@ -1,0 +1,245 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../providers/live_data_provider.dart';
+import '../../providers/connection_provider.dart';
+import '../settings/settings_screen.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/cards/metric_card.dart';
+import '../../widgets/cards/symmetry_gauge.dart';
+import '../../widgets/charts/force_time_chart.dart';
+
+/// Full-screen real-time force monitor.
+/// Available whenever the device is connected, regardless of active test.
+class LiveMonitorScreen extends ConsumerWidget {
+  const LiveMonitorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final live     = ref.watch(liveDataProvider);
+    final conn     = ref.watch(connectionProvider);
+    final showRaw  = ref.watch(settingsProvider.select((s) => s.showRawData));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Monitor en Tiempo Real'),
+        actions: [
+          // Raw-mode indicator chip
+          if (showRaw)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withAlpha(30),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.warning.withAlpha(80)),
+                  ),
+                  child: Text('RAW',
+                      style: GoogleFonts.robotoMono(
+                          fontSize: 11, color: AppColors.warning,
+                          fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          // Platform count badge
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: context.col.surfaceHigh,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.col.border),
+                ),
+                child: Text(
+                  '${live.platformCount} plataforma${live.platformCount > 1 ? "s" : ""}',
+                  style: IXTextStyles.metricLabel,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: conn.isConnected
+          ? _MonitorBody(live: live, showRaw: showRaw)
+          : _NotConnected(),
+    );
+  }
+}
+
+class _MonitorBody extends StatelessWidget {
+  final LiveDataState live;
+  final bool showRaw;
+  const _MonitorBody({required this.live, required this.showRaw});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // ── Force-time chart (fills available space) ──────────────────────
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+            child: ForceTimeChart(
+              timeS: live.timeS,
+              forceTotalN: live.forceTotalN,
+              forceLeftN: live.forceLeftN,
+              forceRightN: live.forceRightN,
+              showChannels: true,
+            ),
+          ),
+        ),
+
+        // ── Raw data panel (visible when showRawData = true) ──────────────
+        if (showRaw) _RawDataPanel(live: live),
+
+        // ── Bottom panel ──────────────────────────────────────────────────
+        Container(
+          color: context.col.surface,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Main metrics row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  CompactMetricTile(
+                    label: 'FUERZA TOTAL',
+                    value: live.currentForceN.toStringAsFixed(0),
+                    unit: 'N',
+                    color: AppColors.forceTotal,
+                  ),
+                  _Divider(),
+                  CompactMetricTile(
+                    label: live.platformCount >= 2 ? 'PLATAFORMA IZQ' : 'IZQUIERDA',
+                    value: live.forceLeftN.isNotEmpty
+                        ? live.forceLeftN.last.toStringAsFixed(0) : '—',
+                    unit: 'N',
+                    color: AppColors.forceLeft,
+                  ),
+                  _Divider(),
+                  CompactMetricTile(
+                    label: live.platformCount >= 2 ? 'PLATAFORMA DER' : 'DERECHA',
+                    value: live.forceRightN.isNotEmpty
+                        ? live.forceRightN.last.toStringAsFixed(0) : '—',
+                    unit: 'N',
+                    color: AppColors.forceRight,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Symmetry gauge
+              SymmetryGauge(
+                leftPercent: live.leftPct,
+                leftLabel:  live.platformCount >= 2 ? 'IZQ' : 'IZQ',
+                rightLabel: live.platformCount >= 2 ? 'DER' : 'DER',
+                isEstimated: live.platformCount == 1,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Raw data debug panel ───────────────────────────────────────────────────
+
+class _RawDataPanel extends StatelessWidget {
+  final LiveDataState live;
+  const _RawDataPanel({required this.live});
+
+  @override
+  Widget build(BuildContext context) {
+    final smoothed = live.currentSmoothedN;
+    final raw      = live.currentForceN;
+    final diff     = raw - smoothed;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withAlpha(15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning.withAlpha(60)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('SEÑAL RAW', style: GoogleFonts.robotoMono(
+              fontSize: 10, color: AppColors.warning,
+              fontWeight: FontWeight.w700, letterSpacing: 1)),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _RawCell('RAW',      '${raw.toStringAsFixed(1)} N',
+                  AppColors.forceTotal),
+              const SizedBox(width: 16),
+              _RawCell('SUAVIZADO', '${smoothed.toStringAsFixed(1)} N',
+                  AppColors.primary),
+              const SizedBox(width: 16),
+              _RawCell('ΔRAW-SMA', '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)} N',
+                  diff.abs() > 20 ? AppColors.danger : context.col.textSecondary),
+              const Spacer(),
+              _RawCell('MUESTRAS', '${live.samplesReceived}',
+                  context.col.textSecondary),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RawCell extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _RawCell(this.label, this.value, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.robotoMono(
+            fontSize: 9, color: context.col.textSecondary)),
+        Text(value, style: GoogleFonts.robotoMono(
+            fontSize: 13, color: color, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 1, height: 40, color: context.col.border);
+}
+
+class _NotConnected extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.usb_off, size: 64, color: context.col.textDisabled),
+          const SizedBox(height: 16),
+          Text('Plataforma no conectada',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: context.col.textSecondary)),
+          const SizedBox(height: 8),
+          Text('Conecta el RECEPTOR por USB para ver la señal en tiempo real.',
+              style: TextStyle(color: context.col.textDisabled, fontSize: 13),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}

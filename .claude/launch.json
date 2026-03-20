@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "InertiaX App (Desktop)",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["C:/Users/Lenovo/Downloads/app.py"],
+      "port": 0
+    }
+  ]
+}
