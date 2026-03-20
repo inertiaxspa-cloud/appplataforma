@@ -31,7 +31,16 @@ class MultiJumpScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Multi-Salto / RSI'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Saltos Repetidos',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Multi-salto con RSI',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -52,8 +61,8 @@ class MultiJumpScreen extends ConsumerWidget {
               border: Border.all(color: AppColors.info.withOpacity(0.3)),
             ),
             child: Text(
-              'Realiza 5–10 saltos máximos continuos con mínimo tiempo '
-              'de contacto. El sistema detecta cada salto automáticamente.',
+              'Salta lo más fuerte y rápido posible, minimizando el tiempo '
+              'en el suelo. El sistema detecta cada salto automáticamente.',
               style: TextStyle(color: AppColors.info, fontSize: 13),
             ),
           ),
@@ -96,7 +105,7 @@ class MultiJumpScreen extends ConsumerWidget {
                 children: [
                   _LiveBadge(label: 'SALTOS', value: '0'),
                   _LiveBadge(label: 'ALTURA MEDIA', value: '-- cm'),
-                  _LiveBadge(label: 'RSI MEDIO', value: '--'),
+                  _LiveBadge(label: 'REACTIVIDAD PROM. (RSI)', value: '--'),
                 ],
               ),
             ),
@@ -178,9 +187,9 @@ class _JumpTable extends StatelessWidget {
             child: Row(
               children: [
                 _TH('N°', flex: 1),
-                _TH('ALTURA', flex: 2),
-                _TH('CONTACTO', flex: 2),
-                _TH('RSImod', flex: 2),
+                _TH('Altura', flex: 2),
+                _TH('T. Contacto', flex: 2),
+                _TH('RSI', flex: 2),
               ],
             ),
           ),

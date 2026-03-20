@@ -7,6 +7,7 @@ import '../../../domain/entities/calibration_data.dart';
 import '../../providers/calibration_provider.dart';
 import '../../providers/live_data_provider.dart';
 import '../../theme/app_theme.dart';
+import '../settings/settings_screen.dart';
 
 // Collection phase state machine
 enum _CalPhase { idle, collectingTare, collectingPoint }
@@ -240,6 +241,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     final cal = ref.watch(calibrationProvider);
     final col = context.col;
     final isCollecting = _phase != _CalPhase.idle;
+    final isEngineer = ref.watch(settingsProvider).engineerMode;
 
     return Scaffold(
       appBar: AppBar(
@@ -275,26 +277,49 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
           children: [
             // ── Live reading card ────────────────────────────────────────
             _LiveReadingCard(
-              smoothedN:   _liveSmoothedN,
-              cvPct:       _liveCvPct,
-              sampleCount: _rawSums.length,
-              rawAML: _liveMeanAML,
-              rawAMR: _liveMeanAMR,
-              rawASL: _liveMeanASL,
-              rawASR: _liveMeanASR,
+              smoothedN:    _liveSmoothedN,
+              cvPct:        _liveCvPct,
+              sampleCount:  _rawSums.length,
+              rawAML:       _liveMeanAML,
+              rawAMR:       _liveMeanAMR,
+              rawASL:       _liveMeanASL,
+              rawASR:       _liveMeanASR,
+              engineerMode: isEngineer,
             ),
             const SizedBox(height: 12),
 
-            // ── Polarity panel ───────────────────────────────────────────
-            _PolarityPanel(
-              polarities: _polarities,
-              liveMeans: {
-                'A_ML': _liveMeanAML,
-                'A_MR': _liveMeanAMR,
-                'A_SL': _liveMeanASL,
-                'A_SR': _liveMeanASR,
-              },
-              onToggle: _togglePolarity,
+            // ── Polarity panel (advanced, collapsed by default) ──────────
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                title: Row(children: [
+                  Icon(Icons.tune, size: 14, color: context.col.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Opciones avanzadas de hardware',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.col.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ]),
+                children: [
+                  const SizedBox(height: 6),
+                  _PolarityPanel(
+                    polarities: _polarities,
+                    liveMeans: {
+                      'A_ML': _liveMeanAML,
+                      'A_MR': _liveMeanAMR,
+                      'A_SL': _liveMeanASL,
+                      'A_SR': _liveMeanASR,
+                    },
+                    onToggle: _togglePolarity,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -312,14 +337,13 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 1: Tare ─────────────────────────────────────────────
             _StepCard(
               step: 0, currentStep: _step,
-              title: 'Paso 1 — Tara (plataforma vacía)',
+              title: 'Paso 1 — Plataforma vacía',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Asegúrate de que la plataforma esté VACÍA y sin movimiento.\n'
-                    'La app capturará ${_collectSamples} muestras (~0.8 s) y '
-                    'calculará el offset de cada celda automáticamente.',
+                    'Deja la plataforma sin peso y sin movimiento.\n'
+                    'Presiona el botón para registrar la referencia de vacío.',
                     style: TextStyle(color: col.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
@@ -327,7 +351,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.sensors, size: 18),
-                      label: const Text('Capturar tara (0 kg)'),
+                      label: const Text('Calibrar vacío'),
                       onPressed: (!isCollecting && _step == 0)
                           ? _startCollectTare
                           : null,
@@ -341,14 +365,13 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 2: Add weights ───────────────────────────────────────
             _StepCard(
               step: 1, currentStep: _step,
-              title: 'Paso 2 — Agregar pesas conocidas',
+              title: 'Paso 2 — Agrega un peso conocido',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Coloca el peso en el CENTRO de la plataforma, espera que '
-                    'deje de oscilar, escribe el valor y pulsa Capturar.\n'
-                    'Se promedian ${_collectSamples} muestras por punto.',
+                    'Coloca el peso sobre la plataforma, espera que deje de '
+                    'oscilar, ingresa el valor en kg y presiona "Agregar".',
                     style: TextStyle(color: col.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
@@ -368,10 +391,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'ML:${p.rawAML.toStringAsFixed(0)} '
-                              'MR:${p.rawAMR.toStringAsFixed(0)} '
-                              'SL:${p.rawASL.toStringAsFixed(0)} '
-                              'SR:${p.rawASR.toStringAsFixed(0)}',
+                              'A-I:${p.rawAML.toStringAsFixed(0)} '
+                              'A-D:${p.rawAMR.toStringAsFixed(0)} '
+                              'B-I:${p.rawASL.toStringAsFixed(0)} '
+                              'B-D:${p.rawASR.toStringAsFixed(0)}',
                               style: TextStyle(
                                   fontSize: 10,
                                   color: col.textSecondary),
@@ -399,7 +422,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.sensors, size: 16),
-                        label: const Text('Capturar'),
+                        label: const Text('Agregar'),
                         onPressed: (!isCollecting && _step == 1)
                             ? _startCollectPoint
                             : null,
@@ -434,7 +457,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 3: Compute & save ────────────────────────────────────
             _StepCard(
               step: 2, currentStep: _step,
-              title: 'Paso 3 — Método y guardar',
+              title: 'Paso 3 — Guardar calibración',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -442,8 +465,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   TextField(
                     controller: _nameCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Nombre de calibración',
-                      hintText: 'ej. Calibración exterior 20 kg',
+                      labelText: 'Nombre de esta calibración',
+                      hintText: 'Ej: Calibración campo 15-mar',
                       prefixIcon: Icon(Icons.label_outline, size: 18),
                     ),
                   ),
@@ -458,9 +481,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   _MethodCard(
                     selected: _method == _CalMethod.perCell,
                     icon: Icons.grid_4x4,
-                    title: 'Por celda (recomendado)',
-                    subtitle: 'Offset + ganancia individual por célula de carga. '
-                        'Compensa terrenos irregulares y cableado asimétrico.',
+                    title: 'Estándar (recomendado)',
+                    subtitle: 'Calibra cada sensor individualmente. '
+                        'Ideal para todo tipo de superficie.',
                     badge: 'ESTÁNDAR',
                     badgeColor: AppColors.success,
                     onTap: () => setState(() => _method = _CalMethod.perCell),
@@ -471,9 +494,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   _MethodCard(
                     selected: _method == _CalMethod.polynomial,
                     icon: Icons.show_chart,
-                    title: 'Polinomial (legacy)',
-                    subtitle: 'Ajuste polinómico sobre la suma total de ADC. '
-                        'Compatible con el algoritmo de app.py.',
+                    title: 'Avanzado (polinomial)',
+                    subtitle: 'Calibración global con ajuste de curva. '
+                        'Para usuarios con experiencia técnica.',
                     badge: 'CLÁSICO',
                     badgeColor: AppColors.warning,
                     onTap: () => setState(() => _method = _CalMethod.polynomial),
@@ -482,7 +505,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   // Polynomial sub-selector
                   if (_method == _CalMethod.polynomial) ...[
                     const SizedBox(height: 12),
-                    Text('GRADO DEL POLINOMIO',
+                    Text('TIPO DE AJUSTE',
                         style: IXTextStyles.metricLabel),
                     const SizedBox(height: 8),
                     _PolyModeSelector(
@@ -504,8 +527,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                                   strokeWidth: 2, color: Colors.black))
                           : const Icon(Icons.save_outlined, size: 18),
                       label: Text(_saving
-                          ? 'Calculando...'
-                          : 'Calcular y Guardar'),
+                          ? 'Guardando...'
+                          : 'Guardar Calibración'),
                       onPressed: _step == 2 && !_saving && !isCollecting
                           ? _compute
                           : null,
@@ -535,6 +558,7 @@ class _LiveReadingCard extends StatelessWidget {
   final double cvPct;
   final int sampleCount;
   final double rawAML, rawAMR, rawASL, rawASR;
+  final bool engineerMode;
 
   const _LiveReadingCard({
     required this.smoothedN,
@@ -544,6 +568,7 @@ class _LiveReadingCard extends StatelessWidget {
     required this.rawAMR,
     required this.rawASL,
     required this.rawASR,
+    this.engineerMode = false,
   });
 
   @override
@@ -579,13 +604,17 @@ class _LiveReadingCard extends StatelessWidget {
                     smoothedN.toStringAsFixed(1),
                     style: IXTextStyles.metricValue(color: AppColors.primary),
                   ),
-                  Text(
-                    'CV ${cvPct.toStringAsFixed(2)}%  |  ${sampleCount}/${90} buf',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: cvPct > 3.0
-                          ? AppColors.warning
-                          : col.textSecondary,
+                  Tooltip(
+                    message: 'Estabilidad (%): menor % = medición más estable',
+                    child: Text(
+                      'Estabilidad: ${cvPct.toStringAsFixed(1)}%'
+                      '${cvPct > 3.0 ? '  ⚠ Espera que se estabilice' : '  ✓'}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: cvPct > 3.0
+                            ? AppColors.warning
+                            : col.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -601,18 +630,22 @@ class _LiveReadingCard extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Per-cell badges
-          Text('CELDAS INDIVIDUALES (ADC crudo)',
-              style: IXTextStyles.metricLabel),
+          Text(
+            engineerMode
+                ? 'SENSORES POR ZONA (A_ML · A_MR · A_SL · A_SR)'
+                : 'SENSORES POR ZONA',
+            style: IXTextStyles.metricLabel,
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _CellBadge(label: 'ML', value: rawAML, warn: amlBad),
+              _CellBadge(label: 'A—Izq', techLabel: 'A_ML', value: rawAML, warn: amlBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'MR', value: rawAMR, warn: amrBad),
+              _CellBadge(label: 'A—Der', techLabel: 'A_MR', value: rawAMR, warn: amrBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'SL', value: rawASL, warn: aslBad),
+              _CellBadge(label: 'B—Izq', techLabel: 'A_SL', value: rawASL, warn: aslBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'SR', value: rawASR, warn: asrBad),
+              _CellBadge(label: 'B—Der', techLabel: 'A_SR', value: rawASR, warn: asrBad, engineerMode: engineerMode),
             ],
           ),
 
@@ -624,8 +657,8 @@ class _LiveReadingCard extends StatelessWidget {
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
-                  'Celda(s) con valor negativo — usa el panel de Polaridad '
-                  'para invertir sin necesidad de reflashear firmware.',
+                  'Sensor(es) con valor negativo — despliega "Opciones avanzadas '
+                  'de hardware" y activa la corrección del sensor afectado.',
                   style: TextStyle(fontSize: 10, color: AppColors.warning),
                 ),
               ),
@@ -634,7 +667,7 @@ class _LiveReadingCard extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'ML/MR = Master Left/Right  ·  SL/SR = Slave Left/Right',
+            'A—Izq / A—Der = Plataforma A  ·  B—Izq / B—Der = Plataforma B',
             style: TextStyle(fontSize: 9, color: col.textDisabled),
           ),
         ],
@@ -657,10 +690,10 @@ class _PolarityPanel extends StatelessWidget {
   });
 
   static const _cells = [
-    ('A_ML', 'ML', 'Master Left'),
-    ('A_MR', 'MR', 'Master Right'),
-    ('A_SL', 'SL', 'Slave Left'),
-    ('A_SR', 'SR', 'Slave Right'),
+    ('A_ML', 'A — Izq', 'Plataforma A — Izquierda'),
+    ('A_MR', 'A — Der', 'Plataforma A — Derecha'),
+    ('A_SL', 'B — Izq', 'Plataforma B — Izquierda'),
+    ('A_SR', 'B — Der', 'Plataforma B — Derecha'),
   ];
 
   @override
@@ -687,11 +720,11 @@ class _PolarityPanel extends StatelessWidget {
             Icon(Icons.swap_vert, size: 14,
                 color: anyInverted ? AppColors.warning : col.textSecondary),
             const SizedBox(width: 6),
-            Text('POLARIDAD DE CELDAS', style: IXTextStyles.metricLabel),
+            Text('CORRECCIÓN DE SENSORES', style: IXTextStyles.metricLabel),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Invierte una celda wired al revés sin reflashear firmware',
+                'Invierte el signo de un sensor si su lectura es negativa',
                 style: TextStyle(fontSize: 9, color: col.textDisabled),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -726,8 +759,7 @@ class _PolarityPanel extends StatelessWidget {
                 SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Polaridad invertida aplicada. La calibración guardará '
-                    'esta corrección automáticamente.',
+                    'Corrección de sensor activa. Se guardará automáticamente con la calibración.',
                     style: TextStyle(fontSize: 10, color: AppColors.warning),
                   ),
                 ),
@@ -834,7 +866,7 @@ class _PolarityRow extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              isInverted ? 'INVERTIDA' : 'Normal',
+              isInverted ? 'CORREGIDO' : 'Normal',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
@@ -867,8 +899,8 @@ class _CollectionProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final pct = (progress / total).clamp(0.0, 1.0);
     final label = phase == _CalPhase.collectingTare
-        ? 'Capturando tara…'
-        : 'Capturando punto de calibración…';
+        ? 'Midiendo... espera'
+        : 'Midiendo... espera';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -897,7 +929,7 @@ class _CollectionProgressCard extends StatelessWidget {
               ),
               TextButton(
                 onPressed: onCancel,
-                child: const Text('Cancelar',
+                child: const Text('Cancelar Calibración',
                     style: TextStyle(fontSize: 11)),
               ),
             ],
@@ -914,7 +946,7 @@ class _CollectionProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '$progress / $total muestras  (${(pct * 100).toStringAsFixed(0)}%)',
+            '${(pct * 100).toStringAsFixed(0)}% completado',
             style: TextStyle(fontSize: 11, color: context.col.textSecondary),
           ),
         ],
@@ -927,9 +959,17 @@ class _CollectionProgressCard extends StatelessWidget {
 
 class _CellBadge extends StatelessWidget {
   final String label;
+  final String techLabel;
   final double value;
   final bool warn;
-  const _CellBadge({required this.label, required this.value, this.warn = false});
+  final bool engineerMode;
+  const _CellBadge({
+    required this.label,
+    required this.techLabel,
+    required this.value,
+    this.warn = false,
+    this.engineerMode = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -947,6 +987,14 @@ class _CellBadge extends StatelessWidget {
         ),
         child: Column(
           children: [
+            if (engineerMode) ...[
+              Text(techLabel,
+                  style: TextStyle(
+                      fontSize: 8,
+                      color: warn ? AppColors.danger : AppColors.textSecondary,
+                      fontWeight: FontWeight.w500)),
+              const SizedBox(height: 1),
+            ],
             Text(label,
                 style: TextStyle(
                     fontSize: 9,

@@ -29,7 +29,15 @@ class SjScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SJ — Squat Jump'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('SJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Salto en Sentadilla',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -55,7 +63,7 @@ class SjScreen extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Posición de sentadilla 90°, sin contramovimiento. '
+                    'Rodilla doblada en ángulo recto, sin contramovimiento. '
                     'Mantén la posición 2s, luego salta.',
                     style: TextStyle(color: AppColors.info, fontSize: 13),
                   ),
@@ -117,7 +125,7 @@ class SjScreen extends ConsumerWidget {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar'),
+                            label: const Text('Cancelar Test'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),

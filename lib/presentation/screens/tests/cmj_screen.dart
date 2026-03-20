@@ -31,7 +31,15 @@ class CmjScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CMJ — Counter Movement Jump'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('CMJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Salto con Contramovimiento',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -107,7 +115,7 @@ class CmjScreen extends ConsumerWidget {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar'),
+                            label: const Text('Cancelar Test'),
                             style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.danger,
                                 side: const BorderSide(color: AppColors.danger)),

@@ -158,6 +158,7 @@ class CompactMetricTile extends StatelessWidget {
   final String value;
   final String unit;
   final Color color;
+  final String? subtitle;
 
   const CompactMetricTile({
     super.key,
@@ -165,6 +166,7 @@ class CompactMetricTile extends StatelessWidget {
     required this.value,
     required this.unit,
     this.color = AppColors.primary,
+    this.subtitle,
   });
 
   @override
@@ -193,6 +195,14 @@ class CompactMetricTile extends StatelessWidget {
             ],
           ),
         ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            style: TextStyle(fontSize: 9, color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }

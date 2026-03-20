@@ -22,6 +22,7 @@ class AppSettings {
   final bool showRawData;
   final bool autoSaveTests;
   final bool soundFeedback;
+  final bool engineerMode;
   final String weightUnit;   // 'kg' or 'lb'
   final String heightUnit;   // 'cm' or 'in'
   final String language;     // 'es' or 'en'
@@ -35,6 +36,7 @@ class AppSettings {
     this.showRawData          = false,
     this.autoSaveTests        = true,
     this.soundFeedback        = true,
+    this.engineerMode         = false,
     this.weightUnit           = 'kg',
     this.heightUnit           = 'cm',
     this.language             = 'es',
@@ -73,6 +75,7 @@ class AppSettings {
     bool? showRawData,
     bool? autoSaveTests,
     bool? soundFeedback,
+    bool? engineerMode,
     String? weightUnit,
     String? heightUnit,
     String? language,
@@ -85,6 +88,7 @@ class AppSettings {
     showRawData:          showRawData          ?? this.showRawData,
     autoSaveTests:        autoSaveTests        ?? this.autoSaveTests,
     soundFeedback:        soundFeedback        ?? this.soundFeedback,
+    engineerMode:         engineerMode         ?? this.engineerMode,
     weightUnit:           weightUnit           ?? this.weightUnit,
     heightUnit:           heightUnit           ?? this.heightUnit,
     language:             language             ?? this.language,
@@ -113,6 +117,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       showRawData:   p.getBool('show_raw')       ?? false,
       autoSaveTests: p.getBool('auto_save')      ?? true,
       soundFeedback: p.getBool('sound')          ?? true,
+      engineerMode:  p.getBool('engineer_mode')  ?? false,
       weightUnit:    p.getString('weight_unit')  ?? 'kg',
       heightUnit:    p.getString('height_unit')  ?? 'cm',
       language:      p.getString('language')     ?? 'es',
@@ -140,6 +145,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await p.setBool('show_raw',          state.showRawData);
     await p.setBool('auto_save',         state.autoSaveTests);
     await p.setBool('sound',             state.soundFeedback);
+    await p.setBool('engineer_mode',     state.engineerMode);
     await p.setString('weight_unit',     state.weightUnit);
     await p.setString('height_unit',     state.heightUnit);
     await p.setString('language',        state.language);
@@ -207,6 +213,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingCard(children: [
             _SliderTile(
               label: 'Separación entre plataformas',
+              subtitle: 'Distancia entre el centro de cada plataforma',
               value: settings.platformSeparationCm,
               min: 20, max: 60, unit: 'cm',
               onChanged: (v) =>
@@ -266,117 +273,142 @@ class SettingsScreen extends ConsumerWidget {
               value:    settings.showRawData,
               onChanged: (v) => upd((s) => s.copyWith(showRawData: v)),
             ),
+            Divider(color: context.col.border, height: 1),
+            _SwitchTile(
+              label:    'Modo Ingeniero',
+              subtitle: 'Muestra valores técnicos de celdas, algoritmos y señal cruda',
+              value:    settings.engineerMode,
+              onChanged: (v) => upd((s) => s.copyWith(engineerMode: v)),
+            ),
           ]),
 
           const SizedBox(height: 16),
 
-          // ── Algoritmos de cálculo ───────────────────────────────────────
-          _SectionHeader('Algoritmos de cálculo'),
+          // ── Configuración Avanzada (algoritmos) ─────────────────────────
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              title: Text('Configuración Avanzada',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: context.col.textPrimary)),
+              subtitle: Text('Métodos de cálculo para investigadores',
+                  style: TextStyle(fontSize: 11, color: context.col.textSecondary)),
+              leading: Icon(Icons.science_outlined,
+                  color: context.col.textSecondary, size: 20),
+              collapsedIconColor: context.col.textSecondary,
+              iconColor: AppColors.primary,
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              children: [
 
-          // Saltos
-          _AlgoSubHeader('Saltos'),
-          _SettingCard(children: [
-            _PickerTile(
-              label:    'Altura de salto',
-              options:  const ['flightTime', 'impulseMomentum'],
-              labels:   const ['Tiempo vuelo', 'Impulso-Momento'],
-              selected: settings.algo.jumpHeight.name,
-              subtitle: settings.algo.jumpHeight == JumpHeightMethod.impulseMomentum
-                  ? 'v=∫(F−BW)dt/m · h=v²/2g  (Linthorne, 2001)'
-                  : 'h = g·tf²/8',
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      jumpHeight: JumpHeightMethod.values.byName(v)))),
+                // Saltos
+                _AlgoSubHeader('Saltos'),
+                _SettingCard(children: [
+                  _PickerTile(
+                    label:    'Altura de salto',
+                    options:  const ['flightTime', 'impulseMomentum'],
+                    labels:   const ['Tiempo vuelo', 'Impulso-Momento'],
+                    selected: settings.algo.jumpHeight.name,
+                    subtitle: settings.algo.jumpHeight == JumpHeightMethod.impulseMomentum
+                        ? 'Cálculo por área bajo la curva de fuerza (más preciso)'
+                        : 'Cálculo por tiempo en el aire',
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            jumpHeight: JumpHeightMethod.values.byName(v)))),
+                  ),
+                  Divider(color: context.col.border, height: 1),
+                  _PickerTile(
+                    label:    'Potencia pico',
+                    options:  const ['sayers', 'harman', 'impulseBased'],
+                    labels:   const ['Sayers', 'Harman', 'Impulso'],
+                    selected: settings.algo.peakPower.name,
+                    subtitle: switch (settings.algo.peakPower) {
+                      PeakPowerMethod.sayers       => 'Ecuación de Sayers (1999)',
+                      PeakPowerMethod.harman       => 'Ecuación de Harman (1991)',
+                      PeakPowerMethod.impulseBased => 'Calculado directamente de la curva de fuerza',
+                    },
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            peakPower: PeakPowerMethod.values.byName(v)))),
+                  ),
+                  Divider(color: context.col.border, height: 1),
+                  _PickerTile(
+                    label:    'Índice de simetría',
+                    options:  const ['asymmetryIndex', 'limbSymmetryIndex'],
+                    labels:   const ['AI', 'LSI'],
+                    selected: settings.algo.symmetry.name,
+                    subtitle: settings.algo.symmetry == SymmetryMethod.limbSymmetryIndex
+                        ? 'Relación entre extremidad más débil y más fuerte'
+                        : 'Diferencia porcentual respecto al 50% ideal',
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            symmetry: SymmetryMethod.values.byName(v)))),
+                  ),
+                ]),
+
+                const SizedBox(height: 8),
+
+                // Detección de fases
+                _AlgoSubHeader('Detección de fases'),
+                _SettingCard(children: [
+                  _PickerTile(
+                    label:    'Inicio de movimiento (CMJ/SJ)',
+                    options:  const ['fixed80N', 'adaptive5SD'],
+                    labels:   const ['80N fijo', '5×DS'],
+                    selected: settings.algo.unweighting.name,
+                    subtitle: settings.algo.unweighting == UnweightingMethod.adaptive5SD
+                        ? 'Se adapta automáticamente al peso del atleta (recomendado)'
+                        : 'Umbral fijo de 80 N bajo el peso corporal',
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            unweighting: UnweightingMethod.values.byName(v)))),
+                  ),
+                ]),
+
+                const SizedBox(height: 8),
+
+                // IMTP
+                _AlgoSubHeader('IMTP'),
+                _SettingCard(children: [
+                  _PickerTile(
+                    label:    'Inicio del tirón',
+                    options:  const ['fixedThreshold', 'statisticalSD'],
+                    labels:   const ['BW+50N', '5×DS'],
+                    selected: settings.algo.imtpOnset.name,
+                    subtitle: settings.algo.imtpOnset == ImtpOnsetMethod.statisticalSD
+                        ? 'Adaptativo basado en variabilidad del atleta (recomendado)'
+                        : 'Umbral fijo de 50 N sobre el peso corporal',
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            imtpOnset: ImtpOnsetMethod.values.byName(v)))),
+                  ),
+                ]),
+
+                const SizedBox(height: 8),
+
+                // CoP / Balance
+                _AlgoSubHeader('CoP / Balance'),
+                _SettingCard(children: [
+                  _PickerTile(
+                    label:    'Frecuencia dominante',
+                    options:  const ['zeroCrossing', 'fft95'],
+                    labels:   const ['Cruces-cero', 'FFT f₉₅'],
+                    selected: settings.algo.copFrequency.name,
+                    subtitle: settings.algo.copFrequency == CopFrequencyMethod.fft95
+                        ? 'Análisis espectral de la señal (más preciso)'
+                        : 'Método simplificado (más rápido)',
+                    onChanged: (v) => upd((s) => s.copyWith(
+                        algo: s.algo.copyWith(
+                            copFrequency: CopFrequencyMethod.values.byName(v)))),
+                  ),
+                ]),
+
+                const SizedBox(height: 8),
+              ],
             ),
-            Divider(color: context.col.border, height: 1),
-            _PickerTile(
-              label:    'Potencia pico',
-              options:  const ['sayers', 'harman', 'impulseBased'],
-              labels:   const ['Sayers', 'Harman', 'Impulso'],
-              selected: settings.algo.peakPower.name,
-              subtitle: switch (settings.algo.peakPower) {
-                PeakPowerMethod.sayers      =>
-                    'PP = 60.7·h + 45.3·BW − 2055  (Sayers, 1999)',
-                PeakPowerMethod.harman      =>
-                    'PP = 61.9·h + 36.0·BW − 1822  (Harman, 1991)',
-                PeakPowerMethod.impulseBased =>
-                    'P = F×v  (máx. fase propulsiva)',
-              },
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      peakPower: PeakPowerMethod.values.byName(v)))),
-            ),
-            Divider(color: context.col.border, height: 1),
-            _PickerTile(
-              label:    'Índice de simetría',
-              options:  const ['asymmetryIndex', 'limbSymmetryIndex'],
-              labels:   const ['AI', 'LSI'],
-              selected: settings.algo.symmetry.name,
-              subtitle: settings.algo.symmetry == SymmetryMethod.limbSymmetryIndex
-                  ? 'LSI = min/max × 100  (Robinson et al., 1987)'
-                  : 'AI = |izq% − 50%|',
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      symmetry: SymmetryMethod.values.byName(v)))),
-            ),
-          ]),
-
-          const SizedBox(height: 8),
-
-          // Detección de fases
-          _AlgoSubHeader('Detección de fases'),
-          _SettingCard(children: [
-            _PickerTile(
-              label:    'Inicio de movimiento (CMJ/SJ)',
-              options:  const ['fixed80N', 'adaptive5SD'],
-              labels:   const ['80N fijo', '5×DS'],
-              selected: settings.algo.unweighting.name,
-              subtitle: settings.algo.unweighting == UnweightingMethod.adaptive5SD
-                  ? 'Umbral = 5×DS del peso en reposo — se adapta al atleta'
-                  : 'Fuerza < peso corporal − 80 N',
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      unweighting: UnweightingMethod.values.byName(v)))),
-            ),
-          ]),
-
-          const SizedBox(height: 8),
-
-          // IMTP
-          _AlgoSubHeader('IMTP'),
-          _SettingCard(children: [
-            _PickerTile(
-              label:    'Inicio del tirón',
-              options:  const ['fixedThreshold', 'statisticalSD'],
-              labels:   const ['BW+50N', '5×DS'],
-              selected: settings.algo.imtpOnset.name,
-              subtitle: settings.algo.imtpOnset == ImtpOnsetMethod.statisticalSD
-                  ? 'Umbral = BW + 5×DS_basal  (Brady et al., 2020)'
-                  : 'Umbral fijo: F > BW + 50 N',
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      imtpOnset: ImtpOnsetMethod.values.byName(v)))),
-            ),
-          ]),
-
-          const SizedBox(height: 8),
-
-          // CoP / Balance
-          _AlgoSubHeader('CoP / Balance'),
-          _SettingCard(children: [
-            _PickerTile(
-              label:    'Frecuencia dominante',
-              options:  const ['zeroCrossing', 'fft95'],
-              labels:   const ['Cruces-cero', 'FFT f₉₅'],
-              selected: settings.algo.copFrequency.name,
-              subtitle: settings.algo.copFrequency == CopFrequencyMethod.fft95
-                  ? 'f₉₅: 95% potencia espectral (DFT)  (Prieto et al., 1996)'
-                  : 'Tasa de cruces por cero — rápido, aproximado',
-              onChanged: (v) => upd((s) => s.copyWith(
-                  algo: s.algo.copyWith(
-                      copFrequency: CopFrequencyMethod.values.byName(v)))),
-            ),
-          ]),
+          ),
 
           const SizedBox(height: 16),
 
@@ -575,6 +607,7 @@ class _PickerTile extends StatelessWidget {
 
 class _SliderTile extends StatelessWidget {
   final String label;
+  final String? subtitle;
   final double value;
   final double min;
   final double max;
@@ -587,6 +620,7 @@ class _SliderTile extends StatelessWidget {
     required this.max,
     required this.unit,
     required this.onChanged,
+    this.subtitle,
   });
 
   @override
@@ -606,6 +640,14 @@ class _SliderTile extends StatelessWidget {
                     .copyWith(fontSize: 14)),
           ],
         ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              subtitle!,
+              style: TextStyle(fontSize: 11, color: context.col.textSecondary),
+            ),
+          ),
         Slider(
           value:       value,
           min:         min,
@@ -673,10 +715,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Servicio no configurado.\n'
-                  'Compila con:\n'
-                  '--dart-define=SUPABASE_URL=https://…\n'
-                  '--dart-define=SUPABASE_ANON_KEY=eyJ…',
+                  'Sincronización en la nube no disponible en esta versión.',
                   style: TextStyle(
                       fontSize: 11,
                       color: context.col.textSecondary,

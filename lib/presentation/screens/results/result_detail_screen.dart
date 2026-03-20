@@ -81,9 +81,9 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
         child: switch (widget.result) {
           DropJumpResult r  => _JumpResultView(result: r, settings: settings),
           JumpResult r      => _JumpResultView(result: r, settings: settings),
-          CoPResult r       => _CoPResultView(result: r),
-          ImtpResult r      => _ImtpResultView(result: r),
-          MultiJumpResult r => _MultiJumpResultView(result: r),
+          CoPResult r       => _CoPResultView(result: r, engineerMode: settings.engineerMode),
+          ImtpResult r      => _ImtpResultView(result: r, engineerMode: settings.engineerMode),
+          MultiJumpResult r => _MultiJumpResultView(result: r, engineerMode: settings.engineerMode),
         },
       ),
     );
@@ -102,18 +102,18 @@ class _JumpResultView extends StatelessWidget {
   // ── Dynamic labels based on selected algorithms ───────────────────────────
 
   String get _heightMethodNote => settings.useImpulseHeight
-      ? 'Método: Impulso-Momento (Linthorne, 2001)'
-      : 'Método: Tiempo de vuelo  h = g·tf²/8';
+      ? 'Método: Impulso-Momento'
+      : 'Método: Tiempo de vuelo';
 
   String get _powerPrimaryLabel => switch (settings.algo.peakPower) {
-    PeakPowerMethod.sayers       => 'Potencia (Sayers)',
-    PeakPowerMethod.harman       => 'Potencia (Harman)',
-    PeakPowerMethod.impulseBased => 'Potencia (F×v)',
+    PeakPowerMethod.sayers       => 'Potencia Máxima',
+    PeakPowerMethod.harman       => 'Potencia Máxima',
+    PeakPowerMethod.impulseBased => 'Potencia Máxima',
   };
 
   String get _symmetryLabel => settings.useLsiSymmetry
-      ? 'Índice LSI'
-      : 'Índice AI';
+      ? 'Simetría (LSI)'
+      : 'Asimetría (%)';
 
   bool get _showImpulsePowerCard =>
       settings.algo.peakPower != PeakPowerMethod.impulseBased &&
@@ -144,7 +144,7 @@ class _JumpResultView extends StatelessWidget {
             unit: 'ms',
           ),
           MetricCard(
-            label: 'Fuerza Pico',
+            label: 'Fuerza Máxima',
             value: result.peakForceN.toStringAsFixed(0),
             unit: 'N',
             valueColor: AppColors.warning,
@@ -174,7 +174,7 @@ class _JumpResultView extends StatelessWidget {
         const SizedBox(height: 20),
 
         // ── RFD ───────────────────────────────────────────────────────────
-        Text('TASA DE DESARROLLO DE FUERZA (RFD)',
+        Text('EXPLOSIVIDAD — RFD',
             style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
@@ -197,7 +197,7 @@ class _JumpResultView extends StatelessWidget {
             valueColor: AppColors.forceLeft,
           ),
           MetricCard(
-            label: 'T. Fuerza Pico',
+            label: 'Tiempo Fuerza Máx.',
             value: result.timeToPeakForceMs.toStringAsFixed(0),
             unit: 'ms',
           ),
@@ -209,13 +209,13 @@ class _JumpResultView extends StatelessWidget {
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(
-            label: 'Fase Excéntrica',
+            label: 'Fase de Bajada',
             value: result.eccentricDurationMs.toStringAsFixed(0),
             unit: 'ms',
             valueColor: AppColors.forceRight,
           ),
           MetricCard(
-            label: 'Fase Concéntrica',
+            label: 'Fase de Subida',
             value: result.concentricDurationMs.toStringAsFixed(0),
             unit: 'ms',
             valueColor: AppColors.primary,
@@ -257,7 +257,7 @@ class _JumpResultView extends StatelessWidget {
               valueColor: AppColors.warning,
             ),
             MetricCard(
-              label: 'RSImod',
+              label: 'Reactividad (RSI)',
               value: (result as DropJumpResult).rsiMod.toStringAsFixed(2),
               unit: '',
               valueColor: AppColors.success,
@@ -272,11 +272,12 @@ class _JumpResultView extends StatelessWidget {
           computedAt:    result.computedAt,
           platformCount: result.platformCount,
           bodyWeightN:   result.bodyWeightN,
+          engineerMode:  settings.engineerMode,
           algoNotes: [
             'Altura: ${settings.useImpulseHeight ? "Impulso-Momento" : "Tiempo vuelo"}',
             'Potencia: ${switch (settings.algo.peakPower) {
-              PeakPowerMethod.sayers       => "Sayers 1999",
-              PeakPowerMethod.harman       => "Harman 1991",
+              PeakPowerMethod.sayers       => "Fórmula regresión A",
+              PeakPowerMethod.harman       => "Fórmula regresión B",
               PeakPowerMethod.impulseBased => "F×v impulso",
             }}',
             'Simetría: ${settings.useLsiSymmetry ? "LSI" : "AI"}',
@@ -293,7 +294,8 @@ class _JumpResultView extends StatelessWidget {
 
 class _CoPResultView extends StatelessWidget {
   final CoPResult result;
-  const _CoPResultView({required this.result});
+  final bool engineerMode;
+  const _CoPResultView({required this.result, this.engineerMode = false});
 
   bool get _is1D => result.platformCount < 2;
 
@@ -308,10 +310,7 @@ class _CoPResultView extends StatelessWidget {
         _HeroMetric(
           value: result.areaEllipseMm2.toStringAsFixed(0),
           unit:  'mm²',
-          label: _is1D ? 'ÁREA SWAY ML (estimada)' : 'ÁREA ELIPSE 95%',
-          note:  _is1D
-              ? '1 plataforma: estimación círculo ML  (χ²df=1 × σ²ML)'
-              : 'Elipse de confianza 95%  (χ²df=2, Prieto et al. 1996)',
+          label: _is1D ? 'ÁREA OSCILACIÓN CoP (estimada)' : 'ÁREA CoP 95%',
         ),
 
         // ── 1D notice chip ────────────────────────────────────────────────
@@ -328,7 +327,7 @@ class _CoPResultView extends StatelessWidget {
                     color: AppColors.warning.withAlpha(100)),
               ),
               child: const Text(
-                '⚠  Hardware ML-only — AP no disponible',
+                '⚠  Solo medición ML disponible (hardware 1D)',
                 style: TextStyle(
                     color: AppColors.warning,
                     fontSize: 11,
@@ -354,7 +353,7 @@ class _CoPResultView extends StatelessWidget {
             unit: 'mm/s',
           ),
           MetricCard(
-            label: 'Rango ML',
+            label: 'Rango ML (Izq-Der)',
             value: result.rangeMLMm.toStringAsFixed(1),
             unit: 'mm',
             valueColor: AppColors.forceLeft,
@@ -362,13 +361,13 @@ class _CoPResultView extends StatelessWidget {
           // Rango AP only meaningful with 2-platform (moment-based) hardware.
           if (!_is1D)
             MetricCard(
-              label: 'Rango AP',
+              label: 'Rango AP (Ant-Post)',
               value: result.rangeAPMm.toStringAsFixed(1),
               unit: 'mm',
               valueColor: AppColors.forceRight,
             ),
           MetricCard(
-            label: _is1D ? 'Frec. ML (f95)' : 'Frec. (f95)',
+            label: 'Frec. de Oscilación (f95)',
             value: result.frequency95Hz.toStringAsFixed(2),
             unit: 'Hz',
           ),
@@ -389,7 +388,7 @@ class _CoPResultView extends StatelessWidget {
           Text('ROMBERG', style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           MetricCard(
-            label: 'Cociente Romberg',
+            label: 'Índice Romberg',
             value: result.rombergQuotient!.toStringAsFixed(2),
             unit: '',
             isHighlighted: true,
@@ -401,9 +400,10 @@ class _CoPResultView extends StatelessWidget {
           computedAt:    result.computedAt,
           platformCount: result.platformCount,
           bodyWeightN:   null,
+          engineerMode:  engineerMode,
           algoNotes: [
-            'Frec: ${_is1D ? "f95 DFT (ML-only)" : "f95 DFT 2D"}',
-            if (_is1D) 'Área: estimación 1D (no elipse real)',
+            'Frec: ${_is1D ? "Frecuencia de oscilación (Izq-Der)" : "Frecuencia de oscilación 2D"}',
+            if (_is1D) 'Área: Estimación con 1 plataforma',
           ],
         ),
       ],
@@ -417,7 +417,8 @@ class _CoPResultView extends StatelessWidget {
 
 class _ImtpResultView extends StatelessWidget {
   final ImtpResult result;
-  const _ImtpResultView({required this.result});
+  final bool engineerMode;
+  const _ImtpResultView({required this.result, this.engineerMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +428,7 @@ class _ImtpResultView extends StatelessWidget {
         _HeroMetric(
           value: result.peakForceN.toStringAsFixed(0),
           unit:  'N',
-          label: 'FUERZA PICO',
+          label: 'FUERZA MÁXIMA (N)',
         ),
         const SizedBox(height: 12),
         Center(
@@ -438,7 +439,7 @@ class _ImtpResultView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Text('RFD', style: IXTextStyles.sectionHeader()),
+        Text('EXPLOSIVIDAD (RFD)', style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(label: 'RFD 50ms',
@@ -450,7 +451,7 @@ class _ImtpResultView extends StatelessWidget {
           MetricCard(label: 'RFD 200ms',
               value: (result.rfdAt200ms / 1000).toStringAsFixed(1),
               unit: 'kN/s', valueColor: AppColors.forceLeft),
-          MetricCard(label: 'T. Fuerza Pico',
+          MetricCard(label: 'Tiempo Fuerza Máx.',
               value: result.timeToPeakForceMs.toStringAsFixed(0), unit: 'ms'),
         ]),
         const SizedBox(height: 20),
@@ -462,8 +463,8 @@ class _ImtpResultView extends StatelessWidget {
               border:       Border.all(color: context.col.border)),
           child: SymmetryGauge(
             leftPercent:  result.symmetry.leftPercent,
-            leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ'    : 'MASTER',
-            rightLabel:  result.symmetry.isTwoPlatform ? 'DER'    : 'SLAVE',
+            leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ'    : 'IZQ',
+            rightLabel:  result.symmetry.isTwoPlatform ? 'DER'    : 'DER',
             isEstimated: !result.symmetry.isTwoPlatform,
           ),
         ),
@@ -472,6 +473,7 @@ class _ImtpResultView extends StatelessWidget {
           computedAt:    result.computedAt,
           platformCount: result.platformCount,
           bodyWeightN:   null,
+          engineerMode:  engineerMode,
         ),
       ],
     );
@@ -484,7 +486,8 @@ class _ImtpResultView extends StatelessWidget {
 
 class _MultiJumpResultView extends StatelessWidget {
   final MultiJumpResult result;
-  const _MultiJumpResultView({required this.result});
+  final bool engineerMode;
+  const _MultiJumpResultView({required this.result, this.engineerMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -494,7 +497,7 @@ class _MultiJumpResultView extends StatelessWidget {
         _HeroMetric(
           value: result.meanRsiMod.toStringAsFixed(2),
           unit:  '',
-          label: 'RSImod MEDIO',
+          label: 'REACTIVIDAD MEDIA (RSI)',
         ),
         const SizedBox(height: 24),
         Text('RESUMEN', style: IXTextStyles.sectionHeader()),
@@ -538,7 +541,7 @@ class _MultiJumpResultView extends StatelessWidget {
                 Text('${j.contactTimeMs.toStringAsFixed(0)}ms CT',
                     style: TextStyle(
                         color: context.col.textSecondary, fontSize: 12)),
-                Text('RSI ${j.rsiMod.toStringAsFixed(2)}',
+                Text('React. ${j.rsiMod.toStringAsFixed(2)}',
                     style: const TextStyle(
                         color: AppColors.success,
                         fontWeight: FontWeight.w500)),
@@ -551,6 +554,7 @@ class _MultiJumpResultView extends StatelessWidget {
           computedAt:    result.computedAt,
           platformCount: result.platformCount,
           bodyWeightN:   null,
+          engineerMode:  engineerMode,
         ),
       ],
     );
@@ -566,7 +570,7 @@ class _HeroMetric extends StatelessWidget {
   final String value;
   final String unit;
   final String label;
-  final String? note;   // small italic line, e.g. "Método: Impulso-Momento"
+  final String? note;   // small italic line, e.g. "Método: Impulso-Momento" (optional)
   const _HeroMetric({
     required this.value,
     required this.unit,
@@ -652,12 +656,14 @@ class _Metadata extends StatelessWidget {
   final int platformCount;
   final double? bodyWeightN;
   final List<String> algoNotes;
+  final bool engineerMode;
 
   const _Metadata({
     required this.computedAt,
     required this.platformCount,
     this.bodyWeightN,
     this.algoNotes = const [],
+    this.engineerMode = false,
   });
 
   @override
@@ -677,14 +683,16 @@ class _Metadata extends StatelessWidget {
             _Row('Peso corporal',
                 '${(bodyWeightN! / 9.81).toStringAsFixed(1)} kg', col),
           _Row('Plataformas', '$platformCount',          col),
-          // Algorithm notes — one row per note
-          for (final note in algoNotes)
-            _Row(
-              note.split(':').first.trim(),
-              note.contains(':') ? note.split(':').last.trim() : note,
-              col,
-              isAlgo: true,
-            ),
+          // Algorithm notes — only shown in engineer mode
+          if (engineerMode) ...[
+            for (final note in algoNotes)
+              _Row(
+                note.split(':').first.trim(),
+                note.contains(':') ? note.split(':').last.trim() : note,
+                col,
+                isAlgo: true,
+              ),
+          ],
         ],
       ),
     );

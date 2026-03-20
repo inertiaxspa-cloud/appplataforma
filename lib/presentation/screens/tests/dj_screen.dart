@@ -33,7 +33,15 @@ class DjScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drop Jump'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('DJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Salto desde Caída',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -107,9 +115,10 @@ class DjScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: CompactMetricTile(
-                        label: 'RSImod',
+                        label: 'Reactividad (RSI)',
                         value: djResult.rsiMod.toStringAsFixed(2),
                         unit: '',
+                        subtitle: 'Mayor valor = mayor eficiencia',
                       ),
                     ),
                   ],
@@ -137,7 +146,7 @@ class DjScreen extends ConsumerWidget {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar'),
+                            label: const Text('Cancelar Test'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),
@@ -147,7 +156,7 @@ class DjScreen extends ConsumerWidget {
                           )
                         : ElevatedButton.icon(
                             icon: const Icon(Icons.play_arrow, size: 20),
-                            label: const Text('Iniciar Drop Jump'),
+                            label: const Text('Iniciar DJ'),
                             onPressed: () => ref
                                 .read(testStateProvider.notifier)
                                 .startTest(TestType.dropJump),

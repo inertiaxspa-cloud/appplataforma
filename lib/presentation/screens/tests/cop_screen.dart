@@ -179,7 +179,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '1 plataforma — CoP ML estimado (menos preciso sin separación física)',
+                      'Solo medición ML disponible (hardware 1D)',
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.warning),
                     ),
@@ -431,9 +431,9 @@ class _TimerDisplay extends StatelessWidget {
 enum _CopPhase { idle, measuring, done }
 
 enum _StanceMode {
-  bipedal('Bipodal'),
-  left('Pie Izq.'),
-  right('Pie Der.');
+  bipedal('Ambos pies (Bipodal)'),
+  left('Un pie — Izq.'),
+  right('Un pie — Der.');
 
   final String label;
   const _StanceMode(this.label);

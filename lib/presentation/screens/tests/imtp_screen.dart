@@ -92,7 +92,15 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IMTP — Isometric Mid-Thigh Pull'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('IMTP', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Tracción Isométrica',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -168,7 +176,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
       case _ImtpPhase.idle:
         return ElevatedButton.icon(
           icon: const Icon(Icons.play_arrow, size: 20),
-          label: const Text('Iniciar IMTP'),
+          label: const Text('Iniciar Test'),
           onPressed: _startCountdown,
         );
       case _ImtpPhase.countdown:
@@ -204,7 +212,7 @@ class _Instructions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const steps = [
-      '1. Coloca la barra a la altura del muslo medio (~20° flexión rodilla)',
+      '1. Coloca la barra a la altura del muslo medio (rodilla levemente flexionada)',
       '2. Asegura la barra — NO debe moverse',
       '3. Espera la cuenta regresiva, luego tira con fuerza máxima',
       '4. Mantén el esfuerzo hasta que suene el tono',
@@ -300,7 +308,7 @@ class _LivePeakForce extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('FUERZA ACTUAL', style: IXTextStyles.metricLabel),
+          Text('FUERZA APLICADA (N)', style: IXTextStyles.metricLabel),
           const SizedBox(width: 12),
           Text(
             '${forceN.toStringAsFixed(0)} N',

@@ -33,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _Header(),
               const SizedBox(height: 28),
-              Text('ESTADO', style: IXTextStyles.sectionHeader()),
+              Text('CONEXIÓN', style: IXTextStyles.sectionHeader()),
               const SizedBox(height: 12),
               _StatusPanel(
                 isConnected: isConnected,
@@ -146,6 +146,7 @@ class _StatusPanel extends StatelessWidget {
           _StatusRow(
             icon: Icons.tune,
             label: 'Calibración',
+            subtitle: 'Necesaria para mediciones precisas',
             status: isCalibrated ? 'Calibrado' : 'Sin calibrar',
             isOk: isCalibrated,
             onTap: () => context.push('/calibration'),
@@ -159,6 +160,7 @@ class _StatusPanel extends StatelessWidget {
 class _StatusRow extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final String status;
   final bool isOk;
   final VoidCallback onTap;
@@ -169,6 +171,7 @@ class _StatusRow extends StatelessWidget {
     required this.status,
     required this.isOk,
     required this.onTap,
+    this.subtitle,
   });
 
   @override
@@ -183,8 +186,17 @@ class _StatusRow extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: col.textSecondary),
             const SizedBox(width: 10),
-            Text(label, style: TextStyle(fontSize: 14, color: col.textSecondary)),
-            const Spacer(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(fontSize: 14, color: col.textSecondary)),
+                  if (subtitle != null)
+                    Text(subtitle!,
+                        style: TextStyle(fontSize: 11, color: col.textDisabled)),
+                ],
+              ),
+            ),
             StatusBadge(label: status, isOk: isOk),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, size: 16, color: col.textDisabled),
@@ -297,12 +309,12 @@ class _TestGrid extends StatelessWidget {
   const _TestGrid({required this.canTest});
 
   static const _tests = [
-    _TestItem('CMJ',        Icons.arrow_upward,   TestType.cmj,       '/tests/cmj',       AppColors.primary),
-    _TestItem('Squat Jump', Icons.sports,          TestType.sj,        '/tests/sj',        AppColors.forceRight),
-    _TestItem('Drop Jump',  Icons.download,        TestType.dropJump,  '/tests/dj',        AppColors.warning),
-    _TestItem('Multi-Salto',Icons.repeat,          TestType.multiJump, '/tests/multijump', AppColors.secondary),
-    _TestItem('Equilibrio', Icons.accessibility,   TestType.cop,       '/tests/cop',       AppColors.success),
-    _TestItem('IMTP',       Icons.fitness_center,  TestType.imtp,      '/tests/imtp',      AppColors.danger),
+    _TestItem('CMJ',         Icons.arrow_upward,   TestType.cmj,       '/tests/cmj',       AppColors.primary,    'Salto con Contramovimiento'),
+    _TestItem('Squat Jump',  Icons.sports,          TestType.sj,        '/tests/sj',        AppColors.forceRight, 'Salto en Sentadilla'),
+    _TestItem('Drop Jump',   Icons.download,        TestType.dropJump,  '/tests/dj',        AppColors.warning,    'Salto desde Caída'),
+    _TestItem('Multi-Salto', Icons.repeat,          TestType.multiJump, '/tests/multijump', AppColors.secondary,  'Saltos repetidos con RSI'),
+    _TestItem('Equilibrio',  Icons.accessibility,   TestType.cop,       '/tests/cop',       AppColors.success,    'Test de Equilibrio (CoP)'),
+    _TestItem('IMTP',        Icons.fitness_center,  TestType.imtp,      '/tests/imtp',      AppColors.danger,     'Tracción Isométrica'),
   ];
 
   @override
@@ -332,7 +344,8 @@ class _TestItem {
   final TestType type;
   final String route;
   final Color color;
-  const _TestItem(this.label, this.icon, this.type, this.route, this.color);
+  final String subtitle;
+  const _TestItem(this.label, this.icon, this.type, this.route, this.color, this.subtitle);
 }
 
 class _TestCard extends StatelessWidget {
@@ -345,40 +358,53 @@ class _TestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final col = context.col;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Opacity(
-        opacity: enabled ? 1.0 : 0.4,
-        child: Container(
-          decoration: BoxDecoration(
-            color: col.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: col.border),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: item.color.withOpacity(0.12),
+    return Tooltip(
+      message: enabled ? '' : 'Conecta la plataforma primero',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.4,
+          child: Container(
+            decoration: BoxDecoration(
+              color: col.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: col.border),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: item.color.withOpacity(0.12),
+                  ),
+                  child: Icon(item.icon, color: item.color, size: 20),
                 ),
-                child: Icon(item.icon, color: item.color, size: 20),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: col.textPrimary,
+                const SizedBox(height: 6),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: col.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  item.subtitle,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: col.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
         ),
       ),

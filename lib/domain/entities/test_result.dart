@@ -5,13 +5,13 @@ enum TestType { cmj, cmjArms, sj, dropJump, multiJump, cop, imtp }
 extension TestTypeExt on TestType {
   String get displayName {
     switch (this) {
-      case TestType.cmj:       return 'CMJ';
+      case TestType.cmj:       return 'CMJ — Contramovimiento';
       case TestType.cmjArms:   return 'CMJ + Brazos';
-      case TestType.sj:        return 'Squat Jump';
-      case TestType.dropJump:  return 'Drop Jump';
-      case TestType.multiJump: return 'Multi-Salto';
+      case TestType.sj:        return 'SJ — Sentadilla';
+      case TestType.dropJump:  return 'DJ — Caída';
+      case TestType.multiJump: return 'Multi-Salto (RSI)';
       case TestType.cop:       return 'Equilibrio (CoP)';
-      case TestType.imtp:      return 'IMTP';
+      case TestType.imtp:      return 'IMTP — Tracción';
     }
   }
 
