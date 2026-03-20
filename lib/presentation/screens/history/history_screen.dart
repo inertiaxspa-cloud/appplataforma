@@ -251,20 +251,31 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final col = context.col;
+    final scheme = Theme.of(context).colorScheme;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.history, size: 64, color: col.textSecondary.withOpacity(0.4)),
-          const SizedBox(height: 16),
-          Text('No hay sesiones guardadas',
-              style: TextStyle(fontSize: 16, color: col.textSecondary,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
-          Text('Realiza tu primer test para ver el historial aquí.',
-              style: TextStyle(fontSize: 13, color: col.textSecondary)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(
+                color: scheme.primary.withAlpha(20),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.history_rounded, size: 40, color: scheme.primary),
+            ),
+            const SizedBox(height: 20),
+            Text('Sin sesiones guardadas',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600,
+                    color: scheme.onSurface)),
+            const SizedBox(height: 8),
+            Text('Realiza un test para ver el historial aquí.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: scheme.onSurface.withAlpha(140))),
+          ],
+        ),
       ),
     );
   }

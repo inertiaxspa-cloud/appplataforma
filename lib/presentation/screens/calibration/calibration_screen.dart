@@ -11,6 +11,9 @@ import '../../theme/app_theme.dart';
 // Collection phase state machine
 enum _CalPhase { idle, collectingTare, collectingPoint }
 
+// Calibration method: per-cell (recommended) or legacy polynomial (app.py style)
+enum _CalMethod { perCell, polynomial }
+
 class CalibrationScreen extends ConsumerStatefulWidget {
   const CalibrationScreen({super.key});
 
@@ -21,8 +24,10 @@ class CalibrationScreen extends ConsumerStatefulWidget {
 class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   int _step = 0;
   final _weightCtrl = TextEditingController();
+  final _nameCtrl   = TextEditingController(text: 'Calibración');
   bool _saving = false;
-  CalibrationMode _mode = CalibrationMode.segmented;
+  CalibrationMode _mode   = CalibrationMode.segmented;
+  _CalMethod      _method = _CalMethod.perCell;
 
   // ── Per-cell polarity: +1 normal, -1 bridge wired inverted ─────────────────
   // Persisted in SharedPreferences so it survives app restarts.
@@ -165,6 +170,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   @override
   void dispose() {
     _weightCtrl.dispose();
+    _nameCtrl.dispose();
     _liveSub?.close();
     super.dispose();
   }
@@ -218,7 +224,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   Future<void> _compute() async {
     setState(() => _saving = true);
     await ref.read(calibrationProvider.notifier).computeAndSave(
+      name: _nameCtrl.text.trim().isEmpty ? 'Calibración' : _nameCtrl.text.trim(),
       mode: _mode,
+      cellOffsets: _method == _CalMethod.polynomial ? {} : null,
       cellPolarities: Map.of(_polarities),
     );
     if (mounted) {
@@ -426,34 +434,66 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 3: Compute & save ────────────────────────────────────
             _StepCard(
               step: 2, currentStep: _step,
-              title: 'Paso 3 — Calcular y guardar',
+              title: 'Paso 3 — Método y guardar',
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline,
-                            size: 16, color: AppColors.primary),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Se usará calibración POR CELDA (offset + ganancia). '
-                            'Método óptimo para terrenos irregulares.',
-                            style: TextStyle(
-                                fontSize: 11, color: AppColors.primary),
-                          ),
-                        ),
-                      ],
+                  // Name field
+                  TextField(
+                    controller: _nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de calibración',
+                      hintText: 'ej. Calibración exterior 20 kg',
+                      prefixIcon: Icon(Icons.label_outline, size: 18),
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // Method selector label
+                  Text('MÉTODO DE CALIBRACIÓN',
+                      style: IXTextStyles.metricLabel),
+                  const SizedBox(height: 8),
+
+                  // Per-cell card
+                  _MethodCard(
+                    selected: _method == _CalMethod.perCell,
+                    icon: Icons.grid_4x4,
+                    title: 'Por celda (recomendado)',
+                    subtitle: 'Offset + ganancia individual por célula de carga. '
+                        'Compensa terrenos irregulares y cableado asimétrico.',
+                    badge: 'ESTÁNDAR',
+                    badgeColor: AppColors.success,
+                    onTap: () => setState(() => _method = _CalMethod.perCell),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Polynomial card
+                  _MethodCard(
+                    selected: _method == _CalMethod.polynomial,
+                    icon: Icons.show_chart,
+                    title: 'Polinomial (legacy)',
+                    subtitle: 'Ajuste polinómico sobre la suma total de ADC. '
+                        'Compatible con el algoritmo de app.py.',
+                    badge: 'CLÁSICO',
+                    badgeColor: AppColors.warning,
+                    onTap: () => setState(() => _method = _CalMethod.polynomial),
+                  ),
+
+                  // Polynomial sub-selector
+                  if (_method == _CalMethod.polynomial) ...[
+                    const SizedBox(height: 12),
+                    Text('GRADO DEL POLINOMIO',
+                        style: IXTextStyles.metricLabel),
+                    const SizedBox(height: 8),
+                    _PolyModeSelector(
+                      current: _mode,
+                      onChange: (m) => setState(() => _mode = m),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Save button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -923,6 +963,169 @@ class _CellBadge extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Method selector card ──────────────────────────────────────────────────────
+
+class _MethodCard extends StatelessWidget {
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String badge;
+  final Color badgeColor;
+  final VoidCallback onTap;
+
+  const _MethodCard({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.badgeColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final col = context.col;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withOpacity(0.06)
+              : col.background,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary.withOpacity(0.6)
+                : col.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary.withOpacity(0.15)
+                    : col.surface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon,
+                  size: 18,
+                  color: selected ? AppColors.primary : col.textSecondary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Text(title,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? AppColors.primary : col.textPrimary,
+                        )),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(badge,
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: badgeColor)),
+                    ),
+                  ]),
+                  const SizedBox(height: 3),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 11, color: col.textSecondary)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_off,
+              size: 18,
+              color: selected ? AppColors.primary : col.textDisabled,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Polynomial mode sub-selector ──────────────────────────────────────────────
+
+class _PolyModeSelector extends StatelessWidget {
+  final CalibrationMode current;
+  final void Function(CalibrationMode) onChange;
+
+  const _PolyModeSelector({required this.current, required this.onChange});
+
+  static const _options = [
+    (CalibrationMode.linear,    'Lineal',    'Grado 1 — mínimo 1 punto'),
+    (CalibrationMode.quadratic, 'Cuadrático','Grado 2 — mínimo 3 puntos'),
+    (CalibrationMode.cubic,     'Cúbico',    'Grado 3 — mínimo 4 puntos'),
+    (CalibrationMode.segmented, 'Segmentado','Tramos lineales — máxima precisión'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final col = context.col;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _options.map((opt) {
+        final (mode, label, hint) = opt;
+        final isSelected = current == mode;
+        return GestureDetector(
+          onTap: () => onChange(mode),
+          child: Tooltip(
+            message: hint,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.warning.withOpacity(0.12)
+                    : col.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.warning.withOpacity(0.7)
+                      : col.border,
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                  color: isSelected ? AppColors.warning : col.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

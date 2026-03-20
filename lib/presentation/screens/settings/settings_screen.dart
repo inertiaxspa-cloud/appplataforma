@@ -197,8 +197,8 @@ class SettingsScreen extends ConsumerWidget {
           _SettingCard(children: [
             _PickerTile(
               label:    'Tema',
-              options:  const ['dark', 'outdoor', 'light'],
-              labels:   const ['Oscuro (interior)', 'Exterior (sol)', 'Claro'],
+              options:  const ['dark', 'outdoor'],
+              labels:   const ['Oscuro', 'Exterior (sol)'],
               selected: settings.themeMode,
               onChanged: (v) => upd((s) => s.copyWith(themeMode: v)),
             ),
