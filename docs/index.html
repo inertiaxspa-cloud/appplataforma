@@ -279,12 +279,21 @@ async function doLogout() {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 async function initDashboard() {
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return;
-  document.getElementById('login-page').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
-  document.getElementById('user-email-label').textContent = user.email;
-  await loadAthletes();
+  try {
+    const { data, error } = await supa.auth.getUser();
+    if (error || !data?.user) {
+      document.getElementById('login-error').textContent = 'Sesión inválida: ' + (error?.message ?? 'usuario no encontrado');
+      document.getElementById('login-error').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('user-email-label').textContent = data.user.email;
+    await loadAthletes();
+  } catch(e) {
+    document.getElementById('login-error').textContent = 'Error al cargar dashboard: ' + e.message;
+    document.getElementById('login-error').classList.remove('hidden');
+  }
 }
 
 // ── Athletes ───────────────────────────────────────────────────────────────
