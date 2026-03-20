@@ -250,15 +250,25 @@ async function doLogin() {
   const err   = document.getElementById('login-error');
   err.classList.add('hidden');
 
-  const { error } = await supa.auth.signInWithPassword({ email, password: pass });
-  if (error) {
-    err.textContent = error.message === 'Invalid login credentials'
-      ? 'Email o contraseña incorrectos.'
-      : error.message;
+  try {
+    const { data, error } = await supa.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      err.textContent = error.message === 'Invalid login credentials'
+        ? 'Email o contraseña incorrectos.'
+        : 'Error: ' + error.message;
+      err.classList.remove('hidden');
+      return;
+    }
+    if (!data?.session) {
+      err.textContent = 'No se obtuvo sesión. Intenta de nuevo.';
+      err.classList.remove('hidden');
+      return;
+    }
+    await initDashboard();
+  } catch(e) {
+    err.textContent = 'Error inesperado: ' + e.message;
     err.classList.remove('hidden');
-    return;
   }
-  await initDashboard();
 }
 
 async function doLogout() {
