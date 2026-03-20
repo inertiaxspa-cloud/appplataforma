@@ -5,24 +5,25 @@ import '../../../core/constants/app_colors.dart';
 import '../../providers/connection_provider.dart';
 import '../../providers/calibration_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/test_illustrations.dart';
 
 /// Tab-level hub that lists available tests and navigates to each.
 class TestsHubScreen extends ConsumerWidget {
   const TestsHubScreen({super.key});
 
-  static const _tests = [
-    _TestItem('CMJ', 'Salto con Contramovimiento', Icons.arrow_upward_rounded,
-        '/tests/cmj', AppColors.primary),
-    _TestItem('Squat Jump', 'Salto sin Contramovimiento', Icons.sports_rounded,
-        '/tests/sj', AppColors.forceRight),
-    _TestItem('Drop Jump', 'Caída y Rebote', Icons.download_rounded,
-        '/tests/dj', AppColors.warning),
-    _TestItem('Multi-Salto', 'Saltos Consecutivos con RSI', Icons.repeat_rounded,
-        '/tests/multijump', AppColors.secondary),
-    _TestItem('Equilibrio / COP', 'Balance y Centro de Presión',
-        Icons.accessibility_new_rounded, '/tests/cop', AppColors.success),
+  static final _tests = [
+    _TestItem('CMJ', 'Salto con Contramovimiento',
+        const CmjPainter(), '/tests/cmj', AppColors.primary),
+    _TestItem('Squat Jump', 'Salto sin Contramovimiento',
+        const SjPainter(), '/tests/sj', AppColors.forceRight),
+    _TestItem('Drop Jump', 'Caída y Rebote',
+        const DjPainter(), '/tests/dj', AppColors.warning),
+    _TestItem('Multi-Salto', 'Saltos Consecutivos con RSI',
+        const MultiJumpPainter(), '/tests/multijump', AppColors.secondary),
+    _TestItem('Equilibrio / CoP', 'Balance y Centro de Presión',
+        const CopPainter(), '/tests/cop', AppColors.success),
     _TestItem('IMTP', 'Tracción Isométrica a Media Altura',
-        Icons.fitness_center_rounded, '/tests/imtp', AppColors.danger),
+        const ImtpPainter(), '/tests/imtp', AppColors.danger),
   ];
 
   @override
@@ -106,11 +107,11 @@ class TestsHubScreen extends ConsumerWidget {
 class _TestItem {
   final String label;
   final String description;
-  final IconData icon;
+  final CustomPainter painter;
   final String route;
   final Color color;
   const _TestItem(
-      this.label, this.description, this.icon, this.route, this.color);
+      this.label, this.description, this.painter, this.route, this.color);
 }
 
 class _TestRow extends StatelessWidget {
@@ -148,13 +149,17 @@ class _TestRow extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: item.color.withOpacity(0.12),
+                  color: item.color.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(item.icon, color: item.color, size: 22),
+                padding: const EdgeInsets.all(6),
+                child: CustomPaint(
+                  size: const Size(68, 68),
+                  painter: item.painter,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
