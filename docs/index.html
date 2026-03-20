@@ -259,12 +259,9 @@ async function doLogin() {
       err.classList.remove('hidden');
       return;
     }
-    if (!data?.session) {
-      err.textContent = 'No se obtuvo sesión. Intenta de nuevo.';
-      err.classList.remove('hidden');
-      return;
-    }
-    await initDashboard();
+    // Usar el usuario directo de la respuesta, sin llamada extra
+    showDashboard(data.user);
+    await loadAthletes();
   } catch(e) {
     err.textContent = 'Error inesperado: ' + e.message;
     err.classList.remove('hidden');
@@ -278,22 +275,17 @@ async function doLogout() {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
+function showDashboard(user) {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('user-email-label').textContent = user?.email ?? '';
+}
+
 async function initDashboard() {
-  try {
-    const { data, error } = await supa.auth.getUser();
-    if (error || !data?.user) {
-      document.getElementById('login-error').textContent = 'Sesión inválida: ' + (error?.message ?? 'usuario no encontrado');
-      document.getElementById('login-error').classList.remove('hidden');
-      return;
-    }
-    document.getElementById('login-page').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    document.getElementById('user-email-label').textContent = data.user.email;
-    await loadAthletes();
-  } catch(e) {
-    document.getElementById('login-error').textContent = 'Error al cargar dashboard: ' + e.message;
-    document.getElementById('login-error').classList.remove('hidden');
-  }
+  const { data: { session } } = await supa.auth.getSession();
+  if (!session) return;
+  showDashboard(session.user);
+  await loadAthletes();
 }
 
 // ── Athletes ───────────────────────────────────────────────────────────────
@@ -353,7 +345,6 @@ async function selectAthlete(id) {
     .filter(Boolean).join(' · ') || 'Sin información adicional';
 
   // Obtener TODOS los UUIDs históricos para este atleta (evita perder sesiones de syncs anteriores)
-  const ath = athletes.find(a => a.id === id);
   const localKey = ath?.local_id ?? id;
   const allUuids = athleteAllUuids[localKey] ?? [id];
   const { data } = await supa
