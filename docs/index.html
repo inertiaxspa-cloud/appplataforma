@@ -82,7 +82,7 @@
   <div class="card p-8 w-full max-w-sm">
     <!-- Logo / Brand -->
     <div class="text-center mb-8">
-      <img src="../assets/images/inertiax_logo.jpg" alt="InertiaX Force"
+      <img src="./inertiax_logo.jpg" alt="InertiaX Force"
            style="height:52px; margin:0 auto 12px; filter:invert(1) brightness(1.1);" />
       <p class="text-xs mt-1" style="color:#8899AA">Dashboard de entrenadores</p>
     </div>
@@ -111,7 +111,7 @@
   <!-- Top nav -->
   <header class="flex items-center justify-between px-6 py-3 border-b" style="border-color:#2D3748; background:#161B22">
     <div class="flex items-center gap-3">
-      <img src="../assets/images/inertiax_logo.jpg" alt="InertiaX"
+      <img src="./inertiax_logo.jpg" alt="InertiaX"
            style="height:28px; filter:invert(1) brightness(1.1);" />
       <span class="text-xs px-2 py-0.5 rounded" style="background:#00C9FF22; color:#00C9FF">Dashboard</span>
     </div>
@@ -278,11 +278,24 @@ async function initDashboard() {
 }
 
 // ── Athletes ───────────────────────────────────────────────────────────────
+// Mapa local_id → lista de todos los UUIDs históricos (para buscar sesiones)
+let athleteAllUuids = {};
+
 async function loadAthletes() {
   const { data } = await supa.from('athletes').select('*').order('name');
-  // Deduplicar por local_id (la app crea duplicados si sincroniza sin uuid guardado)
+  const all = data || [];
+
+  // Agrupar todos los UUIDs por local_id
+  athleteAllUuids = {};
+  all.forEach(a => {
+    const key = a.local_id ?? a.id;
+    if (!athleteAllUuids[key]) athleteAllUuids[key] = [];
+    athleteAllUuids[key].push(a.id);
+  });
+
+  // Deduplicar para sidebar: mostrar solo 1 por local_id
   const seen = new Set();
-  athletes = (data || []).filter(a => {
+  athletes = all.filter(a => {
     const key = a.local_id ?? a.id;
     if (seen.has(key)) return false;
     seen.add(key);
@@ -320,12 +333,14 @@ async function selectAthlete(id) {
     [ath.sport, ath.body_weight_kg ? ath.body_weight_kg+' kg' : null]
     .filter(Boolean).join(' · ') || 'Sin información adicional';
 
-  // Buscar sesiones de TODOS los registros del atleta (puede haber duplicados de athlete_uuid)
-  const athleteIds = athletes.filter(a => (a.local_id ?? a.id) === (athletes.find(x=>x.id===id)?.local_id ?? id)).map(a => a.id);
+  // Obtener TODOS los UUIDs históricos para este atleta (evita perder sesiones de syncs anteriores)
+  const ath = athletes.find(a => a.id === id);
+  const localKey = ath?.local_id ?? id;
+  const allUuids = athleteAllUuids[localKey] ?? [id];
   const { data } = await supa
     .from('test_sessions')
     .select('*')
-    .in('athlete_uuid', athleteIds.length ? athleteIds : [id])
+    .in('athlete_uuid', allUuids)
     .order('performed_at', { ascending: false });
   // Deduplicar por local_session_id
   const seenS = new Set();
