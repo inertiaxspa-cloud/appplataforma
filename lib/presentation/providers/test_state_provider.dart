@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/algorithm_settings.dart';
 import '../../core/services/sound_service.dart';
@@ -84,6 +86,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
   ProviderSubscription<AsyncValue<RawSample>>? _rawSub;
   SignalProcessor? _processor;
+  Timer? _postLandingTimer;
 
   TestStateNotifier(this._ref) : super(const TestState());
 
@@ -174,16 +177,27 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
       case JumpPhase.flight:
         if (_ref.read(settingsProvider).soundFeedback) SoundService.phase();
+        HapticFeedback.mediumImpact();
         state = state.copyWith(
           phase:         JumpPhase.flight,
           statusMessage: '¡En vuelo!',
         );
 
       case JumpPhase.landed:
+        HapticFeedback.heavyImpact();
         if (state.testType == TestType.multiJump) {
           _recordMultiJump(processed);
         } else {
-          _computeAndFinish(processed.platformCount);
+          // Wait 3 seconds of post-landing data before finishing (CMJ / SJ / DJ).
+          final platformCount = processed.platformCount;
+          state = state.copyWith(
+            phase:         JumpPhase.landed,
+            statusMessage: 'Aterrizando...',
+          );
+          _postLandingTimer?.cancel();
+          _postLandingTimer = Timer(const Duration(seconds: 3), () {
+            _computeAndFinish(platformCount);
+          });
         }
 
       default:
@@ -503,6 +517,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
   // ── finishTest: called by IMTP and MultiJump "Done" buttons ──────────────
 
   void finishTest() {
+    _postLandingTimer?.cancel();
+    _postLandingTimer = null;
     _rawSub?.close();
     final type = state.testType;
     if (type == TestType.imtp) {
@@ -626,6 +642,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
   // ── stopTest: cancel ──────────────────────────────────────────────────────
 
   void stopTest() {
+    _postLandingTimer?.cancel();
+    _postLandingTimer = null;
     _rawSub?.close();
     _phaseDetector.reset();
     _jumps.clear();
@@ -634,6 +652,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
   @override
   void dispose() {
+    _postLandingTimer?.cancel();
     _rawSub?.close();
     super.dispose();
   }

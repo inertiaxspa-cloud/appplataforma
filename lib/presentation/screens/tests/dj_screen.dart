@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,11 +15,51 @@ import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
 
-class DjScreen extends ConsumerWidget {
+class DjScreen extends ConsumerStatefulWidget {
   const DjScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DjScreen> createState() => _DjScreenState();
+}
+
+class _DjScreenState extends ConsumerState<DjScreen> {
+  bool _counting = false;
+  int _countdownN = 3;
+  Timer? _countdownTimer;
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() {
+      _counting = true;
+      _countdownN = 3;
+    });
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_countdownN > 1) {
+        setState(() => _countdownN--);
+      } else {
+        t.cancel();
+        setState(() => _counting = false);
+        ref.read(testStateProvider.notifier).startTest(TestType.dropJump);
+      }
+    });
+  }
+
+  void _cancel() {
+    _countdownTimer?.cancel();
+    setState(() {
+      _counting = false;
+      _countdownN = 3;
+    });
+    ref.read(testStateProvider.notifier).stopTest();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final test     = ref.watch(testStateProvider);
     final live     = ref.watch(liveDataProvider);
     final notifier = ref.read(testStateProvider.notifier);
@@ -46,7 +87,7 @@ class DjScreen extends ConsumerWidget {
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
-            ref.read(testStateProvider.notifier).stopTest();
+            _cancel();
             if (context.mounted) context.pop();
           },
         ),
@@ -62,7 +103,7 @@ class DjScreen extends ConsumerWidget {
         children: [
           // Height selector
           _HeightSelector(
-            enabled: !test.isActive,
+            enabled: !test.isActive && !_counting,
             selected: _dropHeightFromState(test),
           ),
 
@@ -94,8 +135,14 @@ class DjScreen extends ConsumerWidget {
               result: test.result!,
               onViewResult: () =>
                   context.push('/results/new', extra: test.result),
-              onRepeat: () =>
-                  ref.read(testStateProvider.notifier).stopTest(),
+              onRepeat: () {
+                ref.read(testStateProvider.notifier).stopTest();
+              },
+            )
+          else if (_counting)
+            _CountdownOverlay(
+              countdownN: _countdownN,
+              onCancel: _cancel,
             )
           else ...[
             // Live RSImod preview (once landed, before completed)
@@ -159,15 +206,12 @@ class DjScreen extends ConsumerWidget {
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),
                             ),
-                            onPressed: () =>
-                                ref.read(testStateProvider.notifier).stopTest(),
+                            onPressed: _cancel,
                           )
                         : ElevatedButton.icon(
                             icon: const Icon(Icons.play_arrow, size: 20),
                             label: const Text('Iniciar DJ'),
-                            onPressed: () => ref
-                                .read(testStateProvider.notifier)
-                                .startTest(TestType.dropJump),
+                            onPressed: _startCountdown,
                           ),
                   ),
                 ],
@@ -235,6 +279,64 @@ class _HeightSelector extends StatelessWidget {
                 ),
               );
             }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Countdown overlay ────────────────────────────────────────────────────────
+
+class _CountdownOverlay extends StatelessWidget {
+  final int countdownN;
+  final VoidCallback onCancel;
+  const _CountdownOverlay({required this.countdownN, required this.onCancel});
+
+  String get _label => countdownN > 0 ? '$countdownN' : '¡Quieto!';
+  Color get _color => countdownN > 0 ? AppColors.warning : AppColors.success;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: context.col.surface,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Column(
+        children: [
+          Text(
+            'Prepárate...',
+            style: TextStyle(
+              fontSize: 14,
+              color: context.col.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _label,
+            style: TextStyle(
+              fontSize: 72,
+              fontWeight: FontWeight.w800,
+              color: _color,
+            ),
+          ).animate(key: ValueKey(countdownN)).scale(
+                begin: const Offset(1.4, 1.4),
+                end: const Offset(1.0, 1.0),
+                duration: 400.ms,
+                curve: Curves.easeOut,
+              ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.close, size: 18),
+              label: const Text('Cancelar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.col.textSecondary,
+                side: BorderSide(color: context.col.border),
+              ),
+              onPressed: onCancel,
+            ),
           ),
         ],
       ),

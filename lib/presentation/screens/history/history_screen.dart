@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/local/database_helper.dart';
 import '../../../domain/entities/test_result.dart';
+import '../../providers/language_provider.dart';
 import '../../theme/app_theme.dart';
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -20,11 +22,14 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch language so the screen rebuilds when the language changes.
+    ref.watch(languageProvider);
+
     final sessionsAsync = ref.watch(sessionHistoryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: Text(AppStrings.get('history')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -55,6 +60,7 @@ class HistoryScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 icon: const Icon(Icons.refresh),
+                // TODO(i18n): use AppStrings.get('retry') here
                 label: const Text('Reintentar'),
                 onPressed: () => ref.invalidate(sessionHistoryProvider),
               ),
@@ -273,7 +279,7 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final col = context.col;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -281,21 +287,29 @@ class _EmptyHistory extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
-                color: scheme.primary.withAlpha(20),
+                color: col.textDisabled.withAlpha(20),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.history_rounded, size: 40, color: scheme.primary),
+              child: Icon(Icons.history_rounded, size: 44, color: col.textDisabled),
             ),
             const SizedBox(height: 20),
-            Text('Sin sesiones guardadas',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600,
-                    color: scheme.onSurface)),
+            Text(
+              AppStrings.get('no_history'),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: col.textSecondary,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text('Realiza un test para ver el historial aquí.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: scheme.onSurface.withAlpha(140))),
+            Text(
+              AppStrings.get('no_history_sub'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: col.textDisabled),
+            ),
           ],
         ),
       ),

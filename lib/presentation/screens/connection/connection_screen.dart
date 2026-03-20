@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,11 +17,25 @@ class ConnectionScreen extends ConsumerStatefulWidget {
 
 class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   bool _scanning = false;
+  bool _showDiagnostic = false;
+  Timer? _diagnosticTimer;
 
   @override
   void initState() {
     super.initState();
     _scan();
+    // Show diagnostic checklist after 5 seconds without a connection
+    _diagnosticTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted && !ref.read(connectionProvider).isConnected) {
+        setState(() => _showDiagnostic = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _diagnosticTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _scan() async {
@@ -32,6 +47,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   @override
   Widget build(BuildContext context) {
     final conn = ref.watch(connectionProvider);
+    // Also show diagnostic immediately when there is an error
+    final shouldShowDiagnostic =
+        _showDiagnostic || (conn.error != null && !conn.isConnected);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,6 +76,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
             ),
           if (conn.error != null)
             _ErrorBanner(message: conn.error!),
+          if (shouldShowDiagnostic && !conn.isConnected)
+            _DiagnosticChecklist(),
           Expanded(
             child: conn.availableTargets.isEmpty
                 ? _EmptyPorts(onScan: _scan, isScanning: _scanning)
@@ -257,6 +277,88 @@ class _EmptyPorts extends StatelessWidget {
     );
   }
 }
+
+// ── Diagnostic checklist ───────────────────────────────────────────────────
+
+class _DiagnosticChecklist extends StatefulWidget {
+  @override
+  State<_DiagnosticChecklist> createState() => _DiagnosticChecklistState();
+}
+
+class _DiagnosticChecklistState extends State<_DiagnosticChecklist> {
+  final List<bool> _checked = [false, false, false, false];
+
+  static const _items = [
+    '¿La plataforma está encendida?',
+    '¿El cable USB está bien conectado?',
+    '¿Seleccionaste el puerto correcto?',
+    '¿Está configurado como 921600 baud?',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final col = context.col;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      decoration: BoxDecoration(
+        color: col.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withOpacity(0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                const Icon(Icons.checklist_rounded,
+                    color: AppColors.warning, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Lista de verificacion',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: col.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ..._items.asMap().entries.map(
+            (entry) => CheckboxListTile(
+              dense: true,
+              value: _checked[entry.key],
+              onChanged: (v) =>
+                  setState(() => _checked[entry.key] = v ?? false),
+              activeColor: AppColors.success,
+              checkColor: Colors.black,
+              title: Text(
+                entry.value,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _checked[entry.key]
+                      ? col.textDisabled
+                      : col.textPrimary,
+                  decoration: _checked[entry.key]
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
+              ),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Help footer ─────────────────────────────────────────────────────────────
 
 class _HelpFooter extends StatelessWidget {
   const _HelpFooter();

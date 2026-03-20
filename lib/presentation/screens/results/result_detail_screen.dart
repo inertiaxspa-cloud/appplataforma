@@ -14,6 +14,23 @@ import '../../theme/app_theme.dart';
 import '../../widgets/cards/metric_card.dart';
 import '../../widgets/cards/symmetry_gauge.dart';
 
+// ── Provider: most recent SJ height for an athlete ───────────────────────────
+
+final _latestSjHeightProvider =
+    FutureProvider.autoDispose.family<double?, int>((ref, athleteId) async {
+  final rows = await DatabaseHelper.instance
+      .getSessionsForAthleteAndType(athleteId, TestType.sj.name);
+  if (rows.isEmpty) return null;
+  // rows are sorted ASC — take the last (most recent).
+  final json = rows.last['result_json'] as String?;
+  if (json == null) return null;
+  try {
+    final result = TestResult.fromJson(json);
+    if (result is JumpResult) return result.jumpHeightCm;
+  } catch (_) {}
+  return null;
+});
+
 /// Displays full results after a completed test.
 /// Receives the [TestResult] via GoRouter extra parameter.
 /// Auto-saves the result to SQLite on first display (when sessionId == null).
@@ -71,6 +88,15 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    // For CMJ results, try to load the most recent SJ height for elasticity index.
+    final athlete = ref.watch(selectedAthleteProvider);
+    final sjHeightAsync = (widget.result is JumpResult &&
+            widget.result.testType == TestType.cmj &&
+            athlete?.id != null)
+        ? ref.watch(_latestSjHeightProvider(athlete!.id!))
+        : null;
+    final sjHeightCm = sjHeightAsync?.valueOrNull;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.result.testType.displayName),
@@ -80,7 +106,10 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
         padding: const EdgeInsets.all(16),
         child: switch (widget.result) {
           DropJumpResult r  => _JumpResultView(result: r, settings: settings),
-          JumpResult r      => _JumpResultView(result: r, settings: settings),
+          JumpResult r      => _JumpResultView(
+              result: r, settings: settings,
+              sjHeightCm: r.testType == TestType.cmj ? sjHeightCm : null,
+            ),
           CoPResult r       => _CoPResultView(result: r, engineerMode: settings.engineerMode),
           ImtpResult r      => _ImtpResultView(result: r, engineerMode: settings.engineerMode),
           MultiJumpResult r => _MultiJumpResultView(result: r, engineerMode: settings.engineerMode),
@@ -97,7 +126,13 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
 class _JumpResultView extends StatelessWidget {
   final JumpResult result;
   final AppSettings settings;
-  const _JumpResultView({required this.result, required this.settings});
+  /// SJ jump height in cm from the most recent SJ test (used for elasticity index on CMJ).
+  final double? sjHeightCm;
+  const _JumpResultView({
+    required this.result,
+    required this.settings,
+    this.sjHeightCm,
+  });
 
   // ── Dynamic labels based on selected algorithms ───────────────────────────
 
@@ -118,6 +153,14 @@ class _JumpResultView extends StatelessWidget {
   bool get _showImpulsePowerCard =>
       settings.algo.peakPower != PeakPowerMethod.impulseBased &&
       result.peakPowerImpulseW > 0;
+
+  /// Elasticity index = (CMJ − SJ) / SJ × 100
+  /// Only meaningful when sjHeightCm is available and > 0.
+  double? get _elasticityIndex {
+    final sj = sjHeightCm;
+    if (sj == null || sj <= 0) return null;
+    return (result.jumpHeightCm - sj) / sj * 100;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +283,69 @@ class _JumpResultView extends StatelessWidget {
               leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ'    : 'MASTER',
               rightLabel:  result.symmetry.isTwoPlatform ? 'DER'    : 'SLAVE',
               isEstimated: !result.symmetry.isTwoPlatform,
+            ),
+          ),
+        ],
+
+        // ── Elasticity index (CMJ vs SJ) ──────────────────────────────────
+        if (_elasticityIndex != null) ...[
+          const SizedBox(height: 20),
+          Text('ÍNDICE DE ELASTICIDAD', style: IXTextStyles.sectionHeader()),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: context.col.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.secondary.withAlpha(77)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.secondary.withAlpha(13),
+                  context.col.surface,
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      _elasticityIndex!.toStringAsFixed(1),
+                      style: IXTextStyles.metricValue(color: AppColors.secondary)
+                          .copyWith(fontSize: 40),
+                    ),
+                    const SizedBox(width: 4),
+                    Text('%',
+                        style: IXTextStyles.metricLabel
+                            .copyWith(fontSize: 16, color: AppColors.secondary)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'CMJ ${result.jumpHeightCm.toStringAsFixed(1)} cm  −  SJ ${sjHeightCm!.toStringAsFixed(1)} cm',
+                      style: TextStyle(
+                          fontSize: 12, color: context.col.textSecondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '(CMJ − SJ) / SJ × 100',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: context.col.textDisabled,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

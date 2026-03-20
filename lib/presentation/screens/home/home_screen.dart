@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/athlete.dart';
 import '../../../domain/entities/test_result.dart';
 import '../../providers/connection_provider.dart';
 import '../../providers/calibration_provider.dart';
 import '../../providers/athlete_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/status_badge.dart';
 
@@ -15,6 +17,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch language so the screen rebuilds when the language changes.
+    ref.watch(languageProvider);
+
     final connState    = ref.watch(connectionProvider);
     final calState     = ref.watch(calibrationProvider);
     final athleteState = ref.watch(selectedAthleteProvider);
@@ -33,7 +38,8 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _Header(),
               const SizedBox(height: 28),
-              Text('CONEXIÓN', style: IXTextStyles.sectionHeader()),
+              Text(AppStrings.get('connect').toUpperCase(),
+                  style: IXTextStyles.sectionHeader()),
               const SizedBox(height: 12),
               _StatusPanel(
                 isConnected: isConnected,
@@ -41,10 +47,12 @@ class HomeScreen extends ConsumerWidget {
                 connectedPort: connState.connectedName,
               ),
               const SizedBox(height: 24),
-              Text('ATLETA', style: IXTextStyles.sectionHeader()),
+              Text(AppStrings.get('athletes').toUpperCase(),
+                  style: IXTextStyles.sectionHeader()),
               const SizedBox(height: 12),
               _AthleteSelector(selected: athleteState),
               const SizedBox(height: 28),
+              // TODO(i18n): add 'quick_tests' key for 'TESTS RÁPIDOS' / 'QUICK TESTS'
               Text('TESTS RÁPIDOS', style: IXTextStyles.sectionHeader()),
               const SizedBox(height: 12),
               _TestGrid(canTest: canTest),
@@ -54,6 +62,7 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.show_chart, size: 18),
+                    // TODO(i18n): add 'live_monitor' key
                     label: const Text('Monitor en Tiempo Real'),
                     onPressed: () => context.push('/monitor'),
                   ),
@@ -137,17 +146,24 @@ class _StatusPanel extends StatelessWidget {
         children: [
           _StatusRow(
             icon: Icons.usb,
+            // TODO(i18n): add 'platform' key for 'Plataforma' / 'Platform'
             label: 'Plataforma',
-            status: isConnected ? (connectedPort ?? 'Conectado') : 'Desconectado',
+            status: isConnected
+                ? (connectedPort ?? AppStrings.get('connected'))
+                : AppStrings.get('disconnected'),
             isOk: isConnected,
             onTap: () => context.push('/connection'),
           ),
           Divider(height: 16, color: col.border),
           _StatusRow(
             icon: Icons.tune,
+            // TODO(i18n): add 'calibration' key for 'Calibración' / 'Calibration'
             label: 'Calibración',
+            // TODO(i18n): add 'calibration_subtitle' key
             subtitle: 'Necesaria para mediciones precisas',
-            status: isCalibrated ? 'Calibrado' : 'Sin calibrar',
+            status: isCalibrated
+                ? AppStrings.get('calibrated')
+                : AppStrings.get('not_calibrated'),
             isOk: isCalibrated,
             onTap: () => context.push('/calibration'),
           ),
@@ -241,6 +257,7 @@ class _AthleteSelector extends ConsumerWidget {
                     color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 12),
+              // TODO(i18n): add 'select_athlete' key for 'Seleccionar atleta' / 'Select athlete'
               const Text('Seleccionar atleta',
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
               const Spacer(),
@@ -308,17 +325,18 @@ class _TestGrid extends StatelessWidget {
   final bool canTest;
   const _TestGrid({required this.canTest});
 
-  static const _tests = [
-    _TestItem('CMJ',         Icons.arrow_upward,   TestType.cmj,       '/tests/cmj',       AppColors.primary,    'Salto con Contramovimiento'),
-    _TestItem('Squat Jump',  Icons.sports,          TestType.sj,        '/tests/sj',        AppColors.forceRight, 'Salto en Sentadilla'),
-    _TestItem('Drop Jump',   Icons.download,        TestType.dropJump,  '/tests/dj',        AppColors.warning,    'Salto desde Caída'),
-    _TestItem('Multi-Salto', Icons.repeat,          TestType.multiJump, '/tests/multijump', AppColors.secondary,  'Saltos repetidos con RSI'),
-    _TestItem('Equilibrio',  Icons.accessibility,   TestType.cop,       '/tests/cop',       AppColors.success,    'Test de Equilibrio (CoP)'),
-    _TestItem('IMTP',        Icons.fitness_center,  TestType.imtp,      '/tests/imtp',      AppColors.danger,     'Tracción Isométrica'),
+  static List<_TestItem> _buildTests() => [
+    _TestItem('CMJ',         Icons.arrow_upward,   TestType.cmj,       '/tests/cmj',       AppColors.primary,    AppStrings.get('test_cmj')),
+    _TestItem('Squat Jump',  Icons.sports,          TestType.sj,        '/tests/sj',        AppColors.forceRight, AppStrings.get('test_sj')),
+    _TestItem('Drop Jump',   Icons.download,        TestType.dropJump,  '/tests/dj',        AppColors.warning,    AppStrings.get('test_dj')),
+    _TestItem('Multi-Salto', Icons.repeat,          TestType.multiJump, '/tests/multijump', AppColors.secondary,  AppStrings.get('test_multijump')),
+    _TestItem('Equilibrio',  Icons.accessibility,   TestType.cop,       '/tests/cop',       AppColors.success,    AppStrings.get('test_cop')),
+    _TestItem('IMTP',        Icons.fitness_center,  TestType.imtp,      '/tests/imtp',      AppColors.danger,     AppStrings.get('test_imtp')),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final tests = _buildTests();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -328,11 +346,11 @@ class _TestGrid extends StatelessWidget {
         crossAxisSpacing: 10,
         childAspectRatio: 1.0,
       ),
-      itemCount: _tests.length,
+      itemCount: tests.length,
       itemBuilder: (ctx, i) => _TestCard(
-        item: _tests[i],
+        item: tests[i],
         enabled: canTest,
-        onTap: canTest ? () => context.push(_tests[i].route) : null,
+        onTap: canTest ? () => context.push(tests[i].route) : null,
       ),
     );
   }
@@ -359,6 +377,7 @@ class _TestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final col = context.col;
     return Tooltip(
+      // TODO(i18n): add 'connect_platform_first' key
       message: enabled ? '' : 'Conecta la plataforma primero',
       child: InkWell(
         onTap: onTap,

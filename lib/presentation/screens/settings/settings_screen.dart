@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/algorithm_settings.dart';
 import '../../../core/constants/physics_constants.dart';
 import '../../../data/services/supabase_service.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -176,8 +177,10 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    final notifier = ref.read(settingsProvider.notifier);
+    final settings    = ref.watch(settingsProvider);
+    final notifier    = ref.read(settingsProvider.notifier);
+    final currentLang = ref.watch(languageProvider);
+    final langNotifier = ref.read(languageProvider.notifier);
 
     void upd(AppSettings Function(AppSettings) fn) => notifier.update(fn);
 
@@ -194,13 +197,32 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
 
+          // ── Idioma / Language ────────────────────────────────────────────
+          _SectionHeader('Idioma / Language'),
+          _SettingCard(children: [
+            _PickerTile(
+              label:    'Idioma',
+              options:  const ['es', 'en'],
+              labels:   const ['Español', 'English'],
+              selected: currentLang,
+              onChanged: (v) {
+                langNotifier.setLanguage(v);
+                // Keep AppSettings.language in sync so it is included in
+                // future SharedPreferences loads.
+                upd((s) => s.copyWith(language: v));
+              },
+            ),
+          ]),
+
+          const SizedBox(height: 16),
+
           // ── Apariencia ──────────────────────────────────────────────────
           _SectionHeader('Apariencia'),
           _SettingCard(children: [
             _PickerTile(
               label:    'Tema',
-              options:  const ['dark', 'outdoor'],
-              labels:   const ['Oscuro', 'Exterior (sol)'],
+              options:  const ['dark', 'light', 'outdoor'],
+              labels:   const ['Oscuro', 'Claro', 'Exterior (sol)'],
               selected: settings.themeMode,
               onChanged: (v) => upd((s) => s.copyWith(themeMode: v)),
             ),

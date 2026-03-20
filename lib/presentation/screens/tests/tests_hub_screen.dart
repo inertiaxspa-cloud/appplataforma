@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../providers/connection_provider.dart';
 import '../../providers/calibration_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/test_illustrations.dart';
 
@@ -11,27 +13,31 @@ import '../../widgets/test_illustrations.dart';
 class TestsHubScreen extends ConsumerWidget {
   const TestsHubScreen({super.key});
 
-  static final _tests = [
-    _TestItem('CMJ', 'Salto con Contramovimiento',
-        const CmjPainter(), '/tests/cmj', AppColors.primary),
-    _TestItem('Squat Jump', 'Salto sin Contramovimiento',
-        const SjPainter(), '/tests/sj', AppColors.forceRight),
-    _TestItem('Drop Jump', 'Caída y Rebote',
-        const DjPainter(), '/tests/dj', AppColors.warning),
-    _TestItem('Multi-Salto', 'Saltos Consecutivos con RSI',
-        const MultiJumpPainter(), '/tests/multijump', AppColors.secondary),
-    _TestItem('Equilibrio / CoP', 'Balance y Centro de Presión',
-        const CopPainter(), '/tests/cop', AppColors.success),
-    _TestItem('IMTP', 'Tracción Isométrica a Media Altura',
-        const ImtpPainter(), '/tests/imtp', AppColors.danger),
+  static List<_TestItem> _buildTests() => [
+    _TestItem('CMJ', AppStrings.get('test_cmj'),
+        const CmjPainter(), '/tests/cmj', AppColors.primary, 'cmj'),
+    _TestItem('Squat Jump', AppStrings.get('test_sj'),
+        const SjPainter(), '/tests/sj', AppColors.forceRight, 'sj'),
+    _TestItem('Drop Jump', AppStrings.get('test_dj'),
+        const DjPainter(), '/tests/dj', AppColors.warning, 'dj'),
+    _TestItem('Multi-Salto', AppStrings.get('test_multijump'),
+        const MultiJumpPainter(), '/tests/multijump', AppColors.secondary, 'multijump'),
+    _TestItem('Equilibrio / CoP', AppStrings.get('test_cop'),
+        const CopPainter(), '/tests/cop', AppColors.success, 'cop'),
+    _TestItem('IMTP', AppStrings.get('test_imtp'),
+        const ImtpPainter(), '/tests/imtp', AppColors.danger, 'imtp'),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch language so the hub rebuilds when the language changes.
+    ref.watch(languageProvider);
+
     final col = context.col;
     final isConnected = ref.watch(connectionProvider).isConnected;
     final isCalibrated = ref.watch(calibrationProvider).isCalibrated;
     final canTest = isConnected && isCalibrated;
+    final tests = _buildTests();
 
     return Scaffold(
       backgroundColor: col.background,
@@ -69,6 +75,8 @@ class TestsHubScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
+                            // TODO(i18n): add 'calibrate_before_test' and
+                            // 'connect_before_test' keys
                             isConnected
                                 ? 'Calibra la plataforma antes de realizar tests.'
                                 : 'Conecta la plataforma para realizar tests.',
@@ -88,12 +96,12 @@ class TestsHubScreen extends ConsumerWidget {
                   (ctx, i) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _TestRow(
-                      item: _tests[i],
+                      item: tests[i],
                       enabled: canTest,
                       isConnected: isConnected,
                     ),
                   ),
-                  childCount: _tests.length,
+                  childCount: tests.length,
                 ),
               ),
             ),
@@ -110,8 +118,10 @@ class _TestItem {
   final CustomPainter painter;
   final String route;
   final Color color;
+  final String infoKey;
   const _TestItem(
-      this.label, this.description, this.painter, this.route, this.color);
+      this.label, this.description, this.painter, this.route, this.color,
+      this.infoKey);
 }
 
 class _TestRow extends StatelessWidget {
@@ -129,6 +139,8 @@ class _TestRow extends StatelessWidget {
         onTap: enabled
             ? () => context.push(item.route)
             : () {
+                // TODO(i18n): add 'connect_platform_first' and
+                // 'calibrate_platform_first' keys to AppStrings
                 final msg = !isConnected
                     ? 'Conecta la plataforma primero'
                     : 'Calibra la plataforma antes de hacer un test';
@@ -140,7 +152,7 @@ class _TestRow extends StatelessWidget {
               },
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
           decoration: BoxDecoration(
             color: col.surface,
             borderRadius: BorderRadius.circular(16),
@@ -177,6 +189,14 @@ class _TestRow extends StatelessWidget {
                             TextStyle(fontSize: 12, color: col.textSecondary)),
                   ],
                 ),
+              ),
+              // Info button — always tappable regardless of connection state
+              IconButton(
+                tooltip: '¿Qué es este test?',
+                icon: Icon(Icons.info_outline_rounded,
+                    color: col.textDisabled, size: 20),
+                onPressed: () =>
+                    context.push('/test-info', extra: item.infoKey),
               ),
               Icon(Icons.chevron_right, color: col.textDisabled),
             ],

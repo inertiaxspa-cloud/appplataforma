@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/athlete.dart';
 import '../../providers/athlete_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../theme/app_theme.dart';
 
 class AthleteListScreen extends ConsumerWidget {
@@ -11,11 +13,14 @@ class AthleteListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch language so the screen rebuilds when the language changes.
+    ref.watch(languageProvider);
+
     final athletes = ref.watch(athleteNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atletas'),
+        title: Text(AppStrings.get('athletes')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -168,6 +173,13 @@ class _AthleteCard extends ConsumerWidget {
                   style: TextStyle(fontSize: 13, color: col.textSecondary),
                 ),
               IconButton(
+                icon: const Icon(Icons.show_chart_rounded,
+                    size: 18, color: AppColors.primary),
+                tooltip: 'Progreso',
+                onPressed: () =>
+                    context.push('/athletes/progress', extra: athlete),
+              ),
+              IconButton(
                 icon: Icon(Icons.edit_outlined, size: 18, color: col.textSecondary),
                 tooltip: 'Editar',
                 onPressed: () => onEdit(athlete),
@@ -234,24 +246,44 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final col = context.col;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.people_outline, size: 64, color: col.textDisabled),
-          const SizedBox(height: 16),
-          Text('Sin atletas registrados',
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(color: col.textSecondary)),
-          const SizedBox(height: 8),
-          Text('Agrega tu primer atleta para comenzar.',
-              style: TextStyle(color: col.textDisabled)),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.person_add_outlined),
-            label: const Text('Agregar atleta'),
-            onPressed: onAdd,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: col.textDisabled.withAlpha(20),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.people_outline, size: 44, color: col.textDisabled),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              AppStrings.get('no_athletes'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: col.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.get('no_athletes_sub'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: col.textDisabled),
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.person_add_outlined),
+              label: Text(AppStrings.get('add_athlete')),
+              onPressed: onAdd,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -359,7 +391,7 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancelar',
+          child: Text(AppStrings.get('cancel'),
               style: TextStyle(color: col.textSecondary)),
         ),
         ElevatedButton(
@@ -367,6 +399,7 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
           child: _saving
               ? const SizedBox(width: 16, height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
+              // TODO(i18n): add 'save_changes' and 'create' keys
               : Text(_isEdit ? 'Guardar cambios' : 'Crear'),
         ),
       ],

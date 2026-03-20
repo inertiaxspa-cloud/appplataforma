@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'core/l10n/app_strings.dart';
+import 'presentation/providers/language_provider.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/monitor/live_monitor_screen.dart';
 import 'presentation/screens/athletes/athlete_list_screen.dart';
+import 'presentation/screens/athletes/athlete_progress_screen.dart';
+import 'domain/entities/athlete.dart' show Athlete;
 import 'presentation/screens/connection/connection_screen.dart';
 import 'presentation/screens/calibration/calibration_screen.dart';
 import 'presentation/screens/tests/cmj_screen.dart';
@@ -17,17 +21,22 @@ import 'presentation/screens/history/history_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/results/result_detail_screen.dart';
 import 'presentation/screens/comparison/comparison_screen.dart';
+import 'presentation/screens/onboarding/welcome_screen.dart';
+import 'presentation/screens/onboarding/test_info_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'domain/entities/test_result.dart';
 
 // ── Shell widget — wraps tab content with NavigationBar ───────────────────
 
-class _AppShell extends StatelessWidget {
+class _AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
   const _AppShell({required this.navigationShell});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch language so nav labels rebuild when the language changes.
+    ref.watch(languageProvider);
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
@@ -38,26 +47,26 @@ class _AppShell extends StatelessWidget {
             initialLocation: index == navigationShell.currentIndex,
           );
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Inicio',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: AppStrings.get('home'),
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.fitness_center_outlined),
             selectedIcon: Icon(Icons.fitness_center_rounded),
             label: 'Tests',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
-            label: 'Historial',
+            icon: const Icon(Icons.bar_chart_outlined),
+            selectedIcon: const Icon(Icons.bar_chart_rounded),
+            label: AppStrings.get('history'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Ajustes',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings_rounded),
+            label: AppStrings.get('settings'),
           ),
         ],
       ),
@@ -65,10 +74,10 @@ class _AppShell extends StatelessWidget {
   }
 }
 
-// ── Router ─────────────────────────────────────────────────────────────────
+// ── Router factory ─────────────────────────────────────────────────────────
 
-final _router = GoRouter(
-  initialLocation: '/',
+GoRouter _buildRouter(String initialLocation) => GoRouter(
+  initialLocation: initialLocation,
   routes: [
     // ── Shell with 4 branches (bottom tabs) ──────────────────────────────
     StatefulShellRoute.indexedStack(
@@ -116,6 +125,12 @@ final _router = GoRouter(
     // ── Routes that push over the shell (no bottom nav) ───────────────────
     GoRoute(path: '/monitor',         builder: (_, __) => const LiveMonitorScreen()),
     GoRoute(path: '/athletes',        builder: (_, __) => const AthleteListScreen()),
+    GoRoute(
+      path: '/athletes/progress',
+      builder: (_, state) => AthleteProgressScreen(
+        athlete: state.extra as Athlete,
+      ),
+    ),
     GoRoute(path: '/connection',      builder: (_, __) => const ConnectionScreen()),
     GoRoute(path: '/calibration',     builder: (_, __) => const CalibrationScreen()),
     GoRoute(path: '/tests/cmj',       builder: (_, __) => const CmjScreen()),
@@ -147,17 +162,32 @@ final _router = GoRouter(
         );
       },
     ),
+    // ── Onboarding ────────────────────────────────────────────────────────
+    GoRoute(
+      path: '/welcome',
+      builder: (_, __) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: '/test-info',
+      builder: (_, state) {
+        final testType = state.extra as String? ?? '';
+        return TestInfoScreen(testType: testType);
+      },
+    ),
   ],
 );
 
 // ── App entry ──────────────────────────────────────────────────────────────
 
 class InertiaXApp extends ConsumerWidget {
-  const InertiaXApp({super.key});
+  final String initialRoute;
+
+  const InertiaXApp({super.key, this.initialRoute = '/'});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final router   = _buildRouter(initialRoute);
     return MaterialApp.router(
       title: 'InertiaX Force',
       debugShowCheckedModeBanner: false,
@@ -165,7 +195,7 @@ class InertiaXApp extends ConsumerWidget {
       theme: settings.themeMode == 'outdoor' ? AppTheme.outdoor : AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: settings.flutterThemeMode,
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }

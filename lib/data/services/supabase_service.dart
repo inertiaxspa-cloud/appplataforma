@@ -36,18 +36,57 @@ class SupabaseService {
   Stream<AuthState> get authStateChanges =>
       isConfigured ? _client.auth.onAuthStateChange : Stream<AuthState>.empty();
 
+  // ── Friendly error messages ───────────────────────────────────────────────
+
+  /// Converts raw Supabase / network errors into human-readable Spanish strings.
+  static String _friendlyError(dynamic e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('invalid login credentials') ||
+        msg.contains('invalid_credentials')) {
+      return 'Email o contraseña incorrectos';
+    }
+    if (msg.contains('user already registered') ||
+        msg.contains('already registered')) {
+      return 'Este email ya tiene una cuenta';
+    }
+    if (msg.contains('network request failed') ||
+        msg.contains('socketexception') ||
+        msg.contains('connection refused') ||
+        msg.contains('failed host lookup')) {
+      return 'Sin conexión a internet. Verifica tu red';
+    }
+    if (msg.contains('jwt expired') || msg.contains('token expired')) {
+      return 'Sesión expirada. Vuelve a iniciar sesión';
+    }
+    return 'Error inesperado. Intenta de nuevo';
+  }
+
   // ── Auth ─────────────────────────────────────────────────────────────────
 
   Future<void> signIn(String email, String password) async {
-    await _client.auth
-        .signInWithPassword(email: email, password: password);
+    try {
+      await _client.auth
+          .signInWithPassword(email: email, password: password);
+    } catch (e) {
+      throw Exception(_friendlyError(e));
+    }
   }
 
   Future<void> signUp(String email, String password) async {
-    await _client.auth.signUp(email: email, password: password);
+    try {
+      await _client.auth.signUp(email: email, password: password);
+    } catch (e) {
+      throw Exception(_friendlyError(e));
+    }
   }
 
-  Future<void> signOut() async => _client.auth.signOut();
+  Future<void> signOut() async {
+    try {
+      await _client.auth.signOut();
+    } catch (e) {
+      throw Exception(_friendlyError(e));
+    }
+  }
 
   static dynamic _parseMetricsJson(dynamic value) {
     if (value is String) {
@@ -73,30 +112,34 @@ class SupabaseService {
     final userId  = user.id;
     final localId = athlete['id'];
 
-    // 1. Check if the athlete already exists in Supabase.
-    final existing = await _client
-        .from('athletes')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('local_id', localId)
-        .maybeSingle();
+    try {
+      // 1. Check if the athlete already exists in Supabase.
+      final existing = await _client
+          .from('athletes')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('local_id', localId)
+          .maybeSingle();
 
-    // 2. Use the existing UUID or generate a new one.
-    final uuid = (existing?['id'] as String?) ??
-        (athlete['supabase_uuid'] as String?) ??
-        const Uuid().v4();
+      // 2. Use the existing UUID or generate a new one.
+      final uuid = (existing?['id'] as String?) ??
+          (athlete['supabase_uuid'] as String?) ??
+          const Uuid().v4();
 
-    // 3. Upsert by PK — never changes `id`, only updates profile fields.
-    await _client.from('athletes').upsert({
-      'id':             uuid,
-      'user_id':        userId,
-      'local_id':       localId,
-      'name':           athlete['name'],
-      'sport':          athlete['sport'],
-      'body_weight_kg': athlete['body_weight_kg'],
-      'notes':          athlete['notes'],
-    });
-    return uuid;
+      // 3. Upsert by PK — never changes `id`, only updates profile fields.
+      await _client.from('athletes').upsert({
+        'id':             uuid,
+        'user_id':        userId,
+        'local_id':       localId,
+        'name':           athlete['name'],
+        'sport':          athlete['sport'],
+        'body_weight_kg': athlete['body_weight_kg'],
+        'notes':          athlete['notes'],
+      });
+      return uuid;
+    } catch (e) {
+      throw Exception(_friendlyError(e));
+    }
   }
 
   /// Upserts a test session. Returns the Supabase UUID used.
@@ -108,21 +151,25 @@ class SupabaseService {
     final uuid =
         (session['supabase_uuid'] as String?) ?? const Uuid().v4();
 
-    // Upsert por clave primaria (id = UUID). No usar onConflict porque
-    // test_sessions no tiene restricción UNIQUE en (user_id, local_id).
-    await _client.from('test_sessions').upsert({
-      'id':               uuid,
-      'user_id':          userId,
-      'athlete_uuid':     athleteUuid,
-      'local_athlete_id': session['athlete_id'],
-      'local_id':         session['id'],
-      'test_type':        session['test_type'],
-      'performed_at':     session['performed_at'],
-      'body_weight_kg':   session['body_weight_kg'],
-      'platform_count':   session['platform_count'] ?? 1,
-      'metrics_json': _parseMetricsJson(session['result_json']),
-      'notes': session['notes'],
-    });
-    return uuid;
+    try {
+      // Upsert por clave primaria (id = UUID). No usar onConflict porque
+      // test_sessions no tiene restricción UNIQUE en (user_id, local_id).
+      await _client.from('test_sessions').upsert({
+        'id':               uuid,
+        'user_id':          userId,
+        'athlete_uuid':     athleteUuid,
+        'local_athlete_id': session['athlete_id'],
+        'local_id':         session['id'],
+        'test_type':        session['test_type'],
+        'performed_at':     session['performed_at'],
+        'body_weight_kg':   session['body_weight_kg'],
+        'platform_count':   session['platform_count'] ?? 1,
+        'metrics_json': _parseMetricsJson(session['result_json']),
+        'notes': session['notes'],
+      });
+      return uuid;
+    } catch (e) {
+      throw Exception(_friendlyError(e));
+    }
   }
 }
