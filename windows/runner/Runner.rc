@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "inertiax" "\0"
+            VALUE "CompanyName", "InertiaX SPA" "\0"
+            VALUE "FileDescription", "InertiaX Force — Force Platform Analysis" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "inertiax" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 InertiaX SPA. All rights reserved." "\0"
             VALUE "OriginalFilename", "inertiax.exe" "\0"
-            VALUE "ProductName", "inertiax" "\0"
+            VALUE "ProductName", "InertiaX Force" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
