@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -86,7 +87,10 @@ class SupabaseService {
       'performed_at':     session['performed_at'],
       'body_weight_kg':   session['body_weight_kg'],
       'platform_count':   session['platform_count'] ?? 1,
-      'metrics_json':     session['result_json'],   // columna real en DB
+      // Decodificar el string JSON para guardarlo como JSONB real en Supabase
+      'metrics_json': session['result_json'] is String
+          ? jsonDecode(session['result_json'] as String)
+          : session['result_json'],
       'notes':            session['notes'],
     });
     return uuid;

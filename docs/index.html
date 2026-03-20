@@ -360,8 +360,12 @@ async function selectAthlete(id) {
     seenS.add(key);
     return true;
   });
-  // metrics_json es la columna real en Supabase
-  sessions = sessions.map(s => ({ ...s, metrics_json: s.metrics_json ?? {} }));
+  // Parsear metrics_json si llegó como string (doble serialización legacy)
+  sessions = sessions.map(s => {
+    let m = s.metrics_json ?? {};
+    if (typeof m === 'string') { try { m = JSON.parse(m); } catch(_) { m = {}; } }
+    return { ...s, metrics_json: m };
+  });
 
   document.getElementById('empty-state').classList.add('hidden');
   document.getElementById('athlete-detail').classList.remove('hidden');
