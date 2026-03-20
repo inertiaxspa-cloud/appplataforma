@@ -68,10 +68,13 @@ class TestStateNotifier extends StateNotifier<TestState> {
   final PhaseDetector _phaseDetector = PhaseDetector();
 
   // Recorded data for metric calculation.
-  final List<double> _forceData  = [];
-  final List<double> _timeData   = [];
-  final List<double> _forceAData = [];
-  final List<double> _forceBData = [];
+  final List<double> _forceData       = [];
+  final List<double> _timeData        = [];
+  final List<double> _forceAData      = [];
+  final List<double> _forceBData      = [];
+  // 1-platform symmetry: master board side vs slave board side (Platform A)
+  final List<double> _forceMasterData = [];
+  final List<double> _forceSlaveData  = [];
 
   // Multi-jump tracking.
   final List<SingleJumpData> _jumps = [];
@@ -94,6 +97,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     _forceData.clear(); _timeData.clear();
     _forceAData.clear(); _forceBData.clear();
+    _forceMasterData.clear(); _forceSlaveData.clear();
     _jumps.clear();
     _mjContactStart = 0;
     _phaseDetector.reset();
@@ -127,6 +131,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
       _timeData.add(processed.timestampS);
       _forceAData.add(processed.forcePlatformA);
       _forceBData.add(processed.forcePlatformB);
+      _forceMasterData.add(processed.forceMasterSide);
+      _forceSlaveData.add(processed.forceSlaveSide);
     }
 
     if (event != null) _handlePhaseEvent(event, processed);
@@ -407,7 +413,11 @@ class TestStateNotifier extends StateNotifier<TestState> {
         ? JumpMetrics.symmetry2Platform(
             totalPlatformAN: totalA, totalPlatformBN: totalB, useLsi: useLsi)
         : JumpMetrics.symmetry1Platform(
-            masterSideN: totalA / 2, slaveSideN: totalA / 2, useLsi: useLsi);
+            masterSideN: _forceMasterData.isEmpty ? 0.0
+                : _forceMasterData.fold(0.0, (s, f) => s + f) / _forceMasterData.length,
+            slaveSideN: _forceSlaveData.isEmpty ? 0.0
+                : _forceSlaveData.fold(0.0, (s, f) => s + f) / _forceSlaveData.length,
+            useLsi: useLsi);
 
     _rawSub?.close();
     final testType = state.testType ?? TestType.cmj;

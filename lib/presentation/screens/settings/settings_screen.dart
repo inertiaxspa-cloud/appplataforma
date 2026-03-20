@@ -43,9 +43,10 @@ class AppSettings {
   });
 
   ThemeMode get flutterThemeMode => switch (themeMode) {
-    'light'  => ThemeMode.light,
-    'system' => ThemeMode.system,
-    _        => ThemeMode.dark,
+    'dark'    => ThemeMode.dark,
+    'outdoor' => ThemeMode.light,   // outdoor usa el slot claro con paleta alto contraste
+    'light'   => ThemeMode.light,
+    _         => ThemeMode.dark,    // default: oscuro
   };
 
   // ── Convenience getters for algorithm choices ─────────────────────────────
@@ -196,8 +197,8 @@ class SettingsScreen extends ConsumerWidget {
           _SettingCard(children: [
             _PickerTile(
               label:    'Tema',
-              options:  const ['dark', 'light', 'system'],
-              labels:   const ['Oscuro', 'Claro', 'Sistema'],
+              options:  const ['dark', 'outdoor', 'light'],
+              labels:   const ['Oscuro (interior)', 'Exterior (sol)', 'Claro'],
               selected: settings.themeMode,
               onChanged: (v) => upd((s) => s.copyWith(themeMode: v)),
             ),

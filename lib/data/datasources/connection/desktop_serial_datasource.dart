@@ -60,7 +60,10 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   }
 
   void _onData(Uint8List chunk) {
-    // Append to buffer, extract complete lines
+    // Safety cap: discard buffer if it grows beyond 64 KB without a newline
+    // (indicates corrupt/stuck firmware — prevents unbounded memory growth).
+    if (_buffer.length > 65536) _buffer = Uint8List(0);
+
     _buffer = Uint8List.fromList([..._buffer, ...chunk]);
     while (true) {
       final nl = _buffer.indexOf(0x0A); // '\n'

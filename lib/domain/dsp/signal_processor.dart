@@ -21,6 +21,7 @@ class SignalProcessor {
   // Held B values until platform A arrives
   int _lastRawBML = 0, _lastRawBMR = 0, _lastRawBSL = 0, _lastRawBSR = 0;
   double _lastBTimestamp = -1;
+  double _firstATimestamp = -1;   // timestamp of first Platform A sample received
   bool _lastBSlaveTimeout = false;
 
   final ButterworthOnline _bw = ButterworthOnline();
@@ -43,10 +44,16 @@ class SignalProcessor {
 
     // Platform A arrived
     final nowS = sample.timestampUs / 1e6;
+    if (_firstATimestamp < 0) _firstATimestamp = nowS;
+
     if (_platformCount == 0) {
-      if (_lastBTimestamp < 0 &&
-          (nowS - (_lastBTimestamp < 0 ? 0 : _lastBTimestamp)) * 1000 >
-              _platformBTimeoutMs) {
+      if (_platformCount == 2) {
+        // Already detected via Platform B packet — nothing to do.
+      } else if (_lastBTimestamp >= 0) {
+        // Platform B has arrived at least once — 2-platform mode.
+        _platformCount = 2;
+      } else if ((nowS - _firstATimestamp) * 1000 > _platformBTimeoutMs) {
+        // No Platform B received within timeout — 1-platform mode.
         _platformCount = 1;
       }
     }

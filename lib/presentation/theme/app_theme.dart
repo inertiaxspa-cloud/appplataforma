@@ -48,6 +48,18 @@ class ThemeColors extends ThemeExtension<ThemeColors> {
     textDisabled:  Color(0xFF9AA5B4),
   );
 
+  /// Alta visibilidad para uso exterior con luz solar directa.
+  static const outdoor = ThemeColors(
+    background:    Color(0xFFFFFFFF),
+    surface:       Color(0xFFF4F7FC),
+    surfaceHigh:   Color(0xFFE6ECF5),
+    border:        Color(0xFFA0AFBF),
+    divider:       Color(0xFFCDD5E0),
+    textPrimary:   Color(0xFF060810),
+    textSecondary: Color(0xFF2D3A4A),
+    textDisabled:  Color(0xFF7A8FA3),
+  );
+
   @override
   ThemeColors copyWith({
     Color? background, Color? surface, Color? surfaceHigh,
@@ -88,111 +100,175 @@ extension ThemeColorsX on BuildContext {
 class AppTheme {
   AppTheme._();
 
-  // ── Light theme ─────────────────────────────────────────────────────────────
-  static ThemeData get light {
-    const bgColor      = Color(0xFFF0F3F8);
-    const surfaceColor = Color(0xFFFFFFFF);
-    const surfaceHigh  = Color(0xFFE8ECF3);
-    const borderColor  = Color(0xFFD1D8E6);
-    const textPrimary  = Color(0xFF0D1120);
-    const textSecondary = Color(0xFF4A5568);
-    const textDisabled  = Color(0xFF9AA5B4);
+  // ── Light theme (indoor) ─────────────────────────────────────────────────────
+  static ThemeData get light => _buildLightTheme(
+    ext:        ThemeColors.light,
+    bg:         const Color(0xFFF0F3F8),
+    surface:    const Color(0xFFFFFFFF),
+    surfaceHi:  const Color(0xFFE8ECF3),
+    border:     const Color(0xFFD1D8E6),
+    primary:    AppColors.primary,
+    onPrimary:  Colors.white,
+    textPri:    const Color(0xFF0D1120),
+    textSec:    const Color(0xFF4A5568),
+    textDis:    const Color(0xFF9AA5B4),
+  );
 
+  // ── Outdoor / Alto contraste ─────────────────────────────────────────────────
+  /// Paleta optimizada para uso exterior con luz solar directa.
+  /// Fondo blanco puro, colores saturados oscuros, alto contraste.
+  static ThemeData get outdoor => _buildLightTheme(
+    ext:        ThemeColors.outdoor,
+    bg:         const Color(0xFFFFFFFF),
+    surface:    const Color(0xFFF4F7FC),
+    surfaceHi:  const Color(0xFFE6ECF5),
+    border:     const Color(0xFFA0AFBF),
+    primary:    const Color(0xFF0057B7),   // azul navy — alto contraste en sol
+    onPrimary:  Colors.white,
+    textPri:    const Color(0xFF060810),
+    textSec:    const Color(0xFF2D3A4A),
+    textDis:    const Color(0xFF7A8FA3),
+  );
+
+  static ThemeData _buildLightTheme({
+    required ThemeColors ext,
+    required Color bg,
+    required Color surface,
+    required Color surfaceHi,
+    required Color border,
+    required Color primary,
+    required Color onPrimary,
+    required Color textPri,
+    required Color textSec,
+    required Color textDis,
+  }) {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
-      extensions: const [ThemeColors.light],
-      scaffoldBackgroundColor: bgColor,
-      colorScheme: const ColorScheme.light(
-        primary:   AppColors.primary,
+      extensions: [ext],
+      scaffoldBackgroundColor: bg,
+      colorScheme: ColorScheme.light(
+        primary:   primary,
         secondary: AppColors.secondary,
-        surface:   surfaceColor,
+        surface:   surface,
         error:     AppColors.danger,
-        onPrimary: Colors.white,
-        onSurface: textPrimary,
+        onPrimary: onPrimary,
+        onSurface: textPri,
       ),
-      textTheme: _lightTextTheme,
+      textTheme: _buildTextTheme(textPri, textSec, textDis),
       appBarTheme: AppBarTheme(
-        backgroundColor: surfaceColor,
+        backgroundColor: surface,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: textPrimary,
+          color: textPri,
         ),
-        iconTheme: const IconThemeData(color: textSecondary),
+        iconTheme: IconThemeData(color: textSec),
       ),
       cardTheme: CardTheme(
-        color: surfaceColor,
+        color: surface,
         elevation: 0,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: borderColor, width: 1),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: border, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
-      dividerTheme: const DividerThemeData(
-        color: borderColor,
-        thickness: 1,
-        space: 1,
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: surfaceColor,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: textDisabled,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
+      dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
+      // NavigationBar — indicador en el color primario del tema
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        indicatorColor: primary.withAlpha(30),
+        labelTextStyle: WidgetStateProperty.all(
+          TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.3, color: textPri),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: primary, size: 24);
+          }
+          return IconThemeData(color: textDis, size: 22);
+        }),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceHigh,
+        fillColor: surfaceHi,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primary, width: 1.5),
         ),
-        hintStyle: GoogleFonts.inter(fontSize: 14, color: textDisabled),
-        labelStyle: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+        hintStyle: GoogleFonts.inter(fontSize: 14, color: textDis),
+        labelStyle: GoogleFonts.inter(fontSize: 14, color: textSec),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
+          shape: const StadiumBorder(),
+          minimumSize: const Size(double.infinity, 52),
+          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
           minimumSize: const Size(120, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: const StadiumBorder(),
           textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryDark,
-          side: const BorderSide(color: AppColors.primaryDark),
+          foregroundColor: primary,
+          side: BorderSide(color: primary),
           minimumSize: const Size(120, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: const StadiumBorder(),
           textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: surfaceHigh,
-        labelStyle: GoogleFonts.inter(fontSize: 12, color: textSecondary),
+        backgroundColor: surfaceHi,
+        labelStyle: GoogleFonts.inter(fontSize: 12, color: textSec),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: borderColor)),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: border),
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: const Color(0xFF1F2937),
         contentTextStyle: GoogleFonts.inter(color: Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        backgroundColor: surface,
+        dragHandleColor: textDis,
+        dragHandleSize: const Size(36, 4),
+        showDragHandle: true,
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS:     CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS:   CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux:   CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }
@@ -348,8 +424,6 @@ class AppTheme {
       ),
     );
   }
-
-  static TextTheme get _lightTextTheme => _buildTextTheme(const Color(0xFF0D1120), const Color(0xFF4A5568), const Color(0xFF9AA5B4));
 
   static TextTheme get _textTheme => _buildTextTheme(AppColors.textPrimary, AppColors.textSecondary, AppColors.textDisabled);
 

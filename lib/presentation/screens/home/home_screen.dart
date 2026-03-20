@@ -72,20 +72,40 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final col = context.col;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
-        Image.asset(
-          'assets/images/inertiax_logo.jpg',
-          height: 28,
-          color: Colors.white,
-          colorBlendMode: BlendMode.srcIn,
-        ),
+        _IXLogo(isDark: isDark),
         const Spacer(),
         IconButton(
           icon: Icon(Icons.settings_outlined, color: col.textSecondary),
           onPressed: () => context.push('/settings'),
         ),
       ],
+    );
+  }
+}
+
+/// Logo InertiaX adaptado a cada tema.
+/// Dark: invierte la imagen (negro→blanco) para visibilidad sobre fondo oscuro.
+/// Light/Outdoor: usa la imagen original (negro sobre blanco).
+class _IXLogo extends StatelessWidget {
+  final bool isDark;
+  const _IXLogo({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final img = Image.asset('assets/images/inertiax_logo.jpg', height: 32);
+    if (!isDark) return img;
+    // Invierte colores: negro→blanco, blanco→negro(≈fondo oscuro, casi invisible)
+    return ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        -1,  0,  0, 0, 255,
+         0, -1,  0, 0, 255,
+         0,  0, -1, 0, 255,
+         0,  0,  0, 1,   0,
+      ]),
+      child: img,
     );
   }
 }

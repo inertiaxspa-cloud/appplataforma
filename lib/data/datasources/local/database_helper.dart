@@ -131,22 +131,23 @@ class DatabaseHelper {
   Future<void> _migrate(Database db, int oldVersion, int newVersion) async {
     for (int v = oldVersion + 1; v <= newVersion; v++) {
       if (v == 2) {
-        // Add per-cell calibration columns
-        await db.execute(
-            "ALTER TABLE calibrations ADD COLUMN cell_gains_json TEXT NOT NULL DEFAULT '{}'");
-        await db.execute(
-            'ALTER TABLE calibration_points ADD COLUMN raw_aml REAL NOT NULL DEFAULT 0');
-        await db.execute(
-            'ALTER TABLE calibration_points ADD COLUMN raw_amr REAL NOT NULL DEFAULT 0');
-        await db.execute(
-            'ALTER TABLE calibration_points ADD COLUMN raw_asl REAL NOT NULL DEFAULT 0');
-        await db.execute(
-            'ALTER TABLE calibration_points ADD COLUMN raw_asr REAL NOT NULL DEFAULT 0');
+        // Add per-cell calibration columns (idempotent: ignore if already exist)
+        for (final sql in [
+          "ALTER TABLE calibrations ADD COLUMN cell_gains_json TEXT NOT NULL DEFAULT '{}'",
+          'ALTER TABLE calibration_points ADD COLUMN raw_aml REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_amr REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_asl REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_asr REAL NOT NULL DEFAULT 0',
+        ]) {
+          try { await db.execute(sql); } catch (_) { /* column already exists */ }
+        }
       }
       if (v == 3) {
-        // Add per-cell polarity storage
-        await db.execute(
-            "ALTER TABLE calibrations ADD COLUMN cell_polarities_json TEXT NOT NULL DEFAULT '{}'");
+        // Add per-cell polarity storage (idempotent)
+        try {
+          await db.execute(
+              "ALTER TABLE calibrations ADD COLUMN cell_polarities_json TEXT NOT NULL DEFAULT '{}'");
+        } catch (_) { /* column already exists */ }
       }
     }
   }

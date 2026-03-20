@@ -58,7 +58,14 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
         'sync_status':    'pending',
       });
       if (mounted) ref.invalidate(sessionHistoryProvider);
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar resultado: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override

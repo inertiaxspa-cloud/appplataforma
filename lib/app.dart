@@ -150,13 +150,14 @@ class InertiaXApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(settingsProvider).flutterThemeMode;
+    final settings = ref.watch(settingsProvider);
     return MaterialApp.router(
       title: 'InertiaX',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      // 'outdoor' ocupa el slot de tema claro con su propia paleta de alto contraste
+      theme: settings.themeMode == 'outdoor' ? AppTheme.outdoor : AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: themeMode,
+      themeMode: settings.flutterThemeMode,
       routerConfig: _router,
     );
   }
