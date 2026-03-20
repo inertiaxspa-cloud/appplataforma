@@ -1,0 +1,77 @@
+name: Build & Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'          # dispara en tags como v1.0.0, v1.2.3
+  workflow_dispatch:  # también se puede lanzar manualmente desde GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # 1 — Checkout
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2 — Flutter
+      - name: Instalar Flutter 3.27.4
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: 'stable'
+          cache: true
+
+      # 3 — Dependencias
+      - name: flutter pub get
+        run: flutter pub get
+
+      # 4 — Build Windows Release
+      #     Si tienes Supabase, agrega los secrets en Settings → Secrets del repo:
+      #       SUPABASE_URL  y  SUPABASE_ANON_KEY
+      - name: Build Windows
+        run: |
+          flutter build windows --release `
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} `
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      # 5 — Comprimir carpeta Release
+      - name: Crear ZIP
+        shell: pwsh
+        run: |
+          $src = "build\windows\x64\runner\Release"
+          $dst = "InertiaX-Windows.zip"
+          Compress-Archive -Path "$src\*" -DestinationPath $dst
+
+      # 6 — Determinar versión (del tag o del commit)
+      - name: Obtener versión
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -match "refs/tags/(.+)") {
+            echo "tag=$($Matches[1])" >> $env:GITHUB_OUTPUT
+          } else {
+            $sha = $env:GITHUB_SHA.Substring(0,7)
+            echo "tag=dev-$sha" >> $env:GITHUB_OUTPUT
+          }
+
+      # 7 — Publicar GitHub Release con el ZIP adjunto
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: InertiaX ${{ steps.version.outputs.tag }}
+          body: |
+            ## InertiaX — Windows
+
+            **Instalación:**
+            1. Descarga `InertiaX-Windows.zip`
+            2. Descomprime en cualquier carpeta
+            3. Ejecuta `inertiax.exe`
+
+            > Requiere Windows 10/11 x64.
+            > Si el exe no abre, instala [Visual C++ Redistributable 2022](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+          files: InertiaX-Windows.zip
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}

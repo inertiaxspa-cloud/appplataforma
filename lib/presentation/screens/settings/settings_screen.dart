@@ -110,8 +110,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
     state = AppSettings(
       platformSeparationCm: p.getDouble('platform_sep_cm')  ?? 30.0,
-      platformWidthCm:      p.getDouble('platform_width_cm')  ?? 35.0,
-      platformLengthCm:     p.getDouble('platform_length_cm') ?? 55.0,
       showRawData:   p.getBool('show_raw')       ?? false,
       autoSaveTests: p.getBool('auto_save')      ?? true,
       soundFeedback: p.getBool('sound')          ?? true,
@@ -139,8 +137,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> _persist() async {
     final p = await SharedPreferences.getInstance();
     await p.setDouble('platform_sep_cm',    state.platformSeparationCm);
-    await p.setDouble('platform_width_cm',  state.platformWidthCm);
-    await p.setDouble('platform_length_cm', state.platformLengthCm);
     await p.setBool('show_raw',          state.showRawData);
     await p.setBool('auto_save',         state.autoSaveTests);
     await p.setBool('sound',             state.soundFeedback);
@@ -215,22 +211,6 @@ class SettingsScreen extends ConsumerWidget {
               min: 20, max: 60, unit: 'cm',
               onChanged: (v) =>
                   upd((s) => s.copyWith(platformSeparationCm: v.roundToDouble())),
-            ),
-            Divider(color: context.col.border, height: 1),
-            _SliderTile(
-              label: 'Ancho de plataforma (ML)',
-              value: settings.platformWidthCm,
-              min: 20, max: 60, unit: 'cm',
-              onChanged: (v) =>
-                  upd((s) => s.copyWith(platformWidthCm: v.roundToDouble())),
-            ),
-            Divider(color: context.col.border, height: 1),
-            _SliderTile(
-              label: 'Largo de plataforma (AP)',
-              value: settings.platformLengthCm,
-              min: 30, max: 80, unit: 'cm',
-              onChanged: (v) =>
-                  upd((s) => s.copyWith(platformLengthCm: v.roundToDouble())),
             ),
           ]),
 
