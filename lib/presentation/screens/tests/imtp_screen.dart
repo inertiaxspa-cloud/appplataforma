@@ -10,6 +10,7 @@ import '../../providers/test_state_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/post_test_panel.dart';
+import '../../widgets/test_tutorial.dart';
 
 // Pull duration limit
 const _maxPullS = 6;
@@ -108,6 +109,13 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
             context.pop();
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Ver tutorial IMTP',
+            onPressed: () => showTestTutorial(context, TestTutorials.imtp),
+          ),
+        ],
       ),
       body: Column(
         children: [

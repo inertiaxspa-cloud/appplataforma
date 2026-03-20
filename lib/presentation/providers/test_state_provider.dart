@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/algorithm_settings.dart';
+import '../../core/services/sound_service.dart';
 import '../../data/models/processed_sample.dart';
 import '../../data/models/raw_sample.dart';
 import '../../domain/dsp/butterworth_filter.dart';
@@ -103,6 +104,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
     _phaseDetector.reset();
     _phaseDetector.startSettling();
 
+    if (settings.soundFeedback) SoundService.countdown();
     state = TestState(
       testType:      type,
       status:        TestStatus.settling,
@@ -142,6 +144,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
     switch (event.to) {
       case JumpPhase.waiting:
         _mjContactStart = processed.timestampS;
+        if (_ref.read(settingsProvider).soundFeedback) SoundService.ready();
         state = state.copyWith(
           status:        TestStatus.running,
           phase:         JumpPhase.waiting,
@@ -158,6 +161,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         );
 
       case JumpPhase.flight:
+        if (_ref.read(settingsProvider).soundFeedback) SoundService.phase();
         state = state.copyWith(
           phase:         JumpPhase.flight,
           statusMessage: '¡En vuelo!',
@@ -257,6 +261,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
   void _computeAndFinish(int platformCount) {
     if (_forceData.isEmpty || _timeData.isEmpty) {
+      if (_ref.read(settingsProvider).soundFeedback) SoundService.error();
       state = state.copyWith(
           status: TestStatus.failed, error: 'Sin datos suficientes');
       return;
@@ -452,9 +457,11 @@ class TestStateNotifier extends StateNotifier<TestState> {
         ),
         statusMessage: 'Drop Jump completado',
       );
+      if (settings.soundFeedback) SoundService.success();
       return;
     }
 
+    if (settings.soundFeedback) SoundService.success();
     state = state.copyWith(
       status: TestStatus.completed,
       phase:  JumpPhase.landed,
@@ -489,6 +496,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
     if (type == TestType.imtp) {
       _computeImtp();
     } else if (type == TestType.multiJump && _jumps.isNotEmpty) {
+      if (_ref.read(settingsProvider).soundFeedback) SoundService.success();
       state = state.copyWith(
         status:        TestStatus.completed,
         result:        _buildMultiJumpResult(),

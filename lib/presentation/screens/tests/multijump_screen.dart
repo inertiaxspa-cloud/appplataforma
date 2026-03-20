@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
+import '../../widgets/test_tutorial.dart';
 
 class MultiJumpScreen extends ConsumerWidget {
   const MultiJumpScreen({super.key});
@@ -48,6 +49,13 @@ class MultiJumpScreen extends ConsumerWidget {
             context.pop();
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Ver tutorial Saltos Repetidos',
+            onPressed: () => showTestTutorial(context, TestTutorials.multiJump),
+          ),
+        ],
       ),
       body: Column(
         children: [

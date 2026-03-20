@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
+import '../../widgets/test_tutorial.dart';
 
 class CmjScreen extends ConsumerWidget {
   const CmjScreen({super.key});
@@ -47,6 +48,13 @@ class CmjScreen extends ConsumerWidget {
             context.pop();
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Ver tutorial CMJ',
+            onPressed: () => showTestTutorial(context, TestTutorials.cmj),
+          ),
+        ],
       ),
       body: Column(
         children: [

@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/cards/symmetry_gauge.dart';
 import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/post_test_panel.dart';
+import '../../widgets/test_tutorial.dart';
 import '../../../domain/entities/test_result.dart';
 
 // Duration of each CoP measurement window
@@ -144,6 +145,13 @@ class _CopScreenState extends ConsumerState<CopScreen> {
             context.pop();
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Ver tutorial Equilibrio',
+            onPressed: () => showTestTutorial(context, TestTutorials.cop),
+          ),
+        ],
       ),
       body: Column(
         children: [
