@@ -1,4 +1,7 @@
-import 'package:path/path.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 // Conditional import: desktop uses sqflite_common_ffi (dart:ffi);
 // web stub is a no-op so the web build compiles without dart:ffi.
@@ -24,13 +27,47 @@ class DatabaseHelper {
     // Switches sqflite to the FFI factory on desktop; no-op on mobile/web.
     initSqfliteForPlatform();
 
-    final dbPath = join(await getDatabasesPath(), _dbName);
+    final dbPath = await _resolveDbPath();
     return openDatabase(
       dbPath,
       version: _dbVersion,
       onCreate: _createTables,
       onUpgrade: _migrate,
     );
+  }
+
+  /// Retorna siempre la misma ruta en %APPDATA%/InertiaX/ (Windows/Linux/macOS).
+  /// En móvil usa getDatabasesPath() como antes.
+  /// Si existe un inertiax.db junto al EXE (build anterior), lo migra automáticamente.
+  Future<String> _resolveDbPath() async {
+    final isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+
+    if (!isDesktop) {
+      return p.join(await getDatabasesPath(), _dbName);
+    }
+
+    // Ruta fija: %APPDATA%/InertiaX/inertiax.db
+    final appSupport = await getApplicationSupportDirectory();
+    final targetDir  = Directory(p.join(appSupport.path, 'InertiaX'));
+    if (!targetDir.existsSync()) targetDir.createSync(recursive: true);
+    final targetPath = p.join(targetDir.path, _dbName);
+
+    // Migración automática: si hay un .db viejo junto al EXE, copiarlo una vez.
+    if (!File(targetPath).existsSync()) {
+      final exeDir  = p.dirname(Platform.resolvedExecutable);
+      final legacyCwd = p.join(Directory.current.path, _dbName);
+      final legacyExe = p.join(exeDir, _dbName);
+      for (final legacy in [legacyExe, legacyCwd]) {
+        if (File(legacy).existsSync()) {
+          File(legacy).copySync(targetPath);
+          break;
+        }
+      }
+    }
+
+    return targetPath;
   }
 
   Future<void> _createTables(Database db, int version) async {
