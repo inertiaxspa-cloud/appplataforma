@@ -43,6 +43,9 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.13.0
 
+  # File picker (importar DB desde versión anterior)
+  file_picker: ^8.1.2
+
   # Utils
   intl: ^0.19.0
   uuid: ^4.4.0

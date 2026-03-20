@@ -54,14 +54,26 @@ class DatabaseHelper {
     if (!targetDir.existsSync()) targetDir.createSync(recursive: true);
     final targetPath = p.join(targetDir.path, _dbName);
 
-    // Migración automática: si hay un .db viejo junto al EXE, copiarlo una vez.
-    if (!File(targetPath).existsSync()) {
-      final exeDir  = p.dirname(Platform.resolvedExecutable);
-      final legacyCwd = p.join(Directory.current.path, _dbName);
-      final legacyExe = p.join(exeDir, _dbName);
-      for (final legacy in [legacyExe, legacyCwd]) {
-        if (File(legacy).existsSync()) {
-          File(legacy).copySync(targetPath);
+    // Migración automática: copiar .db viejo si el destino no existe o está vacío
+    // (< 16 KB = SQLite sin datos reales). Busca junto al EXE y en el directorio de trabajo.
+    final targetFile   = File(targetPath);
+    final targetEmpty  = !targetFile.existsSync() || targetFile.lengthSync() < 16384;
+    if (targetEmpty) {
+      final exeDir = p.dirname(Platform.resolvedExecutable);
+      final cwd    = Directory.current.path;
+      // sqflite_common_ffi almacenaba DBs en .dart_tool/sqflite_common_ffi/databases/
+      final ffiSub = p.join('.dart_tool', 'sqflite_common_ffi', 'databases', _dbName);
+      final candidates = [
+        p.join(exeDir, ffiSub),              // junto al EXE (ruta ffi)
+        p.join(cwd,    ffiSub),              // directorio de trabajo (ruta ffi)
+        p.join(exeDir, _dbName),             // junto al EXE (ruta directa)
+        p.join(cwd,    _dbName),             // directorio de trabajo
+      ];
+      for (final legacy in candidates) {
+        final src = File(legacy);
+        if (src.existsSync() && src.lengthSync() >= 16384) {
+          if (targetFile.existsSync()) targetFile.deleteSync();
+          src.copySync(targetPath);
           break;
         }
       }
