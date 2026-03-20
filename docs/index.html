@@ -611,13 +611,23 @@ function setTab(name, btn) {
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────
 (async () => {
+  // Verificar que Supabase cargó correctamente
+  if (typeof supabase === 'undefined' || !supa) {
+    document.getElementById('login-error').textContent = 'Error: librería Supabase no cargó.';
+    document.getElementById('login-error').classList.remove('hidden');
+    return;
+  }
+
   // Enter key in login
   ['login-email','login-pass'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => e.key==='Enter' && doLogin()));
 
-  const { data: { session } } = await supa.auth.getSession();
-  if (session) {
-    await initDashboard();
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (session) await initDashboard();
+  } catch(e) {
+    document.getElementById('login-error').textContent = 'Error de conexión: ' + e.message;
+    document.getElementById('login-error').classList.remove('hidden');
   }
 })();
 </script>
