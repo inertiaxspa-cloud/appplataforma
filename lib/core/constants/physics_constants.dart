@@ -10,9 +10,9 @@ class PhysicsConstants {
   static const int    platformBTimeoutMs = 500;
 
   // Phase detection thresholds (match Python app.py)
-  static const double settleDurationS    = 1.5;
+  static const double settleDurationS    = 1.0;   // seconds per settling window
   static const double cmjWeightThreshold = 80.0;  // N delta for unweighting start
-  static const double stdThreshold       = 3.0;   // N std for "at rest"
+  static const double stdThreshold       = 10.0;  // N std for "at rest" (realistic ADC noise)
   static const double flightThreshold    = 20.0;  // N below BW = airborne
   static const double landingThreshold   = 80.0;  // N above BW = landed
   static const double imtpPlateauN       = 10.0;  // N/s slope for IMTP plateau

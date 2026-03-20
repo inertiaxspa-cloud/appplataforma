@@ -61,6 +61,8 @@ class PhaseDetector {
   double? _settleStartTime;
   double bodyWeightN = 0;
   double bodyWeightStd = 0;
+  int _settleAttempts = 0;
+  static const int _maxSettleAttempts = 5; // ~5s max before forcing acceptance
 
   // Phase timestamps
   double? _descentStartTime;
@@ -86,8 +88,11 @@ class PhaseDetector {
         if (t - _settleStartTime! >= _settleDuration) {
           bodyWeightN   = _mean(_settlingSamples);
           bodyWeightStd = _std(_settlingSamples);
-          if (bodyWeightStd < _stdOk && bodyWeightN > 50) {
-            // Compute effective unweighting threshold after settling.
+          _settleAttempts++;
+          final forceAccept = _settleAttempts >= _maxSettleAttempts;
+          if ((bodyWeightStd < _stdOk && bodyWeightN > 50) ||
+              (forceAccept && bodyWeightN > 50)) {
+            // Accepted: either stable enough or max attempts reached.
             _effectiveUnweightDelta = useAdaptiveThreshold
                 ? math.max(5.0 * bodyWeightStd, 20.0)   // floor: 20 N
                 : PhysicsConstants.cmjWeightThreshold;   // fixed: 80 N
@@ -166,6 +171,7 @@ class PhaseDetector {
     _phase = JumpPhase.settling;
     _settlingSamples.clear();
     _settleStartTime = null;
+    _settleAttempts = 0;
   }
 
   /// After a multi-jump landing, reset to waiting while keeping bodyWeight.
@@ -182,6 +188,7 @@ class PhaseDetector {
     _phase = JumpPhase.idle;
     _settlingSamples.clear();
     _settleStartTime = null;
+    _settleAttempts = 0;
     _descentStartTime = null;
     _takeoffTime = null;
     _landingTime = null;
