@@ -860,6 +860,25 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          // Botón para forzar re-sincronización completa
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: sync.isBusy ? null : () async {
+                await notifier.resetSyncStatus();
+                await notifier.syncPending();
+              },
+              icon: const Icon(Icons.sync_problem, size: 16),
+              label: const Text('Re-sincronizar todo', style: TextStyle(fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.warning,
+                side: BorderSide(color: AppColors.warning.withAlpha(150)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
         ],
       ),
     );

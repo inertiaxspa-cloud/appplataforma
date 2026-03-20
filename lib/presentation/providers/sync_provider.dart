@@ -159,9 +159,21 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
   // ── Sync ───────────────────────────────────────────────────────────────────
 
-  /// Pushes all sessions with sync_status='pending' to Supabase.
+  /// Marca todas las sesiones como 'pending' para forzar re-sincronización.
+  Future<void> resetSyncStatus() async {
+    final db = await DatabaseHelper.instance.database;
+    await db.update('test_sessions', {'sync_status': 'pending', 'supabase_uuid': null});
+    await db.update('athletes', {'supabase_uuid': null});
+    await _refreshPendingCount();
+  }
+
+  /// Pushes all sessions with sync_status='pending' or 'error' to Supabase.
   Future<void> syncPending() async {
     if (!state.isAuthenticated || state.isBusy) return;
+    // También reintentar sesiones con error previo
+    final db0 = await DatabaseHelper.instance.database;
+    await db0.update('test_sessions', {'sync_status': 'pending'},
+        where: "sync_status = 'error'");
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
 
     try {

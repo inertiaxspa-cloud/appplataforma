@@ -40,3 +40,13 @@ lib/core/config/supabase_config.dart
 .DS_Store
 Thumbs.db
 InertiaX_Analisis.exe
+
+# Claude worktrees y settings locales
+.claude/worktrees/
+.claude/settings.local.json
+.claude/launch.json
+
+# Build outputs / binaries
+InertiaX-Windows/
+InertiaX-Windows.zip
+build/

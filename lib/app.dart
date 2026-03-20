@@ -152,7 +152,7 @@ class InertiaXApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     return MaterialApp.router(
-      title: 'InertiaX',
+      title: 'InertiaX Force',
       debugShowCheckedModeBanner: false,
       // 'outdoor' ocupa el slot de tema claro con su propia paleta de alto contraste
       theme: settings.themeMode == 'outdoor' ? AppTheme.outdoor : AppTheme.light,
