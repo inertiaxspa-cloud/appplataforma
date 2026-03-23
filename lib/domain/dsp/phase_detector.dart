@@ -218,6 +218,9 @@ class PhaseDetector {
   /// Effective unweighting threshold in use (N below body weight).
   double get effectiveUnweightDeltaN => _effectiveUnweightDelta;
 
+  /// Effective flight threshold (N). Force below this = airborne.
+  double get effectiveFlightThresholdN => _effectiveFlightThreshold;
+
   static double _mean(List<double> v) {
     if (v.isEmpty) return 0;
     return v.fold(0.0, (s, x) => s + x) / v.length;

@@ -51,9 +51,20 @@ class PdfReportService {
     TestResult? previousResult,
     bool compact = false,
   }) async {
+    // ── Load fonts that support extended Latin / UTF-8 characters ─────────
+    // Default PDF fonts (Helvetica/Times) lack ñ, á, é, etc.
+    final baseFont  = await PdfGoogleFonts.notoSansRegular();
+    final boldFont  = await PdfGoogleFonts.notoSansBold();
+    final italicFont = await PdfGoogleFonts.notoSansItalic();
+
     final doc = pw.Document(
       author: 'InertiaX',
       title: '${result.testType.displayName} — ${athlete?.name ?? "Atleta"}',
+      theme: pw.ThemeData.withFont(
+        base:   baseFont,
+        bold:   boldFont,
+        italic: italicFont,
+      ),
     );
 
     // Validated curve data (must be same length and non-trivial).
@@ -424,7 +435,7 @@ class PdfReportService {
       _NormLevel('Elite',       45.0, double.infinity, _cSuccess),
       _NormLevel('Avanzado',    35.0, 45.0,             _cCyan),
       _NormLevel('Intermedio',  25.0, 35.0,             _cWarning),
-      _NormLevel('Basico',      0.0,  25.0,             _cDanger),
+      _NormLevel('Básico',      0.0,  25.0,             _cDanger),
     ];
     return _normSection(
       title: 'TABLA NORMATIVA — ALTURA DE SALTO (CMJ/SJ)',
@@ -445,7 +456,7 @@ class PdfReportService {
       _NormLevel('Elite',       1.2, double.infinity, _cSuccess),
       _NormLevel('Avanzado',    0.9, 1.2,             _cCyan),
       _NormLevel('Intermedio',  0.6, 0.9,             _cWarning),
-      _NormLevel('Basico',      0.0, 0.6,             _cDanger),
+      _NormLevel('Básico',      0.0, 0.6,             _cDanger),
     ];
     return _normSection(
       title: 'TABLA NORMATIVA — RSImod (DROP JUMP)',
@@ -466,7 +477,7 @@ class PdfReportService {
       _NormLevel('Elite',       2.5, double.infinity, _cSuccess),
       _NormLevel('Avanzado',    2.0, 2.5,             _cCyan),
       _NormLevel('Intermedio',  1.5, 2.0,             _cWarning),
-      _NormLevel('Basico',      0.0, 1.5,             _cDanger),
+      _NormLevel('Básico',      0.0, 1.5,             _cDanger),
     ];
     return _normSection(
       title: 'TABLA NORMATIVA — FUERZA RELATIVA IMTP (× PC)',
@@ -488,7 +499,7 @@ class PdfReportService {
       _NormLevel('Elite',       0.0,   400.0,          _cSuccess),
       _NormLevel('Avanzado',    400.0, 600.0,           _cCyan),
       _NormLevel('Intermedio',  600.0, 900.0,           _cWarning),
-      _NormLevel('Basico',      900.0, double.infinity, _cDanger),
+      _NormLevel('Básico',      900.0, double.infinity, _cDanger),
     ];
     return _normSection(
       title: 'TABLA NORMATIVA — TRAYECTORIA CoP (mm)',
@@ -605,7 +616,7 @@ class PdfReportService {
       recs.add(_Recommendation(
         icon: '\u26A0',
         color: _cWarning,
-        text: 'Asimetria significativa detectada. Evalua deficit muscular '
+        text: 'Asimetría significativa detectada. Evalúa déficit muscular '
             'en lado dominante.',
       ));
     }
@@ -615,7 +626,7 @@ class PdfReportService {
       recs.add(_Recommendation(
         icon: '\u26A0',
         color: _cWarning,
-        text: 'Asimetria significativa detectada. Evalua deficit muscular '
+        text: 'Asimetría significativa detectada. Evalúa déficit muscular '
             'en lado dominante.',
       ));
     }
@@ -626,7 +637,7 @@ class PdfReportService {
       recs.add(_Recommendation(
         icon: '\u{1F4A1}',
         color: _cCyan,
-        text: 'Nivel basico. Enfoca en fuerza maxima y tecnica de salto.',
+        text: 'Nivel básico. Enfoca en fuerza máxima y técnica de salto.',
       ));
     }
 
@@ -645,7 +656,7 @@ class PdfReportService {
       recs.add(_Recommendation(
         icon: '\u2705',
         color: _cSuccess,
-        text: 'Excelente fuerza maxima. Mantén el trabajo de RFD.',
+        text: 'Excelente fuerza máxima. Mantén el trabajo de RFD.',
       ));
     }
 
@@ -772,7 +783,7 @@ class PdfReportService {
               style: pw.TextStyle(fontSize: 8, color: _cTextM),
             ),
             pw.Text(
-              'Generado automaticamente por InertiaX',
+              'Generado automáticamente por InertiaX',
               style: pw.TextStyle(fontSize: 8, color: _cTextM),
             ),
           ],
@@ -884,8 +895,8 @@ class PdfReportService {
         _table([
           _e('Impulso propulsivo', '${r.propulsiveImpulseNs.toStringAsFixed(1)} N*s'),
           _e('Impulso de frenado', '${r.brakingImpulseNs.toStringAsFixed(1)} N*s'),
-          _e('Fase excentrica',    '${r.eccentricDurationMs.toStringAsFixed(0)} ms'),
-          _e('Fase concentrica',   '${r.concentricDurationMs.toStringAsFixed(0)} ms'),
+          _e('Fase excéntrica',    '${r.eccentricDurationMs.toStringAsFixed(0)} ms'),
+          _e('Fase concéntrica',   '${r.concentricDurationMs.toStringAsFixed(0)} ms'),
           _e('Fuerza de despegue', '${r.takeoffForceN.toStringAsFixed(0)} N'),
           _e('Peso corporal',      '${(r.bodyWeightN / 9.81).toStringAsFixed(1)} kg'),
         ]),
@@ -935,30 +946,30 @@ class PdfReportService {
   }) =>
       [
         if (!compact)
-          _hero('AREA ELIPSE 95%', r.areaEllipseMm2.toStringAsFixed(0), 'mm2'),
+          _hero('ÁREA ELIPSE 95%', r.areaEllipseMm2.toStringAsFixed(0), 'mm²'),
         pw.SizedBox(height: compact ? 8 : 16),
         _section('CONDICIONES'),
         _table([
-          _e('Condicion',
+          _e('Condición',
               r.condition == 'OA' ? 'Ojos abiertos' : 'Ojos cerrados'),
           _e('Postura', r.stance == 'bipedal'
               ? 'Bipodal'
               : r.stance == 'left'
                   ? 'Unipodal izquierdo'
                   : 'Unipodal derecho'),
-          _e('Duracion', '${r.testDurationS.toStringAsFixed(1)} s'),
+          _e('Duración', '${r.testDurationS.toStringAsFixed(1)} s'),
         ]),
         pw.SizedBox(height: compact ? 8 : 12),
         _section('ESTABILIDAD'),
         _tableWithPrev(
           rows: [
-            _e('Area elipse 95%',    '${r.areaEllipseMm2.toStringAsFixed(0)} mm2'),
+            _e('Área elipse 95%',    '${r.areaEllipseMm2.toStringAsFixed(0)} mm²'),
             _e('Long. trayectoria',  '${r.pathLengthMm.toStringAsFixed(0)} mm'),
             _e('Velocidad media',    '${r.meanVelocityMmS.toStringAsFixed(1)} mm/s'),
             _e('Rango medio-lat.',   '${r.rangeMLMm.toStringAsFixed(1)} mm'),
             _e('Rango antero-post.', '${r.rangeAPMm.toStringAsFixed(1)} mm'),
             _e('Frecuencia 95%',     '${r.frequency95Hz.toStringAsFixed(2)} Hz'),
-            _e('Simetria',           '${r.symmetryPercent.toStringAsFixed(1)} %'),
+            _e('Simetría',           '${r.symmetryPercent.toStringAsFixed(1)} %'),
             if (r.rombergQuotient != null)
               _e('Cociente Romberg', r.rombergQuotient!.toStringAsFixed(3)),
           ],
@@ -1000,7 +1011,7 @@ class PdfReportService {
   }) =>
       [
         if (!compact) ...[
-          _hero('FUERZA PICO ISOMETRICA', r.peakForceN.toStringAsFixed(0), 'N'),
+          _hero('FUERZA PICO ISOMÉTRICA', r.peakForceN.toStringAsFixed(0), 'N'),
           pw.SizedBox(height: 4),
           pw.Center(
             child: pw.Text(
@@ -1336,8 +1347,8 @@ class PdfReportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         _section(sym.isTwoPlatform
-            ? 'SIMETRIA'
-            : 'SIMETRIA (estimada — 1 plataforma)'),
+            ? 'SIMETRÍA'
+            : 'SIMETRÍA (estimada — 1 plataforma)'),
         pw.Container(
           padding: const pw.EdgeInsets.all(12),
           decoration: const pw.BoxDecoration(
@@ -1399,8 +1410,8 @@ class PdfReportService {
               pw.Center(
                 child: pw.Text(
                   isOk
-                      ? 'Simetria correcta  (Δ ${sym.asymmetryIndexPct.toStringAsFixed(1)} %)'
-                      : 'Asimetria elevada  (Δ ${sym.asymmetryIndexPct.toStringAsFixed(1)} %)',
+                      ? 'Simetría correcta  (Δ ${sym.asymmetryIndexPct.toStringAsFixed(1)} %)'
+                      : 'Asimetría elevada  (Δ ${sym.asymmetryIndexPct.toStringAsFixed(1)} %)',
                   style: pw.TextStyle(
                     fontSize: 9,
                     fontWeight: pw.FontWeight.bold,
@@ -1524,31 +1535,48 @@ class PdfReportService {
     final fDs     = _downsample(forceN, maxPts);
     final tDs     = _downsample(timeS,  maxPts);
     final massKg  = bodyWeightN / 9.81;
-    final t0      = tDs.first;
 
-    // Trapezoid integration: v[i] = v[i-1] + (F_net[i-1] + F_net[i]) / 2 / m * dt
-    final velMs = List<double>.filled(fDs.length, 0.0);
+    // ── Find movement onset: first index where force deviates > 5% BW ─────
+    // This prevents drift accumulation during the quiet-standing (settling) period.
+    // We use the mean of the first 200ms as the true body-weight reference.
+    final bwRef = _estimateBodyWeight(fDs, tDs);
+    final deviationThreshold = bwRef * 0.05; // 5% of body weight
+    int onsetIdx = 0;
     for (int i = 1; i < fDs.length; i++) {
+      if ((fDs[i] - bwRef).abs() > deviationThreshold) {
+        onsetIdx = math.max(0, i - 5); // include 5 samples before onset
+        break;
+      }
+    }
+    final t0 = tDs[onsetIdx];
+
+    // Trapezoid integration starting from onsetIdx (v=0 at onset).
+    final velMs = List<double>.filled(fDs.length, 0.0);
+    for (int i = onsetIdx + 1; i < fDs.length; i++) {
       final dt    = tDs[i] - tDs[i - 1];
       final fNet0 = fDs[i - 1] - bodyWeightN;
       final fNet1 = fDs[i]     - bodyWeightN;
       velMs[i]    = velMs[i - 1] + (fNet0 + fNet1) / 2.0 / massKg * dt;
     }
 
+    // Only plot from onsetIdx onwards (no pre-movement flat line).
+    final velPlot = velMs.sublist(onsetIdx);
+    final tPlot   = tDs.sublist(onsetIdx);
+
     // Y range: round to nearest 0.5 m/s, ≥1 m/s span.
-    double vMin = velMs.reduce(math.min);
-    double vMax = velMs.reduce(math.max);
+    double vMin = velPlot.reduce(math.min);
+    double vMax = velPlot.reduce(math.max);
     vMin = (vMin / 0.5).floorToDouble() * 0.5;
     vMax = (vMax / 0.5).ceilToDouble()  * 0.5;
     if (vMax - vMin < 1.0) { vMin -= 0.5; vMax += 0.5; }
 
-    final tMax     = (tDs.last - t0).clamp(0.001, double.infinity);
+    final tMax     = (tPlot.last - t0).clamp(0.001, double.infinity);
     final xTicks   = List.generate(5, (i) => tMax * i / 4.0);
     final yTicks   = List.generate(5, (i) => vMin + (vMax - vMin) * i / 4.0);
 
     final vData = <pw.PointChartValue>[
-      for (int i = 0; i < fDs.length; i++)
-        pw.PointChartValue(tDs[i] - t0, velMs[i]),
+      for (int i = 0; i < tPlot.length; i++)
+        pw.PointChartValue(tPlot[i] - t0, velPlot[i]),
     ];
 
     return [
@@ -1589,6 +1617,17 @@ class PdfReportService {
         ),
       ),
     ];
+  }
+
+  /// Estimates body weight as the mean of the first 200ms of the signal.
+  /// Robust against drift because it uses the quiet-standing baseline.
+  static double _estimateBodyWeight(List<double> fDs, List<double> tDs) {
+    final t200 = tDs.first + 0.20;
+    double sum = 0; int count = 0;
+    for (int i = 0; i < fDs.length && tDs[i] <= t200; i++) {
+      sum += fDs[i]; count++;
+    }
+    return count > 0 ? sum / count : (fDs.isNotEmpty ? fDs.first : 0.0);
   }
 
   static List<double> _downsample(List<double> data, int maxPts) {

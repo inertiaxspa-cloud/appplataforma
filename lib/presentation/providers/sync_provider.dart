@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -229,7 +230,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
             whereArgs: [row['id']],
           );
         } catch (e) {
-          // Mark individual session as error; no tocar notes del usuario.
+          // Log real error for debugging, then mark session as error.
+          final errMsg = e.toString().replaceAll('Exception: ', '');
+          debugPrint('[Sync] Session ${row['id']} failed: $errMsg');
           await db.update('test_sessions',
               {'sync_status': 'error'},
               where: 'id = ?', whereArgs: [row['id']]);

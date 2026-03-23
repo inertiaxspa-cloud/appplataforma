@@ -4,19 +4,26 @@ import 'package:uuid/uuid.dart';
 
 /// Wrapper around the Supabase client.
 ///
-/// Configure at build time via:
-///   flutter build windows \
-///     --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
-///     --dart-define=SUPABASE_ANON_KEY=eyJhbGci...
+/// Credentials are embedded at compile time. Override via:
+///   --dart-define=SUPABASE_URL=https://xxxx.supabase.co
+///   --dart-define=SUPABASE_ANON_KEY=eyJhbGci...
 ///
-/// If either constant is empty the service is disabled and all calls are no-ops.
+/// The anon key is a public client key — Row Level Security on the server
+/// is what enforces access control.
 class SupabaseService {
+  // Production credentials embedded as defaults.
+  // Override at build time with --dart-define=SUPABASE_URL=... / SUPABASE_ANON_KEY=...
   static const _url = String.fromEnvironment(
-      'SUPABASE_URL', defaultValue: '');
+      'SUPABASE_URL',
+      defaultValue: 'https://rldtkomtclolhbmrphgh.supabase.co');
   static const _key = String.fromEnvironment(
-      'SUPABASE_ANON_KEY', defaultValue: '');
+      'SUPABASE_ANON_KEY',
+      defaultValue:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+          'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZHRrb210Y2xvbGhibXJwaGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NzQ1OTQsImV4cCI6MjA4OTU1MDU5NH0.'
+          'uB9S--0zxvmO7UccotZRSen6KLRn4aeOuQe0n8MM5rs');
 
-  /// true if the app was compiled with Supabase credentials.
+  /// Always true — production credentials are embedded in the binary.
   static bool get isConfigured => _url.isNotEmpty && _key.isNotEmpty;
 
   static final SupabaseService instance = SupabaseService._();
@@ -40,7 +47,8 @@ class SupabaseService {
 
   /// Converts raw Supabase / network errors into human-readable Spanish strings.
   static String _friendlyError(dynamic e) {
-    final msg = e.toString().toLowerCase();
+    final raw = e.toString();
+    final msg = raw.toLowerCase();
     if (msg.contains('invalid login credentials') ||
         msg.contains('invalid_credentials')) {
       return 'Email o contraseña incorrectos';
@@ -49,16 +57,29 @@ class SupabaseService {
         msg.contains('already registered')) {
       return 'Este email ya tiene una cuenta';
     }
-    if (msg.contains('network request failed') ||
-        msg.contains('socketexception') ||
-        msg.contains('connection refused') ||
-        msg.contains('failed host lookup')) {
-      return 'Sin conexión a internet. Verifica tu red';
+    if (msg.contains('email not confirmed')) {
+      return 'Confirma tu email antes de iniciar sesión';
     }
     if (msg.contains('jwt expired') || msg.contains('token expired')) {
       return 'Sesión expirada. Vuelve a iniciar sesión';
     }
-    return 'Error inesperado. Intenta de nuevo';
+    // Network / server unreachable — could also be Supabase project paused.
+    if (msg.contains('network request failed') ||
+        msg.contains('socketexception') ||
+        msg.contains('connection refused') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('timeout')) {
+      return 'No se pudo conectar con el servidor. '
+          'Verifica tu internet o espera un momento si es el primer uso.';
+    }
+    // Pass through a sanitised version of the raw message so the user can
+    // report it precisely.
+    final sanitised = raw
+        .replaceAll('Exception: ', '')
+        .replaceAll('AuthException: ', '')
+        .replaceAll('PostgrestException: ', '');
+    if (sanitised.length > 120) return '${sanitised.substring(0, 120)}…';
+    return sanitised.isNotEmpty ? sanitised : 'Error inesperado. Intenta de nuevo';
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────

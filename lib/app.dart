@@ -179,23 +179,35 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
 
 // ── App entry ──────────────────────────────────────────────────────────────
 
-class InertiaXApp extends ConsumerWidget {
+class InertiaXApp extends ConsumerStatefulWidget {
   final String initialRoute;
 
   const InertiaXApp({super.key, this.initialRoute = '/'});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InertiaXApp> createState() => _InertiaXAppState();
+}
+
+class _InertiaXAppState extends ConsumerState<InertiaXApp> {
+  // Router created ONCE in initState — never recreated on theme/language rebuild.
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = _buildRouter(widget.initialRoute);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
-    final router   = _buildRouter(initialRoute);
     return MaterialApp.router(
       title: 'InertiaX Force',
       debugShowCheckedModeBanner: false,
-      // 'outdoor' ocupa el slot de tema claro con su propia paleta de alto contraste
       theme: settings.themeMode == 'outdoor' ? AppTheme.outdoor : AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: settings.flutterThemeMode,
-      routerConfig: router,
+      routerConfig: _router,
     );
   }
 }

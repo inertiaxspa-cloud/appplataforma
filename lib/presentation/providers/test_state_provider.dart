@@ -313,20 +313,61 @@ class TestStateNotifier extends StateNotifier<TestState> {
     final descentT = _phaseDetector.descentStartTime;
     final takeoffT = _phaseDetector.takeoffTime;
 
-    int descentIdx = 0, takeoffIdx = forceFiltered.length - 1;
+    // descentIdx: first sample at/after descent start.
+    int descentIdx = 0;
     if (descentT != null) {
       for (int i = 0; i < _timeData.length; i++) {
         if (_timeData[i] >= descentT) { descentIdx = i; break; }
       }
     }
+
+    // roughTakeoffIdx: the sample the phase detector labelled "takeoff".
+    // NOTE: the phase detector fires AFTER a 10-sample debounce, so this index
+    // is 10 ms into the flight phase (force ≈ 0–20 N). Do NOT use it directly
+    // as the takeoff boundary for metric computations.
+    int roughTakeoffIdx = forceFiltered.length - 1;
     if (takeoffT != null) {
       for (int i = _timeData.length - 1; i >= 0; i--) {
-        if (_timeData[i] <= takeoffT) { takeoffIdx = i; break; }
+        if (_timeData[i] <= takeoffT) { roughTakeoffIdx = i; break; }
       }
+    }
+
+    // ── STEP 1 — Propulsive peak: global max in [descentIdx, roughTakeoffIdx]
+    // This must come FIRST because the 10-sample debounce means roughTakeoffIdx
+    // is already in the flight phase (force ≈ 0), making any minimum-first
+    // search land in the flight region and corrupt every subsequent index.
+    int peakForceIdx = descentIdx;
+    double peakF = forceFiltered.isNotEmpty ? forceFiltered[descentIdx] : 0.0;
+    for (int i = descentIdx + 1; i <= roughTakeoffIdx && i < forceFiltered.length; i++) {
+      if (forceFiltered[i] > peakF) { peakF = forceFiltered[i]; peakForceIdx = i; }
+    }
+    // Sanity: if propulsive peak is implausibly low (< 50% BW) fall back to
+    // the global maximum of the whole recording (excludes nothing from noise).
+    if (peakF < bwN * 0.5 && forceFiltered.isNotEmpty) {
+      peakF = forceFiltered.reduce((a, b) => a > b ? a : b);
+    }
+
+    // ── STEP 2 — True takeoff: last sample ABOVE flight threshold after peak
+    // Walk forward from peakForceIdx; takeoffIdx is the last sample ≥ threshold.
+    final flightThr = _phaseDetector.effectiveFlightThresholdN;
+    int takeoffIdx = peakForceIdx; // conservative: at least at the peak
+    for (int i = peakForceIdx; i <= roughTakeoffIdx && i < forceFiltered.length; i++) {
+      if (forceFiltered[i] >= flightThr) takeoffIdx = i;
+    }
+
+    // ── STEP 3 — Squat bottom: minimum in [descentIdx, peakForceIdx]
+    // Searching only up to peakForceIdx prevents the flight-phase near-zero
+    // from being selected as the "minimum" (which was the root cause of
+    // peakForce = 19 N and concentricDuration = 0 ms).
+    int minIdx = descentIdx;
+    double minF = forceFiltered.isNotEmpty ? forceFiltered[descentIdx] : 0.0;
+    for (int i = descentIdx + 1; i <= peakForceIdx && i < forceFiltered.length; i++) {
+      if (forceFiltered[i] < minF) { minF = forceFiltered[i]; minIdx = i; }
     }
 
     // ── Impulse-momentum height ───────────────────────────────────────────
     // v = 0 at startIdx = 0 (beginning of settling, athlete at rest).
+    // Use the corrected takeoffIdx (last above-threshold sample, not debounced).
     final heightImpulseM = JumpMetrics.jumpHeightFromImpulse(
       forceN:      forceFiltered,
       timeS:       _timeData,
@@ -340,34 +381,12 @@ class TestStateNotifier extends StateNotifier<TestState> {
         : heightFlightM;
     final double heightCm = heightM * 100;
 
-    // ── Phase indices: squat bottom FIRST, then propulsive peak ──────────
-    // Finding peakForceIdx before minIdx was the root cause of
-    // "Fase concentrica = 0 ms" and "Impulso propulsivo = 0.0 N·s":
-    // with the old order, minIdx could land at or beyond takeoffIdx.
-
-    // Step 1: squat bottom = global minimum in [descentIdx, takeoffIdx]
-    int minIdx = descentIdx;
-    double minF = double.infinity;
-    for (int i = descentIdx; i <= takeoffIdx && i < forceFiltered.length; i++) {
-      if (forceFiltered[i] < minF) { minF = forceFiltered[i]; minIdx = i; }
-    }
-
-    // Step 2: propulsive peak = maximum from squat bottom to takeoff
-    int peakForceIdx = minIdx;
-    double peakF = -double.infinity;
-    for (int i = minIdx; i <= takeoffIdx && i < forceFiltered.length; i++) {
-      if (forceFiltered[i] > peakF) { peakF = forceFiltered[i]; peakForceIdx = i; }
-    }
-
     // ── Peak / mean force ─────────────────────────────────────────────────
-    // Use propulsive peak (not global max) to avoid landing spike contamination.
-    final peakForceN = peakF > 0 ? peakF : forceFiltered.reduce((a, b) => a > b ? a : b);
+    final peakForceN = peakF;
     final meanForceN =
         forceFiltered.fold(0.0, (s, f) => s + f) / forceFiltered.length;
 
-    // ── RFD / TTP: search onset from minIdx (not from 0!) ─────────────────
-    // Searching from 0 picks up the BW+20 threshold in the settling period,
-    // producing a near-zero or negative onsetIdx and corrupted RFD/TTP.
+    // ── RFD / TTP: onset = first sample past minIdx exceeding BW + 20 N ──
     int onsetIdx = minIdx;
     for (int i = minIdx; i <= takeoffIdx && i < forceFiltered.length; i++) {
       if (forceFiltered[i] > bwN + 20) { onsetIdx = i; break; }

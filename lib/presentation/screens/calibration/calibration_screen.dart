@@ -75,8 +75,13 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   double get _liveCvPct {
     if (_rawSums.length < 2) return 100;
     final m = _mean(_rawSums);
-    if (m.abs() < 1) return 100;
-    return _std(_rawSums) / m.abs() * 100;
+    final s = _std(_rawSums);
+    // Step 1 (tare/vacío): mean ≈ tare offset, often small relative to noise.
+    // Use absolute std normalized to a fixed scale (500 counts) so the empty
+    // platform doesn't show artificially high CV%.
+    // Step 2+ (with person): mean >> 500, so CV formula gives correct result.
+    final scale = m.abs() < 500 ? 500.0 : m.abs();
+    return s / scale * 100;
   }
 
   int get _collectProgress => _cAML.length;

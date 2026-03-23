@@ -113,12 +113,12 @@ class _SessionList extends StatelessWidget {
   }
 }
 
-class _SessionTile extends StatelessWidget {
+class _SessionTile extends ConsumerWidget {
   final Map<String, dynamic> session;
   const _SessionTile({required this.session});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final col          = context.col;
     final testTypeName = session['test_type'] as String? ?? 'cmj';
     final testType     = TestType.values.firstWhere(
@@ -150,7 +150,59 @@ class _SessionTile extends StatelessWidget {
 
     final athleteId = session['athlete_id'] as int?;
 
-    return Container(
+    final sessionId = session['id']?.toString() ?? testTypeName;
+    return Dismissible(
+      key: Key('session_$sessionId'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.danger.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
+      ),
+      confirmDismiss: (_) async {
+        final id = session['id'] as int?;
+        if (id == null) return false;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: col.surface,
+            title: const Text('Eliminar sesión'),
+            content:
+                const Text('¿Estás seguro? Esta acción no se puede deshacer.'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar')),
+              TextButton(
+                  style:
+                      TextButton.styleFrom(foregroundColor: AppColors.danger),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Eliminar')),
+            ],
+          ),
+        );
+        return confirmed == true;
+      },
+      onDismissed: (_) async {
+        final id = session['id'] as int?;
+        if (id != null) await DatabaseHelper.instance.deleteSession(id);
+        ref.invalidate(sessionHistoryProvider);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sesión eliminada'),
+              backgroundColor: AppColors.danger,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: col.surface,
@@ -225,7 +277,8 @@ class _SessionTile extends StatelessWidget {
           ),
         ),
       ),
-    );
+      ), // Container
+    ); // Dismissible
   }
 }
 
@@ -264,7 +317,7 @@ class _TestTypeIcon extends StatelessWidget {
     return Container(
       width: 40, height: 40,
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.15),
+        color: _color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(_icon, color: _color, size: 20),

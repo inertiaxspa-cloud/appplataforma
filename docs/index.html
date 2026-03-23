@@ -79,6 +79,12 @@
     .trend-flat { color:#8899AA; }
     canvas { max-height:220px; }
     .ath-card:hover { border-color:#00C9FF55; transform:translateY(-1px); transition:.15s; cursor:pointer; }
+    .btn-danger { background:transparent; border:1px solid #EF444466; color:#EF4444;
+                  padding:7px 16px; border-radius:8px; cursor:pointer; font-size:13px; }
+    .btn-danger:hover { background:#EF444422; border-color:#EF4444; }
+    .badge-dropJump  { background:#F59E0B22; color:#F59E0B; border:1px solid #F59E0B55; }
+    .badge-multiJump { background:#22C55E22; color:#22C55E; border:1px solid #22C55E55; }
+    .badge-cmjArms   { background:#00C9FF22; color:#00C9FF; border:1px solid #00C9FF55; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -187,7 +193,8 @@
                     onchange="renderRanking()">
               <option value="cmj">CMJ — Altura</option>
               <option value="sj">SJ — Altura</option>
-              <option value="dj">DJ — RSI</option>
+              <option value="dropJump">DJ — RSI</option>
+              <option value="multiJump">Multi-Salto — RSI</option>
               <option value="imtp">IMTP — Fuerza pico</option>
             </select>
           </div>
@@ -219,6 +226,7 @@
               <button class="date-btn active" onclick="setDateFilter(0,this)">Todo</button>
             </div>
             <button class="btn-ghost text-xs" onclick="openEditAthlete()">✏ Editar</button>
+            <button class="btn-ghost text-xs" style="color:#EF4444;border-color:#EF444466" onclick="confirmDeleteAthlete(selAthId)">🗑 Eliminar</button>
             <button class="btn-ghost text-xs" onclick="exportCSV()">⬇ CSV</button>
             <div class="flex gap-1">
               <button class="tab active" onclick="setTab('history',this)">Historial</button>
@@ -243,8 +251,8 @@
                   <option value="">Todos los tipos</option>
                   <option value="cmj">CMJ</option>
                   <option value="sj">SJ</option>
-                  <option value="dj">DJ</option>
-                  <option value="multijump">Multi-Salto</option>
+                  <option value="dropJump">DJ</option>
+                  <option value="multiJump">Multi-Salto</option>
                   <option value="imtp">IMTP</option>
                   <option value="cop">Equilibrio</option>
                 </select>
@@ -352,9 +360,9 @@ let selAthId = null, charts = {}, dateFilterDays = 0;
 let athleteAllUuids = {};
 
 // ── Constants ───────────────────────────────────────────────────────────────
-const TYPE_LABELS = { cmj:'CMJ', sj:'SJ', dj:'DJ', multijump:'Multi-Salto', imtp:'IMTP', cop:'Equilibrio' };
-const TYPE_ICONS  = { cmj:'↑', sj:'⬆', dj:'⤵', multijump:'↕', imtp:'💪', cop:'⚖' };
-const TYPE_COLORS = { cmj:'#00C9FF', sj:'#A78BFA', dj:'#F59E0B', multijump:'#22C55E', imtp:'#EF4444', cop:'#3B82F6' };
+const TYPE_LABELS = { cmj:'CMJ', cmjArms:'CMJ+Brazos', sj:'SJ', dropJump:'DJ', dj:'DJ', multiJump:'Multi-Salto', multijump:'Multi-Salto', imtp:'IMTP', cop:'Equilibrio' };
+const TYPE_ICONS  = { cmj:'↑', cmjArms:'↑', sj:'⬆', dropJump:'⤵', dj:'⤵', multiJump:'↕', multijump:'↕', imtp:'💪', cop:'⚖' };
+const TYPE_COLORS = { cmj:'#00C9FF', cmjArms:'#00C9FF', sj:'#A78BFA', dropJump:'#F59E0B', dj:'#F59E0B', multiJump:'#22C55E', multijump:'#22C55E', imtp:'#EF4444', cop:'#3B82F6' };
 
 function fmt(v,u='',dec=1){ return v!=null && v!=='' ? Number(v).toFixed(dec)+u : '—'; }
 
@@ -712,11 +720,12 @@ function renderKPIs() {
 // ── Main metric helper ───────────────────────────────────────────────────────
 function mainMetric(s) {
   const m = s.metrics_json||{};
-  if (['cmj','sj'].includes(s.test_type)) return { val:fmt(m.jump_height_cm,'cm'), raw:m.jump_height_cm };
-  if (s.test_type==='dj')        return { val:fmt(m.rsi_mod,'',2),                   raw:m.rsi_mod };
-  if (s.test_type==='multijump') return { val:fmt(m.mean_rsi_mod,'',2),              raw:m.mean_rsi_mod };
-  if (s.test_type==='imtp')      return { val:fmt(m.peak_force_n!=null?m.peak_force_n/1000:null,'kN',2), raw:m.peak_force_n };
-  if (s.test_type==='cop')       return { val:fmt(m.path_length_mm,'mm',0),          raw:m.path_length_mm };
+  const tt = s.test_type;
+  if (['cmj','sj','cmjArms'].includes(tt)) return { val:fmt(m.jump_height_cm,'cm'), raw:m.jump_height_cm };
+  if (tt==='dropJump'||tt==='dj')          return { val:fmt(m.rsi_mod,'',2), raw:m.rsi_mod };
+  if (tt==='multiJump'||tt==='multijump')  return { val:fmt(m.mean_rsi_mod,'',2), raw:m.mean_rsi_mod };
+  if (tt==='imtp')      return { val:fmt(m.peak_force_n!=null?m.peak_force_n/1000:null,'kN',2), raw:m.peak_force_n };
+  if (tt==='cop')       return { val:fmt(m.path_length_mm,'mm',0), raw:m.path_length_mm };
   return { val:'—', raw:null };
 }
 
@@ -766,7 +775,9 @@ function renderHistory() {
       ? new Date(s.performed_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})
       : '—';
     const mm   = mainMetric(s);
-    const symRaw = m.symmetry_pct != null ? Number(m.symmetry_pct) : null;
+    const symRaw = m.symmetry?.asymmetry_index_pct != null
+      ? 100 - Number(m.symmetry.asymmetry_index_pct)
+      : (m.symmetry_pct != null ? Number(m.symmetry_pct) : null);
     const sym    = symRaw != null ? symRaw.toFixed(1)+'%' : '—';
     const symCls = symRaw != null && symRaw < 90 ? 'style="color:#EF4444;font-weight:600"' : '';
     const peak = m.peak_force_n!=null ? (m.peak_force_n/9.81).toFixed(1)+' kg' : '—';
@@ -826,55 +837,67 @@ function openSessionModal(sessionId) {
     `<span class="badge badge-${s.test_type} mr-2">${TYPE_ICONS[s.test_type]||''} ${TYPE_LABELS[s.test_type]||s.test_type}</span>`;
   document.getElementById('modal-subtitle').textContent = date;
 
-  // Build metrics per test type
-  let metricsHtml = '';
+  // Helper to extract symmetry % from nested symmetry object
+  function symPct(m) {
+    if (m.symmetry && m.symmetry.asymmetry_index_pct != null)
+      return 100 - m.symmetry.asymmetry_index_pct;
+    if (m.symmetry_pct != null) return m.symmetry_pct; // legacy
+    return null;
+  }
+
   const row = (label, val) => `
     <div style="background:#0D0F14; border-radius:8px; padding:10px 12px">
       <p class="text-xs mb-1" style="color:#8899AA">${label}</p>
       <p class="font-bold" style="color:#00C9FF;font-size:16px">${val}</p>
     </div>`;
 
-  if (['cmj','sj'].includes(s.test_type)) {
+  let metricsHtml = '';
+  if (['cmj','sj','cmjArms'].includes(s.test_type)) {
+    const sym = symPct(m);
     metricsHtml = [
       row('Altura de salto', fmt(m.jump_height_cm,'cm')),
       row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/9.81:null,' kg',1)),
-      row('Impulso neto', fmt(m.net_impulse_ns,'N·s',1)),
-      row('Vel. despegue', fmt(m.takeoff_velocity_ms,' m/s',2)),
-      row('Potencia pico', fmt(m.peak_power_w,'W',0)),
-      row('Pot. relativa', fmt(m.relative_peak_power_wkg,' W/kg',2)),
-      row('Simetría', fmt(m.symmetry_pct,'%')),
-      row('RSI Modificado', fmt(m.rsi_mod,'',2)),
+      row('Impulso propulsivo', fmt(m.propulsive_impulse_ns,'N·s',1)),
       row('Tiempo vuelo', fmt(m.flight_time_ms,'ms',0)),
-      row('Tiempo contracción', fmt(m.contraction_time_ms,'ms',0)),
+      row('Potencia pico (Sayers)', fmt(m.peak_power_sayers_w,'W',0)),
+      row('Potencia pico (impulso)', fmt(m.peak_power_impulse_w,'W',0)),
+      row('Simetría', sym!=null?fmt(sym,'%'):' —'),
+      row('Fase excéntrica', fmt(m.eccentric_duration_ms,'ms',0)),
+      row('Fase concéntrica', fmt(m.concentric_duration_ms,'ms',0)),
+      row('RFD 100ms', fmt(m.rfd_100ms,'N/s',0)),
+      row('RFD 200ms', fmt(m.rfd_200ms,'N/s',0)),
       row('Peso corporal', fmt(m.body_weight_n!=null?m.body_weight_n/9.81:null,' kg',1)),
     ].join('');
-  } else if (s.test_type === 'dj') {
+  } else if (s.test_type === 'dropJump') {
+    const sym = symPct(m);
     metricsHtml = [
       row('Altura de salto', fmt(m.jump_height_cm,'cm')),
       row('RSI Modificado', fmt(m.rsi_mod,'',2)),
       row('Tiempo contacto', fmt(m.contact_time_ms,'ms',0)),
       row('Tiempo vuelo', fmt(m.flight_time_ms,'ms',0)),
       row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/9.81:null,' kg',1)),
-      row('Simetría', fmt(m.symmetry_pct,'%')),
+      row('Potencia pico', fmt(m.peak_power_sayers_w,'W',0)),
+      row('Simetría', sym!=null?fmt(sym,'%'):' —'),
     ].join('');
-  } else if (s.test_type === 'multijump') {
+  } else if (s.test_type === 'multiJump') {
     metricsHtml = [
       row('RSI Medio', fmt(m.mean_rsi_mod,'',2)),
       row('Altura media', fmt(m.mean_height_cm,'cm')),
-      row('Mejor altura', fmt(m.best_height_cm,'cm')),
       row('Nº saltos', m.jump_count ?? '—'),
-      row('T. contacto medio', fmt(m.mean_contact_ms,'ms',0)),
-      row('T. vuelo medio', fmt(m.mean_flight_ms,'ms',0)),
+      row('T. contacto medio', fmt(m.mean_contact_time_ms,'ms',0)),
+      row('Fatiga', fmt(m.fatigue_pct,'%',1)),
+      row('Variabilidad', fmt(m.variability_pct,'%',1)),
     ].join('');
   } else if (s.test_type === 'imtp') {
+    const sym = symPct(m);
     metricsHtml = [
       row('Fuerza pico', fmt(m.peak_force_n!=null?m.peak_force_n/1000:null,'kN',2)),
       row('Fuerza pico / BW', fmt(m.peak_force_bw,'× BW',2)),
-      row('RFD 0-100ms', fmt(m.rfd_0_100_n_s,'N/s',0)),
-      row('RFD 0-200ms', fmt(m.rfd_0_200_n_s,'N/s',0)),
-      row('Fuerza a 100ms', fmt(m.force_at_100ms_n,'N',0)),
-      row('Fuerza a 200ms', fmt(m.force_at_200ms_n,'N',0)),
-      row('Simetría', fmt(m.symmetry_pct,'%')),
+      row('RFD 50ms', fmt(m.rfd_at50ms,'N/s',0)),
+      row('RFD 100ms', fmt(m.rfd_at100ms,'N/s',0)),
+      row('RFD 200ms', fmt(m.rfd_at200ms,'N/s',0)),
+      row('Impulso neto', fmt(m.net_impulse_ns,'N·s',1)),
+      row('Simetría', sym!=null?fmt(sym,'%'):' —'),
     ].join('');
   } else if (s.test_type === 'cop') {
     metricsHtml = [
@@ -883,7 +906,7 @@ function openSessionModal(sessionId) {
       row('Vel. media', fmt(m.mean_velocity_mm_s,'mm/s',1)),
       row('Rango ML', fmt(m.range_ml_mm,'mm',1)),
       row('Rango AP', fmt(m.range_ap_mm,'mm',1)),
-      row('Frec. dominante', fmt(m.dominant_freq_hz,'Hz',2)),
+      row('Simetría', fmt(m.symmetry_pct,'%',1)),
       row('Condición', m.condition ?? '—'),
       row('Postura', m.stance ?? '—'),
     ].join('');
@@ -897,7 +920,11 @@ function openSessionModal(sessionId) {
   document.getElementById('modal-body').innerHTML = `
     <div class="metric-detail-grid">${metricsHtml}</div>
     ${notes}
-    <p class="text-xs mt-4 text-center" style="color:#2D3748">ID: ${s.id}</p>`;
+    <div class="flex gap-2 mt-5">
+      <button class="btn-ghost text-xs flex-1" style="color:#EF4444;border-color:#EF444466"
+              onclick="confirmDeleteSession('${s.id}')">🗑 Eliminar sesión</button>
+    </div>
+    <p class="text-xs mt-3 text-center" style="color:#2D3748">ID: ${s.id}</p>`;
 
   document.getElementById('session-modal').classList.remove('hidden');
 }
@@ -906,6 +933,57 @@ function closeModal(e) {
   if (!e || e.target === document.getElementById('session-modal')) {
     document.getElementById('session-modal').classList.add('hidden');
   }
+}
+
+// ── Delete session ────────────────────────────────────────────────────────────
+async function confirmDeleteSession(sessionId) {
+  if (!confirm('¿Eliminar esta sesión? Esta acción no se puede deshacer.')) return;
+  try {
+    const { error } = await supa.from('test_sessions').delete().eq('id', sessionId);
+    if (error) throw error;
+    // Remove from local state
+    sessions = sessions.filter(s => s.id !== sessionId);
+    allSessions = allSessions.filter(s => s.id !== sessionId);
+    closeModal();
+    renderKPIs();
+    renderHistory();
+    renderOverview();
+    renderRanking();
+    showToast('Sesión eliminada correctamente', 'success');
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+// ── Delete athlete ────────────────────────────────────────────────────────────
+async function confirmDeleteAthlete(athleteId) {
+  const ath = allAthletes.find(a => a.id === athleteId);
+  if (!confirm(`¿Eliminar al atleta "${ath?.name}"?\nTambién se eliminarán TODAS sus sesiones. Esta acción no se puede deshacer.`)) return;
+  try {
+    // Delete all sessions first (cascade should handle it but let's be explicit)
+    await supa.from('test_sessions').delete().eq('athlete_uuid', athleteId);
+    const { error } = await supa.from('athletes').delete().eq('id', athleteId);
+    if (error) throw error;
+    allAthletes = allAthletes.filter(a => a.id !== athleteId);
+    athletes = athletes.filter(a => a.id !== athleteId);
+    allSessions = allSessions.filter(s => s.athlete_uuid !== athleteId);
+    showOverview();
+    showToast('Atleta eliminado correctamente', 'success');
+  } catch(e) {
+    showToast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+// ── Toast notification ────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  const el = document.createElement('div');
+  const bg = type === 'success' ? '#22C55E' : '#EF4444';
+  el.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:100;background:${bg};
+    color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);transition:opacity .3s;`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
 }
 
 document.addEventListener('keydown', e => {
@@ -1016,7 +1094,7 @@ function renderCharts() {
 // ── Summary ───────────────────────────────────────────────────────────────────
 function renderSummary() {
   const fs = filteredSessions();
-  const types = ['cmj','sj','dj','multijump','imtp','cop'];
+  const types = ['cmj','cmjArms','sj','dropJump','dj','multiJump','multijump','imtp','cop'];
   const el = document.getElementById('summary-cards');
 
   const cards = types.map(type => {
@@ -1034,7 +1112,7 @@ function renderSummary() {
       if (v === Infinity || v === 0) return '—';
       if (type==='imtp') return (v/1000).toFixed(2)+'kN';
       if (type==='cop')  return v.toFixed(0)+'mm';
-      if (['dj','multijump'].includes(type)) return v.toFixed(2);
+      if (['dj','dropJump','multijump','multiJump'].includes(type)) return v.toFixed(2);
       return v.toFixed(1)+'cm';
     };
 
@@ -1155,7 +1233,7 @@ function renderRanking() {
   const medals = ['🥇','🥈','🥉'];
   const fmtBest = (v) => {
     if (type === 'imtp') return (v/1000).toFixed(2) + ' kN';
-    if (['dj','multijump'].includes(type)) return v.toFixed(2);
+    if (['dj','dropJump','multijump','multiJump'].includes(type)) return v.toFixed(2);
     return v.toFixed(1) + ' cm';
   };
 
