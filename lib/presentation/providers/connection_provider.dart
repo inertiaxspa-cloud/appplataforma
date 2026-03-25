@@ -106,9 +106,11 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     }
   }
 
+  // C7 fix: reset _connecting, wrap close in try-catch, clear error.
   Future<void> disconnect() async {
-    await _ds.close();
-    state = state.copyWith(isConnected: false, connectedName: null);
+    _connecting = false;
+    try { await _ds.close(); } catch (_) {}
+    state = state.copyWith(isConnected: false, connectedName: null, error: null);
   }
 }
 

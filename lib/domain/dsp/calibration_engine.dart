@@ -140,7 +140,11 @@ class CalibrationEngine {
       aug[col] = aug[maxRow];
       aug[maxRow] = swap;
 
-      if (aug[col][col].abs() < 1e-12) continue;
+      // C5 fix: throw instead of silently skipping singular columns.
+      if (aug[col][col].abs() < 1e-10) {
+        throw Exception(
+            'Calibration matrix is singular at column $col — add more distinct weight points');
+      }
 
       // Eliminate all other rows
       for (int r = 0; r < n; r++) {
@@ -152,8 +156,13 @@ class CalibrationEngine {
       }
     }
 
-    return List.generate(n, (i) =>
-        aug[i][i].abs() < 1e-12 ? 0.0 : aug[i][n] / aug[i][i]);
+    return List.generate(n, (i) {
+      if (aug[i][i].abs() < 1e-10) {
+        throw Exception(
+            'Singular calibration — coefficient $i cannot be determined');
+      }
+      return aug[i][n] / aug[i][i];
+    });
   }
 
   static double _pow(double base, int exp) {

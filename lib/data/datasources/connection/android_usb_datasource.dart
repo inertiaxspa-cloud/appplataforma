@@ -60,6 +60,11 @@ class AndroidUsbDataSource implements ConnectionDataSource {
   void _onData(dynamic chunk) {
     final bytes = chunk as List<int>;
     _lineBuffer += String.fromCharCodes(bytes);
+    // C8 fix: prevent unbounded growth if firmware sends data without newlines
+    // (e.g. USB framing errors). Keep last 1 KB to preserve partial line.
+    if (_lineBuffer.length > 10240) {
+      _lineBuffer = _lineBuffer.substring(_lineBuffer.length - 1024);
+    }
     while (_lineBuffer.contains('\n')) {
       final idx = _lineBuffer.indexOf('\n');
       final line = _lineBuffer.substring(0, idx).trim();

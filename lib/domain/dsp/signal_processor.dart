@@ -46,14 +46,11 @@ class SignalProcessor {
     final nowS = sample.timestampUs / 1e6;
     if (_firstATimestamp < 0) _firstATimestamp = nowS;
 
+    // C1 fix: removed unreachable `if (_platformCount == 2)` inner branch.
     if (_platformCount == 0) {
-      if (_platformCount == 2) {
-        // Already detected via Platform B packet — nothing to do.
-      } else if (_lastBTimestamp >= 0) {
-        // Platform B has arrived at least once — 2-platform mode.
+      if (_lastBTimestamp >= 0) {
         _platformCount = 2;
       } else if ((nowS - _firstATimestamp) * 1000 > _platformBTimeoutMs) {
-        // No Platform B received within timeout — 1-platform mode.
         _platformCount = 1;
       }
     }
@@ -94,16 +91,22 @@ class SignalProcessor {
       forcePlatformA = cal.rawToNewton(al_raw + ar_raw);
 
       final aMasterRaw = -(sample.adcMasterL + sample.adcMasterR)
-          - (offsets['A_L'] ?? 0.0) - (offsets['A_R'] ?? 0.0);
+          - (offsets['A_ML'] ?? offsets['A_L'] ?? 0.0)
+          - (offsets['A_MR'] ?? offsets['A_R'] ?? 0.0);
+      // C3 fix: apply slave-board offsets (were missing — caused asymmetry bias).
       final aSlaveRaw  = sample.hasSlaveTimeout ? 0.0
-          : -(sample.adcSlaveL + sample.adcSlaveR).toDouble();
+          : -(sample.adcSlaveL + sample.adcSlaveR).toDouble()
+              - (offsets['A_SL'] ?? 0.0) - (offsets['A_SR'] ?? 0.0);
       forceMasterSide = cal.rawToNewton(aMasterRaw);
       forceSlaveSide  = cal.rawToNewton(aSlaveRaw);
     }
 
     // ── Platform B ──────────────────────────────────────────────────────────
     double forceBL = 0, forceBR = 0, forcePlatformB = 0;
-    if (_platformCount == 2) {
+    // C2 fix: discard stale B data if no B sample received within timeout.
+    final bStale = _platformCount == 2 && _lastBTimestamp >= 0
+        && (nowS - _lastBTimestamp) > _platformBTimeoutMs / 1000.0;
+    if (_platformCount == 2 && !bStale) {
       final rawBML = (-_lastRawBML).toDouble();
       final rawBMR = (-_lastRawBMR).toDouble();
       final rawBSL = _lastBSlaveTimeout ? 0.0 : (-_lastRawBSL).toDouble();

@@ -175,10 +175,13 @@ class SyncNotifier extends StateNotifier<SyncState> {
   Future<void> syncPending() async {
     if (!state.isAuthenticated || _syncing) return;
     _syncing = true;
-    // También reintentar sesiones con error previo
+    // Re-queue all non-pending sessions: error AND synced.
+    // If the user deleted rows from the Supabase dashboard, local 'synced'
+    // records need re-upload.  The upsert call in Supabase is idempotent,
+    // so re-uploading an already-present row is harmless.
     final db0 = await DatabaseHelper.instance.database;
     await db0.update('test_sessions', {'sync_status': 'pending'},
-        where: "sync_status = 'error'");
+        where: "sync_status IN ('error', 'synced')");
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
 
     try {

@@ -93,11 +93,12 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
 
     _t.addLast(tRel);
     _fTotal.addLast(processed.forceTotal);
-    // Single platform → left=master board, right=slave board
-    // Dual platform   → left=Platform A,   right=Platform B
+    // Symmetry fix: use actual Left/Right columns (not front/back board).
+    // Single platform → left column (masterL+slaveL), right column (masterR+slaveR)
+    // Dual platform   → left=Platform A, right=Platform B
     if (processed.platformCount == 1) {
-      _fLeft.addLast(processed.forceMasterSide);
-      _fRight.addLast(processed.forceSlaveSide);
+      _fLeft.addLast(processed.forceAL);
+      _fRight.addLast(processed.forceAR);
     } else {
       _fLeft.addLast(processed.forcePlatformA);
       _fRight.addLast(processed.forcePlatformB);
@@ -122,10 +123,21 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
       currentSmoothedN: processed.smoothedTotal,
       currentRawSum:    processed.rawSumA,
       platformCount:    processed.platformCount,
-      leftPct:  processed.platformCount == 1
-          ? processed.masterPercent : processed.leftPercent,
-      rightPct: processed.platformCount == 1
-          ? processed.slavePercent  : processed.rightPercent,
+      // Symmetry fix: use left/right column percentages (not master/slave).
+      leftPct: (() {
+        if (processed.platformCount == 1) {
+          final t = processed.forceAL + processed.forceAR;
+          return t > 0 ? processed.forceAL / t * 100 : 50.0;
+        }
+        return processed.leftPercent;
+      })(),
+      rightPct: (() {
+        if (processed.platformCount == 1) {
+          final t = processed.forceAL + processed.forceAR;
+          return t > 0 ? processed.forceAR / t * 100 : 50.0;
+        }
+        return processed.rightPercent;
+      })(),
       samplesReceived:     n,
       currentForceALN:     processed.forceAL,
       currentForceARN:     processed.forceAR,

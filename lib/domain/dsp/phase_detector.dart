@@ -76,7 +76,9 @@ class PhaseDetector {
   /// Feed a processed sample. Returns a [PhaseEvent] on transition, else null.
   PhaseEvent? update(ProcessedSample sample) {
     final t = sample.timestampS;
-    final f = sample.smoothedTotal;
+    // C9 fix: clamp negative forces to 0 — calibration errors or ADC drift
+    // can produce slightly negative values that corrupt settling and thresholds.
+    final f = sample.smoothedTotal < 0 ? 0.0 : sample.smoothedTotal;
 
     switch (_phase) {
       case JumpPhase.idle:

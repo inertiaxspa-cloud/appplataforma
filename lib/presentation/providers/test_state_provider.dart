@@ -77,8 +77,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
   final List<double> _forceAData      = [];
   final List<double> _forceBData      = [];
   // 1-platform symmetry: master board side vs slave board side (Platform A)
-  final List<double> _forceMasterData = [];
-  final List<double> _forceSlaveData  = [];
+  // Symmetry fix: accumulate left/right column forces (not master/slave board).
+  final List<double> _forceLeftData  = [];
+  final List<double> _forceRightData = [];
 
   // Multi-jump tracking.
   final List<SingleJumpData> _jumps = [];
@@ -109,7 +110,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     _forceData.clear(); _timeData.clear();
     _forceAData.clear(); _forceBData.clear();
-    _forceMasterData.clear(); _forceSlaveData.clear();
+    _forceLeftData.clear(); _forceRightData.clear();
     _jumps.clear();
     _mjContactStart = 0;
     _phaseDetector.reset();
@@ -129,7 +130,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
           next.whenData(_onRawSample);
           // Si se pierde la conexión durante el test, marcarlo como fallido
           // en lugar de dejarlo congelado en estado 'running'.
-          if (next is AsyncError && state.status == TestStatus.running) {
+          // A9 fix: also detect connection loss during settling (was: only running).
+          if (next is AsyncError && (state.status == TestStatus.running || state.status == TestStatus.settling)) {
             state = state.copyWith(
               status: TestStatus.failed,
               statusMessage: 'Conexión perdida. Reconecta el dispositivo.',
@@ -156,8 +158,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
       _timeData.add(processed.timestampS);
       _forceAData.add(processed.forcePlatformA);
       _forceBData.add(processed.forcePlatformB);
-      _forceMasterData.add(processed.forceMasterSide);
-      _forceSlaveData.add(processed.forceSlaveSide);
+      // Symmetry: left column (masterL+slaveL), right column (masterR+slaveR)
+      _forceLeftData.add(processed.forceAL);
+      _forceRightData.add(processed.forceAR);
     }
 
     if (event != null) _handlePhaseEvent(event, processed);
@@ -192,6 +195,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
         );
 
       case JumpPhase.landed:
+        // C10 fix: ignore duplicate landing events if already processing.
+        if (state.phase == JumpPhase.landed) break;
         HapticFeedback.heavyImpact();
         if (state.testType == TestType.multiJump) {
           _recordMultiJump(processed);
@@ -296,6 +301,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
   void _computeAndFinish(int platformCount) {
     _rawSub?.close();
     _rawSub = null;
+
+    // C6 fix: CoP results are computed in cop_screen.dart, not here.
+    if (state.testType == TestType.cop) return;
 
     if (_forceData.isEmpty || _timeData.isEmpty) {
       if (_ref.read(settingsProvider).soundFeedback) SoundService.error();
@@ -491,11 +499,12 @@ class TestStateNotifier extends StateNotifier<TestState> {
     final symmetry = platformCount >= 2
         ? JumpMetrics.symmetry2Platform(
             totalPlatformAN: totalA, totalPlatformBN: totalB, useLsi: useLsi)
+        // Symmetry fix: use actual L/R column data (not master/slave board).
         : JumpMetrics.symmetry1Platform(
-            masterSideN: _forceMasterData.isEmpty ? 0.0
-                : _forceMasterData.fold(0.0, (s, f) => s + f) / _forceMasterData.length,
-            slaveSideN: _forceSlaveData.isEmpty ? 0.0
-                : _forceSlaveData.fold(0.0, (s, f) => s + f) / _forceSlaveData.length,
+            masterSideN: _forceLeftData.isEmpty ? 0.0
+                : _forceLeftData.fold(0.0, (s, f) => s + f) / _forceLeftData.length,
+            slaveSideN: _forceRightData.isEmpty ? 0.0
+                : _forceRightData.fold(0.0, (s, f) => s + f) / _forceRightData.length,
             useLsi: useLsi);
 
     _rawSub?.close();

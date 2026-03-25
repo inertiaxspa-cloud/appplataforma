@@ -31,6 +31,8 @@ class DatabaseHelper {
     return openDatabase(
       dbPath,
       version: _dbVersion,
+      // C4 fix: enable FK enforcement so ON DELETE CASCADE actually works.
+      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: _createTables,
       onUpgrade: _migrate,
     );
