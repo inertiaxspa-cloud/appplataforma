@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ── Permisos de red (Supabase / PdfGoogleFonts) ── -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <!-- ── USB OTG — plataformas de fuerza (usb_serial) ── -->
+    <uses-feature android:name="android.hardware.usb.host" android:required="false"/>
+
     <application
         android:label="InertiaX Force"
         android:name="${applicationName}"
