@@ -191,7 +191,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
       case _ImtpPhase.countdown:
         return OutlinedButton.icon(
           icon: const Icon(Icons.close, size: 18),
-          label: const Text('Cancelar'),
+          label: Text(AppStrings.get('cancel')),
           style: OutlinedButton.styleFrom(
             foregroundColor: context.col.textSecondary,
             side: BorderSide(color: context.col.border),

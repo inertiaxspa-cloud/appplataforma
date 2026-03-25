@@ -146,7 +146,7 @@ class _AthletePicker extends StatelessWidget {
           items: [
             DropdownMenuItem<int?>(
               value: null,
-              child: Text('— Sin seleccionar —',
+              child: Text(AppStrings.get('none_selected'),
                   style: TextStyle(color: col.textSecondary, fontSize: 13)),
             ),
             ...athletes.map((a) => DropdownMenuItem<int?>(
@@ -218,7 +218,7 @@ class _ComparisonBody extends ConsumerWidget {
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
-          child: Text('Error: $e',
+          child: Text('${AppStrings.get('error_loading')}: $e',
               style: const TextStyle(color: AppColors.danger))),
       data: (rows) {
         // Parse result JSON from each session row.
@@ -254,7 +254,7 @@ class _ComparisonBody extends ConsumerWidget {
           children: [
             if (sessions.length > 8) ...[
               Text(
-                'Mostrando las últimas 8 de ${sessions.length} sesiones',
+                '${AppStrings.get('showing_last_n')} ${sessions.length} ${AppStrings.get('sessions_word')}',
                 style: const TextStyle(
                     fontSize: 11, color: AppColors.textSecondary),
               ),
@@ -290,44 +290,29 @@ class _TrendChart extends StatelessWidget {
     final r = sessions.first.result;
     return switch (r) {
       DropJumpResult _ => (
-          'Altura de Salto',
-          sessions
-              .map((s) => (s.result as DropJumpResult).jumpHeightCm)
-              .toList(),
-          'cm',
-          false,
+          AppStrings.get('jump_height_short'),
+          sessions.map((s) => (s.result as DropJumpResult).jumpHeightCm).toList(),
+          'cm', false,
         ),
       JumpResult _ => (
-          'Altura de Salto',
-          sessions
-              .map((s) => (s.result as JumpResult).jumpHeightCm)
-              .toList(),
-          'cm',
-          false,
+          AppStrings.get('jump_height_short'),
+          sessions.map((s) => (s.result as JumpResult).jumpHeightCm).toList(),
+          'cm', false,
         ),
       MultiJumpResult _ => (
-          'Altura Media',
-          sessions
-              .map((s) => (s.result as MultiJumpResult).meanHeightCm)
-              .toList(),
-          'cm',
-          false,
+          AppStrings.get('mean_height_short'),
+          sessions.map((s) => (s.result as MultiJumpResult).meanHeightCm).toList(),
+          'cm', false,
         ),
       ImtpResult _ => (
-          'Fuerza Pico',
-          sessions
-              .map((s) => (s.result as ImtpResult).peakForceN)
-              .toList(),
-          'N',
-          false,
+          AppStrings.get('peak_force_short'),
+          sessions.map((s) => (s.result as ImtpResult).peakForceN).toList(),
+          'N', false,
         ),
       CoPResult _ => (
-          'Área Elipse',
-          sessions
-              .map((s) => (s.result as CoPResult).areaEllipseMm2)
-              .toList(),
-          'mm²',
-          true,
+          AppStrings.get('ellipse_area_short'),
+          sessions.map((s) => (s.result as CoPResult).areaEllipseMm2).toList(),
+          'mm²', true,
         ),
     };
   }
@@ -481,7 +466,7 @@ class _TrendChart extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 8),
             child: Text(
-              '${lowerIsBetter ? "Mejor (mín)" : "Mejor"}: '
+              '${lowerIsBetter ? AppStrings.get('best_min_label') : AppStrings.get('best_max_label')}: '
               '${bestVal.toStringAsFixed(2)} $unit  ·  '
               '${DateFormat("d MMM yyyy", AppStrings.currentLanguage).format(sessions[bestIndex].date)}',
               style: const TextStyle(
@@ -527,48 +512,48 @@ class _MetricsTable extends StatelessWidget {
   }
 
   List<_MetricSpec> _jumpSpecs() => [
-    _MetricSpec('Altura salto',      'cm',  false, (r) => (r as JumpResult).jumpHeightCm),
-    _MetricSpec('Tiempo vuelo',      'ms',  false, (r) => (r as JumpResult).flightTimeMs),
-    _MetricSpec('Fuerza pico',       'N',   false, (r) => (r as JumpResult).peakForceN),
-    _MetricSpec('Potencia pico',     'W',   false, (r) => (r as JumpResult).peakPowerImpulseW),
-    _MetricSpec('Impulso propulsivo','Ns',  false, (r) => (r as JumpResult).propulsiveImpulseNs),
-    _MetricSpec('RFD @100ms',        'N/s', false, (r) => (r as JumpResult).rfdAt100ms),
-    _MetricSpec('T. hasta F.pico',   'ms',  true,  (r) => (r as JumpResult).timeToPeakForceMs),
-    _MetricSpec('Asimetría',         '%',   true,  (r) => (r as JumpResult).symmetry.asymmetryIndexPct),
+    _MetricSpec(AppStrings.get('jump_height_short'),       'cm',  false, (r) => (r as JumpResult).jumpHeightCm),
+    _MetricSpec(AppStrings.get('flight_time_short'),       'ms',  false, (r) => (r as JumpResult).flightTimeMs),
+    _MetricSpec(AppStrings.get('peak_force_short'),        'N',   false, (r) => (r as JumpResult).peakForceN),
+    _MetricSpec(AppStrings.get('peak_power_short'),        'W',   false, (r) => (r as JumpResult).peakPowerImpulseW),
+    _MetricSpec(AppStrings.get('propulsive_impulse_short'),'Ns',  false, (r) => (r as JumpResult).propulsiveImpulseNs),
+    _MetricSpec(AppStrings.get('rfd_100ms_short'),         'N/s', false, (r) => (r as JumpResult).rfdAt100ms),
+    _MetricSpec(AppStrings.get('time_to_peak_short'),      'ms',  true,  (r) => (r as JumpResult).timeToPeakForceMs),
+    _MetricSpec(AppStrings.get('asymmetry_short'),         '%',   true,  (r) => (r as JumpResult).symmetry.asymmetryIndexPct),
   ];
 
   List<_MetricSpec> _dropJumpSpecs() => [
     ..._jumpSpecs(),
-    _MetricSpec('T. contacto', 'ms', true,  (r) => (r as DropJumpResult).contactTimeMs),
-    _MetricSpec('RSI-mod',     '',   false, (r) => (r as DropJumpResult).rsiMod),
+    _MetricSpec(AppStrings.get('contact_time_short'), 'ms', true,  (r) => (r as DropJumpResult).contactTimeMs),
+    _MetricSpec(AppStrings.get('rsi_mod_short'),      '',   false, (r) => (r as DropJumpResult).rsiMod),
   ];
 
   List<_MetricSpec> _multiJumpSpecs() => [
-    _MetricSpec('Altura media',      'cm',  false, (r) => (r as MultiJumpResult).meanHeightCm),
-    _MetricSpec('T. contacto medio', 'ms',  true,  (r) => (r as MultiJumpResult).meanContactTimeMs),
-    _MetricSpec('RSI-mod medio',     '',    false, (r) => (r as MultiJumpResult).meanRsiMod),
-    _MetricSpec('Fatiga',            '%',   true,  (r) => (r as MultiJumpResult).fatiguePercent),
-    _MetricSpec('Variabilidad',      '%',   true,  (r) => (r as MultiJumpResult).variabilityPercent),
-    _MetricSpec('Nº saltos',         '',    false, (r) => (r as MultiJumpResult).jumpCount.toDouble()),
+    _MetricSpec(AppStrings.get('mean_height_short'),  'cm',  false, (r) => (r as MultiJumpResult).meanHeightCm),
+    _MetricSpec(AppStrings.get('mean_contact_short'), 'ms',  true,  (r) => (r as MultiJumpResult).meanContactTimeMs),
+    _MetricSpec(AppStrings.get('mean_rsi_short'),     '',    false, (r) => (r as MultiJumpResult).meanRsiMod),
+    _MetricSpec(AppStrings.get('fatigue_short'),      '%',   true,  (r) => (r as MultiJumpResult).fatiguePercent),
+    _MetricSpec(AppStrings.get('variability_short'),  '%',   true,  (r) => (r as MultiJumpResult).variabilityPercent),
+    _MetricSpec(AppStrings.get('num_jumps_short'),    '',    false, (r) => (r as MultiJumpResult).jumpCount.toDouble()),
   ];
 
   List<_MetricSpec> _imtpSpecs() => [
-    _MetricSpec('Fuerza pico',   'N',   false, (r) => (r as ImtpResult).peakForceN),
-    _MetricSpec('Fuerza pico',   'BW',  false, (r) => (r as ImtpResult).peakForceBW),
-    _MetricSpec('Impulso neto',  'Ns',  false, (r) => (r as ImtpResult).netImpulseNs),
-    _MetricSpec('RFD @50ms',     'N/s', false, (r) => (r as ImtpResult).rfdAt50ms),
-    _MetricSpec('RFD @100ms',    'N/s', false, (r) => (r as ImtpResult).rfdAt100ms),
-    _MetricSpec('T. hasta F.pico','ms', true,  (r) => (r as ImtpResult).timeToPeakForceMs),
-    _MetricSpec('Asimetría',     '%',   true,  (r) => (r as ImtpResult).symmetry.asymmetryIndexPct),
+    _MetricSpec(AppStrings.get('peak_force_short'),    'N',   false, (r) => (r as ImtpResult).peakForceN),
+    _MetricSpec(AppStrings.get('peak_force_bw_short'), 'BW',  false, (r) => (r as ImtpResult).peakForceBW),
+    _MetricSpec(AppStrings.get('net_impulse_short'),   'Ns',  false, (r) => (r as ImtpResult).netImpulseNs),
+    _MetricSpec(AppStrings.get('rfd_50ms_short'),      'N/s', false, (r) => (r as ImtpResult).rfdAt50ms),
+    _MetricSpec(AppStrings.get('rfd_100ms_short'),     'N/s', false, (r) => (r as ImtpResult).rfdAt100ms),
+    _MetricSpec(AppStrings.get('time_to_peak_short'),  'ms',  true,  (r) => (r as ImtpResult).timeToPeakForceMs),
+    _MetricSpec(AppStrings.get('asymmetry_short'),     '%',   true,  (r) => (r as ImtpResult).symmetry.asymmetryIndexPct),
   ];
 
   List<_MetricSpec> _copSpecs() => [
-    _MetricSpec('Área elipse',   'mm²',  true,  (r) => (r as CoPResult).areaEllipseMm2),
-    _MetricSpec('Long. trayecto','mm',   true,  (r) => (r as CoPResult).pathLengthMm),
-    _MetricSpec('Vel. media',    'mm/s', true,  (r) => (r as CoPResult).meanVelocityMmS),
-    _MetricSpec('Rango ML',      'mm',   true,  (r) => (r as CoPResult).rangeMLMm),
-    _MetricSpec('Rango AP',      'mm',   true,  (r) => (r as CoPResult).rangeAPMm),
-    _MetricSpec('Simetría',      '%',    false, (r) => (r as CoPResult).symmetryPercent),
+    _MetricSpec(AppStrings.get('ellipse_area_short'),   'mm²',  true,  (r) => (r as CoPResult).areaEllipseMm2),
+    _MetricSpec(AppStrings.get('path_length_short'),    'mm',   true,  (r) => (r as CoPResult).pathLengthMm),
+    _MetricSpec(AppStrings.get('mean_velocity_short'),  'mm/s', true,  (r) => (r as CoPResult).meanVelocityMmS),
+    _MetricSpec(AppStrings.get('range_ml_short'),       'mm',   true,  (r) => (r as CoPResult).rangeMLMm),
+    _MetricSpec(AppStrings.get('range_ap_short'),       'mm',   true,  (r) => (r as CoPResult).rangeAPMm),
+    _MetricSpec(AppStrings.get('symmetry_short'),       '%',    false, (r) => (r as CoPResult).symmetryPercent),
   ];
 
   @override
@@ -594,7 +579,7 @@ class _MetricsTable extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
               children: [
-                Text('Métricas por sesión', style: IXTextStyles.sectionHeader()),
+                Text(AppStrings.get('metrics_per_session'), style: IXTextStyles.sectionHeader()),
                 const Spacer(),
                 Container(
                   padding:
@@ -603,7 +588,7 @@ class _MetricsTable extends StatelessWidget {
                     color: AppColors.success.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text('● mejor',
+                  child: Text(AppStrings.get('best_label'),
                       style: TextStyle(
                           fontSize: 10, color: AppColors.success)),
                 ),
@@ -644,9 +629,9 @@ class _MetricsTable extends StatelessWidget {
         TableRow(
           decoration: BoxDecoration(color: col.background.withOpacity(0.4)),
           children: [
-            const _TCell(
-              child: Text('Métrica',
-                  style: TextStyle(
+            _TCell(
+              child: Text(AppStrings.get('metric_header'),
+                  style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary)),

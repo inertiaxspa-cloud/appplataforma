@@ -155,7 +155,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                   children: [
                     Expanded(
                       child: CompactMetricTile(
-                        label: 'Altura',
+                        label: AppStrings.get('height_label_short'),
                         value: djResult.jumpHeightCm.toStringAsFixed(1),
                         unit: 'cm',
                       ),
@@ -163,7 +163,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: CompactMetricTile(
-                        label: 'Contacto',
+                        label: AppStrings.get('contact_label_short'),
                         value: djResult.contactTimeMs.toStringAsFixed(0),
                         unit: 'ms',
                       ),
@@ -171,10 +171,10 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: CompactMetricTile(
-                        label: 'Reactividad (RSI)',
+                        label: AppStrings.get('reactivity_rsi_label'),
                         value: djResult.rsiMod.toStringAsFixed(2),
                         unit: '',
-                        subtitle: 'Mayor valor = mayor eficiencia',
+                        subtitle: AppStrings.get('higher_value_better'),
                       ),
                     ),
                   ],

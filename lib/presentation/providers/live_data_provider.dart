@@ -151,6 +151,12 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
     state = nextState;
   }
 
+  @override
+  void dispose() {
+    _t.clear(); _fTotal.clear(); _fLeft.clear(); _fRight.clear();
+    super.dispose();
+  }
+
   void reset() {
     _t.clear(); _fTotal.clear(); _fLeft.clear(); _fRight.clear();
     _t0 = 0;

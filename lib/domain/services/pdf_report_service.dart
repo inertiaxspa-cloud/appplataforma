@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../core/l10n/app_strings.dart';
 import '../entities/athlete.dart';
 import '../entities/test_result.dart';
 
@@ -59,7 +60,7 @@ class PdfReportService {
 
     final doc = pw.Document(
       author: 'InertiaX',
-      title: '${result.testType.displayName} — ${athlete?.name ?? "Atleta"}',
+      title: '${result.testType.displayName} — ${athlete?.name ?? AppStrings.get('pdf_athlete')}',
       theme: pw.ThemeData.withFont(
         base:   baseFont,
         bold:   boldFont,
@@ -81,7 +82,7 @@ class PdfReportService {
     if (result is JumpResult)  bwRef = result.bodyWeightN;
     if (result is ImtpResult)  bwRef = result.peakForceBW > 0 ? result.peakForceN / result.peakForceBW : null;
 
-    final athleteName = athlete?.name ?? 'Atleta';
+    final athleteName = athlete?.name ?? AppStrings.get('pdf_athlete');
 
     // ── Cover page (only in full mode) ─────────────────────────────────────
     if (!compact) {
@@ -194,7 +195,7 @@ class PdfReportService {
                       ),
                       pw.SizedBox(height: 6),
                       pw.Text(
-                        'Plataformas de Fuerza',
+                        AppStrings.get('pdf_force_platforms'),
                         style: pw.TextStyle(
                           fontSize: 14,
                           color: _cCyan,
@@ -210,7 +211,7 @@ class PdfReportService {
                       pw.SizedBox(height: 30),
                       // "Reporte de Rendimiento"
                       pw.Text(
-                        'REPORTE DE RENDIMIENTO',
+                        AppStrings.get('pdf_title').toUpperCase(),
                         style: pw.TextStyle(
                           fontSize: 10,
                           letterSpacing: 3,
@@ -265,8 +266,8 @@ class PdfReportService {
                       ),
                       pw.SizedBox(height: 14),
                       pw.Text(
-                        'Generado automáticamente por InertiaX  •  '
-                        'Plataformas: ${result.platformCount}',
+                        '${AppStrings.get('pdf_generated_by')}  •  '
+                        '${AppStrings.get('pdf_platforms')}: ${result.platformCount}',
                         style: pw.TextStyle(
                           fontSize: 8,
                           color: const PdfColor(0.5, 0.55, 0.60),
@@ -779,11 +780,11 @@ class PdfReportService {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'InertiaX  |  Plataformas: ${r.platformCount}',
+              'InertiaX  |  ${AppStrings.get('pdf_platforms')}: ${r.platformCount}',
               style: pw.TextStyle(fontSize: 8, color: _cTextM),
             ),
             pw.Text(
-              'Generado automáticamente por InertiaX',
+              AppStrings.get('pdf_generated_by'),
               style: pw.TextStyle(fontSize: 8, color: _cTextM),
             ),
           ],
@@ -898,7 +899,7 @@ class PdfReportService {
           _e('Fase excéntrica',    '${r.eccentricDurationMs.toStringAsFixed(0)} ms'),
           _e('Fase concéntrica',   '${r.concentricDurationMs.toStringAsFixed(0)} ms'),
           _e('Fuerza de despegue', '${r.takeoffForceN.toStringAsFixed(0)} N'),
-          _e('Peso corporal',      '${(r.bodyWeightN / 9.81).toStringAsFixed(1)} kg'),
+          _e(AppStrings.get('pdf_body_weight'), '${(r.bodyWeightN / 9.81).toStringAsFixed(1)} kg'),
         ]),
       ],
       pw.SizedBox(height: compact ? 8 : 12),
@@ -1015,7 +1016,7 @@ class PdfReportService {
           pw.SizedBox(height: 4),
           pw.Center(
             child: pw.Text(
-              '${r.peakForceBW.toStringAsFixed(2)} x Peso corporal',
+              '${r.peakForceBW.toStringAsFixed(2)} x ${AppStrings.get('pdf_body_weight')}',
               style: pw.TextStyle(fontSize: 11, color: _cTextM),
             ),
           ),
@@ -1463,7 +1464,7 @@ class PdfReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _section('CURVA FUERZA-TIEMPO'),
+        _section(AppStrings.get('pdf_force_time_curve').toUpperCase()),
         pw.SizedBox(height: 4),
         pw.SizedBox(
           height: 130,

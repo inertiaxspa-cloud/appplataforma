@@ -121,7 +121,7 @@ class _AthleteCard extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${athlete.name} eliminado'),
+              content: Text('${athlete.name} ${AppStrings.get('athlete_deleted')}'),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -181,7 +181,7 @@ class _AthleteCard extends ConsumerWidget {
               ),
               IconButton(
                 icon: Icon(Icons.edit_outlined, size: 18, color: col.textSecondary),
-                tooltip: 'Editar',
+                tooltip: AppStrings.get('edit'),
                 onPressed: () => onEdit(athlete),
               ),
               Icon(Icons.chevron_right, color: col.textDisabled, size: 18),
@@ -200,7 +200,7 @@ class _AthleteCard extends ConsumerWidget {
         title: Text(AppStrings.get('delete_athlete'),
             style: TextStyle(color: ctx.col.textPrimary)),
         content: Text(
-          '¿Eliminar a ${athlete.name}?\n'
+          '${AppStrings.get('delete_athlete_confirm')} ${athlete.name}?\n'
           '${AppStrings.get('delete_athlete_confirmation')}',
           style: TextStyle(color: ctx.col.textSecondary, fontSize: 13),
         ),
@@ -371,20 +371,20 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
         children: [
           TextField(
             controller: _nameCtrl,
-            decoration: const InputDecoration(labelText: 'Nombre *'),
+            decoration: InputDecoration(labelText: AppStrings.get('name_required')),
             autofocus: !_isEdit,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _sportCtrl,
-            decoration: const InputDecoration(labelText: 'Deporte'),
+            decoration: InputDecoration(labelText: AppStrings.get('sport_label')),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _weightCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-                labelText: 'Peso corporal (kg)', suffixText: 'kg'),
+            decoration: InputDecoration(
+                labelText: AppStrings.get('body_weight_label_kg'), suffixText: 'kg'),
           ),
         ],
       ),
@@ -399,8 +399,7 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
           child: _saving
               ? const SizedBox(width: 16, height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              // TODO(i18n): add 'save_changes' and 'create' keys
-              : Text(_isEdit ? 'Guardar cambios' : 'Crear'),
+              : Text(_isEdit ? AppStrings.get('save_changes') : AppStrings.get('create_label')),
         ),
       ],
     );

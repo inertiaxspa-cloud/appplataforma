@@ -188,7 +188,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Solo medición ML disponible (hardware 1D)',
+                      AppStrings.get('cop_1d_only'),
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.warning),
                     ),
@@ -245,7 +245,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
                 child: _phase == _CopPhase.measuring
                     ? OutlinedButton.icon(
                         icon: const Icon(Icons.stop, size: 18),
-                        label: const Text('Cancelar'),
+                        label: Text(AppStrings.get('cancel')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.danger,
                           side: const BorderSide(color: AppColors.danger),
