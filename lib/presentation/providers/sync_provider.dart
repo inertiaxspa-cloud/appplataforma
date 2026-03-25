@@ -172,21 +172,27 @@ class SyncNotifier extends StateNotifier<SyncState> {
   }
 
   /// Pushes all sessions with sync_status='pending' or 'error' to Supabase.
-  Future<void> syncPending() async {
+  Future<void> syncPending({bool forceAll = false}) async {
     if (!state.isAuthenticated || _syncing) return;
     _syncing = true;
-    // Re-queue all non-pending sessions: error AND synced.
-    // If the user deleted rows from the Supabase dashboard, local 'synced'
-    // records need re-upload.  The upsert call in Supabase is idempotent,
-    // so re-uploading an already-present row is harmless.
-    final db0 = await DatabaseHelper.instance.database;
-    await db0.update('test_sessions', {'sync_status': 'pending'},
-        where: "sync_status IN ('error', 'synced')");
+
+    final db = await DatabaseHelper.instance.database;
+
+    // Re-queue previous errors so they get retried.
+    await db.update('test_sessions', {'sync_status': 'pending'},
+        where: "sync_status = 'error'");
+
+    // If forceAll, also re-queue 'synced' (useful after Supabase dashboard wipe).
+    if (forceAll) {
+      await db.update('test_sessions', {'sync_status': 'pending'},
+          where: "sync_status = 'synced'");
+    }
+
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
 
-    try {
-      final db = await DatabaseHelper.instance.database;
+    String? lastError; // Keep last error detail for user display.
 
+    try {
       // Fetch pending sessions joined with athlete data.
       final rows = await db.rawQuery('''
         SELECT ts.*,
@@ -202,11 +208,19 @@ class SyncNotifier extends StateNotifier<SyncState> {
         ORDER BY ts.performed_at ASC
       ''');
 
+      // Cache athlete UUIDs to avoid repeated upserts for the same athlete.
+      final athleteUuidCache = <int, String>{};
+
       for (final row in rows) {
         try {
           // ── Ensure athlete has a Supabase UUID ──────────────────────────
-          final athleteId  = row['athlete_id']          as int?;
+          final athleteId  = row['athlete_id'] as int?;
           String? athUuid  = row['athlete_supabase_uuid'] as String?;
+
+          // Use cache first (avoids repeated Supabase calls for same athlete).
+          if (athleteId != null && athUuid == null && athleteUuidCache.containsKey(athleteId)) {
+            athUuid = athleteUuidCache[athleteId];
+          }
 
           if (athleteId != null && athUuid == null) {
             final athleteRow = <String, dynamic>{
@@ -218,8 +232,14 @@ class SyncNotifier extends StateNotifier<SyncState> {
               'notes':          row['a_notes'],
             };
             athUuid = await SupabaseService.instance.upsertAthlete(athleteRow);
+            // Persist UUID locally so future syncs don't repeat this.
             await db.update('athletes', {'supabase_uuid': athUuid},
                 where: 'id = ?', whereArgs: [athleteId]);
+            athleteUuidCache[athleteId] = athUuid;
+          }
+
+          if (athleteId != null && athUuid != null) {
+            athleteUuidCache[athleteId] = athUuid;
           }
 
           // ── Push session ─────────────────────────────────────────────────
@@ -234,8 +254,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
             whereArgs: [row['id']],
           );
         } catch (e) {
-          // Log real error for debugging, then mark session as error.
           final errMsg = e.toString().replaceAll('Exception: ', '');
+          lastError = errMsg;
           debugPrint('[Sync] Session ${row['id']} failed: $errMsg');
           await db.update('test_sessions',
               {'sync_status': 'error'},
@@ -253,12 +273,13 @@ class SyncNotifier extends StateNotifier<SyncState> {
       final synced = rows.length - pendingLeft - errorCount;
 
       if (mounted) {
+        // Show the ACTUAL error detail so user can diagnose.
         final msg = errorCount > 0
-            ? 'Subidas $synced/${rows.length}. Fallaron $errorCount — revisar conexión.'
+            ? 'Subidas $synced/${rows.length}. Fallaron $errorCount.\n${lastError ?? ''}'
             : 'Sincronización completa ($synced sesiones).';
         state = state.copyWith(
           status:         errorCount > 0 ? SyncStatus.error : SyncStatus.success,
-          pendingCount:   pendingLeft,
+          pendingCount:   pendingLeft + errorCount,
           lastSyncAt:     DateTime.now(),
           errorMessage:   errorCount > 0 ? msg : null,
           successMessage: errorCount == 0 ? msg : null,
@@ -267,7 +288,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
     } catch (e) {
       if (mounted) {
         state = state.copyWith(
-            status: SyncStatus.error, errorMessage: e.toString());
+            status: SyncStatus.error,
+            errorMessage: e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       _syncing = false;

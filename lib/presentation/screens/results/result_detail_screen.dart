@@ -285,8 +285,8 @@ class _JumpResultView extends StatelessWidget {
             ),
             child: SymmetryGauge(
               leftPercent:  result.symmetry.leftPercent,
-              leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ'    : 'MASTER',
-              rightLabel:  result.symmetry.isTwoPlatform ? 'DER'    : 'SLAVE',
+              leftLabel:   AppStrings.get('left_label'),
+              rightLabel:  AppStrings.get('right_label'),
               isEstimated: !result.symmetry.isTwoPlatform,
             ),
           ),

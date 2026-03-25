@@ -889,8 +889,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: sync.isBusy ? null : () async {
-                await notifier.resetSyncStatus();
-                await notifier.syncPending();
+                await notifier.syncPending(forceAll: true);
               },
               icon: const Icon(Icons.sync_problem, size: 16),
               label: Text(AppStrings.get('resync_all'), style: const TextStyle(fontSize: 12)),
