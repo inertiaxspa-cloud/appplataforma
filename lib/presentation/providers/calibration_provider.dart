@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../data/datasources/local/database_helper.dart';
 import '../../domain/dsp/calibration_engine.dart';
 import '../../domain/entities/calibration_data.dart';
@@ -133,9 +134,16 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
     Map<String, int>? cellPolarities,
   }) async {
     final points = state.pendingPoints;
-    final weightPoints = points.where((p) => p.weightKg > 0).length;
-    if (weightPoints < 1) {
-      state = state.copyWith(error: 'Se necesita al menos 1 punto de peso');
+    final weightPoints = points.where((p) => p.weightKg > 0).toList();
+    if (weightPoints.length < 2) {
+      state = state.copyWith(
+          error: AppStrings.get('min_calibration_points'));
+      return;
+    }
+    final uniqueWeights = weightPoints.map((p) => p.weightKg).toSet();
+    if (uniqueWeights.length < 2) {
+      state = state.copyWith(
+          error: AppStrings.get('min_calibration_points'));
       return;
     }
 

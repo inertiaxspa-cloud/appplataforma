@@ -92,7 +92,7 @@ class _LiveMonitorScreenState extends ConsumerState<LiveMonitorScreen> {
                   border: Border.all(color: context.col.border),
                 ),
                 child: Text(
-                  '${live.platformCount} plataforma${live.platformCount > 1 ? "s" : ""}',
+                  '${live.platformCount} ${live.platformCount > 1 ? AppStrings.get('platforms_label').toLowerCase() : AppStrings.get('platform_section').toLowerCase()}',
                   style: IXTextStyles.metricLabel,
                 ),
               ),
@@ -180,7 +180,7 @@ class _LandscapeLayout extends StatelessWidget {
                               border: Border.all(color: col.border),
                             ),
                             child: Text(
-                              '${live.platformCount} plataforma${live.platformCount > 1 ? "s" : ""}',
+                              '${live.platformCount} ${live.platformCount > 1 ? AppStrings.get('platforms_label').toLowerCase() : AppStrings.get('platform_section').toLowerCase()}',
                               style: IXTextStyles.metricLabel,
                             ),
                           ),
@@ -198,7 +198,7 @@ class _LandscapeLayout extends StatelessWidget {
                           CompactMetricTile(
                             label: live.platformCount >= 2
                                 ? AppStrings.get('left_platform')
-                                : 'IZQUIERDA',
+                                : AppStrings.get('left_label'),
                             value: live.forceLeftN.isNotEmpty
                                 ? live.forceLeftN.last.toStringAsFixed(0)
                                 : '—',
@@ -212,7 +212,7 @@ class _LandscapeLayout extends StatelessWidget {
                           CompactMetricTile(
                             label: live.platformCount >= 2
                                 ? AppStrings.get('right_platform')
-                                : 'DERECHA',
+                                : AppStrings.get('right_label'),
                             value: live.forceRightN.isNotEmpty
                                 ? live.forceRightN.last.toStringAsFixed(0)
                                 : '—',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/algorithm_settings.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/local/database_helper.dart';
 import '../../../domain/entities/test_result.dart';
 import '../../../domain/services/pdf_report_service.dart';
@@ -83,7 +84,7 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar resultado: $e'),
+          SnackBar(content: Text('${AppStrings.get('error_saving_result')}: $e'),
               backgroundColor: Colors.red),
         );
       }
@@ -142,18 +143,14 @@ class _JumpResultView extends StatelessWidget {
   // ── Dynamic labels based on selected algorithms ───────────────────────────
 
   String get _heightMethodNote => settings.useImpulseHeight
-      ? 'Método: Impulso-Momento'
-      : 'Método: Tiempo de vuelo';
+      ? AppStrings.get('height_method_impulse')
+      : AppStrings.get('height_method_flight');
 
-  String get _powerPrimaryLabel => switch (settings.algo.peakPower) {
-    PeakPowerMethod.sayers       => 'Potencia Máxima',
-    PeakPowerMethod.harman       => 'Potencia Máxima',
-    PeakPowerMethod.impulseBased => 'Potencia Máxima',
-  };
+  String get _powerPrimaryLabel => AppStrings.get('peak_power_label');
 
   String get _symmetryLabel => settings.useLsiSymmetry
-      ? 'Simetría (LSI)'
-      : 'Asimetría (%)';
+      ? AppStrings.get('symmetry_lsi')
+      : AppStrings.get('asymmetry_pct');
 
   bool get _showImpulsePowerCard =>
       settings.algo.peakPower != PeakPowerMethod.impulseBased &&
@@ -177,28 +174,28 @@ class _JumpResultView extends StatelessWidget {
         _HeroMetric(
           value: result.jumpHeightCm.toStringAsFixed(1),
           unit: 'cm',
-          label: 'ALTURA DE SALTO',
+          label: AppStrings.get('jump_height_hero'),
           note: _heightMethodNote,
         ),
         const SizedBox(height: 24),
 
         // ── Performance grid ───────────────────────────────────────────────
-        Text('RENDIMIENTO', style: IXTextStyles.sectionHeader()),
+        Text(AppStrings.get('performance_section'), style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(
-            label: 'Tiempo vuelo',
+            label: AppStrings.get('flight_time_label'),
             value: result.flightTimeMs.toStringAsFixed(0),
             unit: 'ms',
           ),
           MetricCard(
-            label: 'Fuerza Máxima',
+            label: AppStrings.get('peak_force_label'),
             value: result.peakForceN.toStringAsFixed(0),
             unit: 'N',
             valueColor: AppColors.warning,
           ),
           MetricCard(
-            label: 'Fuerza Media',
+            label: AppStrings.get('mean_force_label'),
             value: result.meanForceN.toStringAsFixed(0),
             unit: 'N',
           ),
@@ -213,7 +210,7 @@ class _JumpResultView extends StatelessWidget {
           // Impulse-based power — only shown when a regression method is active
           if (_showImpulsePowerCard)
             MetricCard(
-              label: 'Potencia (F×v)',
+              label: AppStrings.get('power_fv_label'),
               value: result.peakPowerImpulseW.toStringAsFixed(0),
               unit: 'W',
               valueColor: AppColors.secondary,
@@ -222,30 +219,30 @@ class _JumpResultView extends StatelessWidget {
         const SizedBox(height: 20),
 
         // ── RFD ───────────────────────────────────────────────────────────
-        Text('EXPLOSIVIDAD — RFD',
+        Text(AppStrings.get('explosivity_section'),
             style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(
-            label: 'RFD 50ms',
+            label: AppStrings.get('rfd_50ms'),
             value: (result.rfdAt50ms / 1000).toStringAsFixed(1),
             unit: 'kN/s',
             valueColor: AppColors.forceLeft,
           ),
           MetricCard(
-            label: 'RFD 100ms',
+            label: AppStrings.get('rfd_100ms'),
             value: (result.rfdAt100ms / 1000).toStringAsFixed(1),
             unit: 'kN/s',
             valueColor: AppColors.forceLeft,
           ),
           MetricCard(
-            label: 'RFD 200ms',
+            label: AppStrings.get('rfd_200ms'),
             value: (result.rfdAt200ms / 1000).toStringAsFixed(1),
             unit: 'kN/s',
             valueColor: AppColors.forceLeft,
           ),
           MetricCard(
-            label: 'Tiempo Fuerza Máx.',
+            label: AppStrings.get('ttp_label'),
             value: result.timeToPeakForceMs.toStringAsFixed(0),
             unit: 'ms',
           ),
@@ -253,17 +250,17 @@ class _JumpResultView extends StatelessWidget {
         const SizedBox(height: 20),
 
         // ── Phases ────────────────────────────────────────────────────────
-        Text('FASES', style: IXTextStyles.sectionHeader()),
+        Text(AppStrings.get('phases_section'), style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(
-            label: 'Fase de Bajada',
+            label: AppStrings.get('eccentric_phase'),
             value: result.eccentricDurationMs.toStringAsFixed(0),
             unit: 'ms',
             valueColor: AppColors.forceRight,
           ),
           MetricCard(
-            label: 'Fase de Subida',
+            label: AppStrings.get('concentric_phase'),
             value: result.concentricDurationMs.toStringAsFixed(0),
             unit: 'ms',
             valueColor: AppColors.primary,
@@ -273,7 +270,7 @@ class _JumpResultView extends StatelessWidget {
         // ── Symmetry ─────────────────────────────────────────────────────
         if (result.symmetry.leftPercent != 50 || result.platformCount >= 1) ...[
           const SizedBox(height: 20),
-          Text('SIMETRÍA  ·  $_symmetryLabel',
+          Text('${AppStrings.get('symmetry_section')}  ·  $_symmetryLabel',
               style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           Container(
@@ -295,7 +292,7 @@ class _JumpResultView extends StatelessWidget {
         // ── Elasticity index (CMJ vs SJ) ──────────────────────────────────
         if (_elasticityIndex != null) ...[
           const SizedBox(height: 20),
-          Text('ÍNDICE DE ELASTICIDAD', style: IXTextStyles.sectionHeader()),
+          Text(AppStrings.get('elasticity_index'), style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -358,17 +355,17 @@ class _JumpResultView extends StatelessWidget {
         // ── Drop Jump extras ──────────────────────────────────────────────
         if (result is DropJumpResult) ...[
           const SizedBox(height: 20),
-          Text('DROP JUMP', style: IXTextStyles.sectionHeader()),
+          Text(AppStrings.get('drop_jump_section'), style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           _MetricGrid(children: [
             MetricCard(
-              label: 'Tiempo Contacto',
+              label: AppStrings.get('contact_time_label'),
               value: (result as DropJumpResult).contactTimeMs.toStringAsFixed(0),
               unit: 'ms',
               valueColor: AppColors.warning,
             ),
             MetricCard(
-              label: 'Reactividad (RSI)',
+              label: AppStrings.get('reactivity_rsi'),
               value: (result as DropJumpResult).rsiMod.toStringAsFixed(2),
               unit: '',
               valueColor: AppColors.success,
@@ -421,7 +418,7 @@ class _CoPResultView extends StatelessWidget {
         _HeroMetric(
           value: result.areaEllipseMm2.toStringAsFixed(0),
           unit:  'mm²',
-          label: _is1D ? 'ÁREA OSCILACIÓN CoP (estimada)' : 'ÁREA CoP 95%',
+          label: _is1D ? AppStrings.get('cop_area_estimated') : AppStrings.get('cop_area_95'),
         ),
 
         // ── 1D notice chip ────────────────────────────────────────────────
@@ -437,8 +434,8 @@ class _CoPResultView extends StatelessWidget {
                 border: Border.all(
                     color: AppColors.warning.withAlpha(100)),
               ),
-              child: const Text(
-                '⚠  Solo medición ML disponible (hardware 1D)',
+              child: Text(
+                AppStrings.get('cop_1d_note'),
                 style: TextStyle(
                     color: AppColors.warning,
                     fontSize: 11,
@@ -450,21 +447,21 @@ class _CoPResultView extends StatelessWidget {
         const SizedBox(height: 24),
 
         // ── Stability grid ────────────────────────────────────────────────
-        Text('ESTABILIDAD', style: IXTextStyles.sectionHeader()),
+        Text(AppStrings.get('stability_section'), style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
           MetricCard(
-            label: 'Long. Trayectoria',
+            label: AppStrings.get('path_length_label'),
             value: result.pathLengthMm.toStringAsFixed(0),
             unit: 'mm',
           ),
           MetricCard(
-            label: 'Vel. Media',
+            label: AppStrings.get('mean_velocity_label'),
             value: result.meanVelocityMmS.toStringAsFixed(1),
             unit: 'mm/s',
           ),
           MetricCard(
-            label: 'Rango ML (Izq-Der)',
+            label: AppStrings.get('ml_range_label'),
             value: result.rangeMLMm.toStringAsFixed(1),
             unit: 'mm',
             valueColor: AppColors.forceLeft,
@@ -472,19 +469,19 @@ class _CoPResultView extends StatelessWidget {
           // Rango AP only meaningful with 2-platform (moment-based) hardware.
           if (!_is1D)
             MetricCard(
-              label: 'Rango AP (Ant-Post)',
+              label: AppStrings.get('ap_range_label'),
               value: result.rangeAPMm.toStringAsFixed(1),
               unit: 'mm',
               valueColor: AppColors.forceRight,
             ),
           MetricCard(
-            label: 'Frec. de Oscilación (f95)',
+            label: AppStrings.get('osc_freq_label'),
             value: result.frequency95Hz.toStringAsFixed(2),
             unit: 'Hz',
           ),
           if (!_is1D && result.symmetryPercent < 100)
             MetricCard(
-              label: 'Simetría Peso',
+              label: AppStrings.get('weight_symmetry_label'),
               value: result.symmetryPercent.toStringAsFixed(1),
               unit: '%',
               valueColor: result.symmetryPercent > 85
@@ -496,10 +493,10 @@ class _CoPResultView extends StatelessWidget {
         // ── Romberg quotient ──────────────────────────────────────────────
         if (result.rombergQuotient != null) ...[
           const SizedBox(height: 20),
-          Text('ROMBERG', style: IXTextStyles.sectionHeader()),
+          Text(AppStrings.get('romberg_section'), style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           MetricCard(
-            label: 'Índice Romberg',
+            label: AppStrings.get('romberg_index'),
             value: result.rombergQuotient!.toStringAsFixed(2),
             unit: '',
             isHighlighted: true,
@@ -539,30 +536,30 @@ class _ImtpResultView extends StatelessWidget {
         _HeroMetric(
           value: result.peakForceN.toStringAsFixed(0),
           unit:  'N',
-          label: 'FUERZA MÁXIMA (N)',
+          label: AppStrings.get('imtp_peak_force_hero'),
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
-            '${result.peakForceBW.toStringAsFixed(2)} × Peso Corporal',
+            '${result.peakForceBW.toStringAsFixed(2)} ${AppStrings.get('times_bw')}',
             style: TextStyle(
                 fontSize: 15, color: context.col.textSecondary),
           ),
         ),
         const SizedBox(height: 24),
-        Text('EXPLOSIVIDAD (RFD)', style: IXTextStyles.sectionHeader()),
+        Text(AppStrings.get('explosivity_rfd_section'), style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
-          MetricCard(label: 'RFD 50ms',
+          MetricCard(label: AppStrings.get('rfd_50ms'),
               value: (result.rfdAt50ms / 1000).toStringAsFixed(1),
               unit: 'kN/s', valueColor: AppColors.forceLeft),
-          MetricCard(label: 'RFD 100ms',
+          MetricCard(label: AppStrings.get('rfd_100ms'),
               value: (result.rfdAt100ms / 1000).toStringAsFixed(1),
               unit: 'kN/s', valueColor: AppColors.forceLeft),
-          MetricCard(label: 'RFD 200ms',
+          MetricCard(label: AppStrings.get('rfd_200ms'),
               value: (result.rfdAt200ms / 1000).toStringAsFixed(1),
               unit: 'kN/s', valueColor: AppColors.forceLeft),
-          MetricCard(label: 'Tiempo Fuerza Máx.',
+          MetricCard(label: AppStrings.get('ttp_label'),
               value: result.timeToPeakForceMs.toStringAsFixed(0), unit: 'ms'),
         ]),
         const SizedBox(height: 20),
@@ -608,25 +605,25 @@ class _MultiJumpResultView extends StatelessWidget {
         _HeroMetric(
           value: result.meanRsiMod.toStringAsFixed(2),
           unit:  '',
-          label: 'REACTIVIDAD MEDIA (RSI)',
+          label: AppStrings.get('reactivity_section'),
         ),
         const SizedBox(height: 24),
-        Text('RESUMEN', style: IXTextStyles.sectionHeader()),
+        Text(AppStrings.get('summary_section'), style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         _MetricGrid(children: [
-          MetricCard(label: 'Altura Media',
+          MetricCard(label: AppStrings.get('mean_height_label'),
               value: result.meanHeightCm.toStringAsFixed(1), unit: 'cm'),
-          MetricCard(label: 'Contacto Medio',
+          MetricCard(label: AppStrings.get('mean_contact_label'),
               value: result.meanContactTimeMs.toStringAsFixed(0), unit: 'ms'),
-          MetricCard(label: 'Índice Fatiga',
+          MetricCard(label: AppStrings.get('fatigue_index'),
               value: result.fatiguePercent.toStringAsFixed(1), unit: '%',
               valueColor: result.fatiguePercent > 10
                   ? AppColors.danger : AppColors.success),
-          MetricCard(label: 'Variabilidad',
+          MetricCard(label: AppStrings.get('variability_label'),
               value: result.variabilityPercent.toStringAsFixed(1), unit: '%'),
         ]),
         const SizedBox(height: 20),
-        Text('POR SALTO (${result.jumpCount})',
+        Text('${AppStrings.get('per_jump_section')} (${result.jumpCount})',
             style: IXTextStyles.sectionHeader()),
         const SizedBox(height: 12),
         ...result.jumps.map((j) => Padding(
@@ -789,11 +786,11 @@ class _Metadata extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _Row('Fecha',       _formatDate(computedAt),  col),
+          _Row(AppStrings.get('date_label'),         _formatDate(computedAt),  col),
           if (bodyWeightN != null)
-            _Row('Peso corporal',
+            _Row(AppStrings.get('body_weight_label'),
                 '${(bodyWeightN! / 9.81).toStringAsFixed(1)} kg', col),
-          _Row('Plataformas', '$platformCount',          col),
+          _Row(AppStrings.get('platforms_label'), '$platformCount',          col),
           // Algorithm notes — only shown in engineer mode
           if (engineerMode) ...[
             for (final note in algoNotes)
@@ -872,7 +869,7 @@ class _PdfExportButtonState extends ConsumerState<_PdfExportButton> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:         Text('Error al generar PDF: $e'),
+          content:         Text('${AppStrings.get('error_pdf')}: $e'),
           backgroundColor: AppColors.danger,
         ));
       }
@@ -895,7 +892,7 @@ class _PdfExportButtonState extends ConsumerState<_PdfExportButton> {
     }
     return IconButton(
       icon:    const Icon(Icons.picture_as_pdf_outlined),
-      tooltip: 'Exportar PDF',
+      tooltip: AppStrings.get('export_pdf'),
       onPressed: _export,
     );
   }

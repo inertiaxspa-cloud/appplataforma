@@ -52,8 +52,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               _AthleteSelector(selected: athleteState),
               const SizedBox(height: 28),
-              // TODO(i18n): add 'quick_tests' key for 'TESTS RÁPIDOS' / 'QUICK TESTS'
-              Text('TESTS RÁPIDOS', style: IXTextStyles.sectionHeader()),
+              Text(AppStrings.get('quick_tests').toUpperCase(), style: IXTextStyles.sectionHeader()),
               const SizedBox(height: 12),
               _TestGrid(canTest: canTest),
               const SizedBox(height: 24),
@@ -62,8 +61,7 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.show_chart, size: 18),
-                    // TODO(i18n): add 'live_monitor' key
-                    label: const Text('Monitor en Tiempo Real'),
+                    label: Text(AppStrings.get('live_monitor')),
                     onPressed: () => context.push('/monitor'),
                   ),
                 ),
@@ -162,8 +160,7 @@ class _StatusPanel extends StatelessWidget {
         children: [
           _StatusRow(
             icon: Icons.usb,
-            // TODO(i18n): add 'platform' key for 'Plataforma' / 'Platform'
-            label: 'Plataforma',
+            label: AppStrings.get('platform_section'),
             status: isConnected
                 ? _shortPortName(connectedPort ?? AppStrings.get('connected'))
                 : AppStrings.get('disconnected'),
@@ -173,10 +170,8 @@ class _StatusPanel extends StatelessWidget {
           Divider(height: 16, color: col.border),
           _StatusRow(
             icon: Icons.tune,
-            // TODO(i18n): add 'calibration' key for 'Calibración' / 'Calibration'
-            label: 'Calibración',
-            // TODO(i18n): add 'calibration_subtitle' key
-            subtitle: 'Necesaria para mediciones precisas',
+            label: AppStrings.get('calibration_section'),
+            subtitle: AppStrings.get('calibration_needed'),
             status: isCalibrated
                 ? AppStrings.get('calibrated')
                 : AppStrings.get('not_calibrated'),

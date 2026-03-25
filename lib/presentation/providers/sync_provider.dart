@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show debugPrint;
+import '../../core/l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -136,8 +137,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
           status:         SyncStatus.idle,
           userEmail:      user?.email,
           successMessage: user != null
-              ? '¡Cuenta creada! Sesión iniciada correctamente.'
-              : 'Cuenta creada. Verifica tu email para iniciar sesión.',
+              ? AppStrings.get('account_created_loggedin')
+              : AppStrings.get('account_created_verify'),
           clearError: true,
         );
       }

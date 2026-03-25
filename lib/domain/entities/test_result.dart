@@ -76,21 +76,30 @@ sealed class TestResult {
   Map<String, dynamic> toMap();
 
   static TestResult fromJson(String json) {
-    final map = jsonDecode(json) as Map<String, dynamic>;
-    final type = TestType.values[map['test_type'] as int];
-    switch (type) {
-      case TestType.cmj:
-      case TestType.cmjArms:
-      case TestType.sj:
-        return JumpResult.fromMap(map);
-      case TestType.dropJump:
-        return DropJumpResult.fromMap(map);
-      case TestType.multiJump:
-        return MultiJumpResult.fromMap(map);
-      case TestType.cop:
-        return CoPResult.fromMap(map);
-      case TestType.imtp:
-        return ImtpResult.fromMap(map);
+    try {
+      final map = jsonDecode(json) as Map<String, dynamic>?;
+      if (map == null) throw const FormatException('Empty JSON');
+      final typeIdx = map['test_type'] as int?;
+      if (typeIdx == null || typeIdx < 0 || typeIdx >= TestType.values.length) {
+        throw FormatException('Invalid test_type: $typeIdx');
+      }
+      final type = TestType.values[typeIdx];
+      switch (type) {
+        case TestType.cmj:
+        case TestType.cmjArms:
+        case TestType.sj:
+          return JumpResult.fromMap(map);
+        case TestType.dropJump:
+          return DropJumpResult.fromMap(map);
+        case TestType.multiJump:
+          return MultiJumpResult.fromMap(map);
+        case TestType.cop:
+          return CoPResult.fromMap(map);
+        case TestType.imtp:
+          return ImtpResult.fromMap(map);
+      }
+    } catch (e) {
+      throw FormatException('TestResult.fromJson failed: $e\nJSON: ${json.length > 200 ? json.substring(0, 200) : json}');
     }
   }
 

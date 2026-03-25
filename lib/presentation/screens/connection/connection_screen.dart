@@ -71,7 +71,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
         children: [
           if (conn.isConnected)
             _ConnectedBanner(
-              name: conn.connectedName ?? 'Conectado',
+              name: conn.connectedName ?? AppStrings.get('connected'),
               onDisconnect: () =>
                   ref.read(connectionProvider.notifier).disconnect(),
             ),
@@ -121,7 +121,7 @@ class _ConnectedBanner extends StatelessWidget {
             onPressed: onDisconnect,
             style: TextButton.styleFrom(
                 foregroundColor: AppColors.danger, padding: EdgeInsets.zero),
-            child: const Text('Desconectar', style: TextStyle(fontSize: 12)),
+            child: Text(AppStrings.get('disconnect'), style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),
@@ -236,7 +236,7 @@ class _PortTile extends StatelessWidget {
               ),
             ),
             StatusBadge(
-              label: isConnected ? 'Conectado' : 'Conectar',
+              label: isConnected ? AppStrings.get('connected') : AppStrings.get('connect'),
               isOk: isConnected,
             ),
           ],

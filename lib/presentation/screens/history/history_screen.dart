@@ -123,7 +123,7 @@ class _SessionListState extends ConsumerState<_SessionList> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al borrar: $e'),
+              content: Text('${AppStrings.get('error_deleting')}: $e'),
               backgroundColor: AppColors.danger,
             ),
           );

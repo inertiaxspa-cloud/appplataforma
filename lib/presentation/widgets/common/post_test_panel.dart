@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/test_result.dart';
 import '../../theme/app_theme.dart';
 
@@ -35,7 +36,7 @@ class PostTestPanel extends StatelessWidget {
                   color: AppColors.success, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Test completado',
+                AppStrings.get('test_completed'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -58,7 +59,7 @@ class PostTestPanel extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Repetir'),
+                  label: Text(AppStrings.get('repeat')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: col.textSecondary,
                     side: BorderSide(color: col.border),
@@ -71,7 +72,7 @@ class PostTestPanel extends StatelessWidget {
                 flex: 2,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.bar_chart, size: 18),
-                  label: const Text('Ver resultado completo'),
+                  label: Text(AppStrings.get('view_full_result')),
                   onPressed: onViewResult,
                 ),
               ),
@@ -103,33 +104,33 @@ class _MetricsRow extends StatelessWidget {
   List<(String, String, String)> _extractMetrics(TestResult r) {
     if (r is JumpResult) {
       return [
-        ('ALTURA', r.jumpHeightCm.toStringAsFixed(1), 'cm'),
-        ('VUELO', r.flightTimeMs.toStringAsFixed(0), 'ms'),
-        ('F. PICO', r.peakForceN.toStringAsFixed(0), 'N'),
+        (AppStrings.get('mini_height'), r.jumpHeightCm.toStringAsFixed(1), 'cm'),
+        (AppStrings.get('mini_flight'), r.flightTimeMs.toStringAsFixed(0), 'ms'),
+        (AppStrings.get('mini_peak_force'), r.peakForceN.toStringAsFixed(0), 'N'),
       ];
     } else if (r is DropJumpResult) {
       return [
-        ('ALTURA', r.jumpHeightCm.toStringAsFixed(1), 'cm'),
-        ('CONTACTO', r.contactTimeMs.toStringAsFixed(0), 'ms'),
+        (AppStrings.get('mini_height'), r.jumpHeightCm.toStringAsFixed(1), 'cm'),
+        (AppStrings.get('mini_contact'), r.contactTimeMs.toStringAsFixed(0), 'ms'),
         ('RSImod', r.rsiMod.toStringAsFixed(2), ''),
       ];
     } else if (r is MultiJumpResult) {
       return [
-        ('SALTOS', r.jumpCount.toString(), ''),
-        ('ALTURA M.', r.meanHeightCm.toStringAsFixed(1), 'cm'),
-        ('RSI M.', r.meanRsiMod.toStringAsFixed(2), ''),
+        (AppStrings.get('mini_jumps'), r.jumpCount.toString(), ''),
+        (AppStrings.get('mini_mean_height'), r.meanHeightCm.toStringAsFixed(1), 'cm'),
+        (AppStrings.get('mini_mean_rsi'), r.meanRsiMod.toStringAsFixed(2), ''),
       ];
     } else if (r is ImtpResult) {
       return [
-        ('F. PICO', r.peakForceN.toStringAsFixed(0), 'N'),
-        ('F. PICO/PC', r.peakForceBW.toStringAsFixed(2), 'BW'),
-        ('RFD 100ms', r.rfdAt100ms.toStringAsFixed(0), 'N/s'),
+        (AppStrings.get('mini_peak_force'), r.peakForceN.toStringAsFixed(0), 'N'),
+        (AppStrings.get('mini_peak_force_bw'), r.peakForceBW.toStringAsFixed(2), 'BW'),
+        (AppStrings.get('rfd_100ms'), r.rfdAt100ms.toStringAsFixed(0), 'N/s'),
       ];
     } else if (r is CoPResult) {
       return [
-        ('ÁREA', r.areaEllipseMm2.toStringAsFixed(0), 'mm²'),
-        ('TRAY.', r.pathLengthMm.toStringAsFixed(0), 'mm'),
-        ('SIM.', r.symmetryPercent.toStringAsFixed(1), '%'),
+        (AppStrings.get('mini_area'), r.areaEllipseMm2.toStringAsFixed(0), 'mm²'),
+        (AppStrings.get('mini_traj'), r.pathLengthMm.toStringAsFixed(0), 'mm'),
+        (AppStrings.get('mini_sym'), r.symmetryPercent.toStringAsFixed(1), '%'),
       ];
     }
     return [('—', '—', ''), ('—', '—', ''), ('—', '—', '')];

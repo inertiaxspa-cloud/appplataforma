@@ -294,6 +294,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
   // ── CMJ / SJ / DJ finish ─────────────────────────────────────────────────
 
   void _computeAndFinish(int platformCount) {
+    _rawSub?.close();
+    _rawSub = null;
+
     if (_forceData.isEmpty || _timeData.isEmpty) {
       if (_ref.read(settingsProvider).soundFeedback) SoundService.error();
       state = state.copyWith(
@@ -303,6 +306,16 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     final settings = _ref.read(settingsProvider);
     final bwN      = _phaseDetector.bodyWeightN;
+
+    // Validate body weight was properly detected during settling phase.
+    if (bwN < 50) {
+      if (settings.soundFeedback) SoundService.error();
+      state = state.copyWith(
+        status: TestStatus.failed,
+        error: 'Peso corporal no detectado. Repite el test sobre la plataforma.',
+      );
+      return;
+    }
     final bwKg     = bwN / 9.81;
     final useLsi   = settings.useLsiSymmetry;
 
