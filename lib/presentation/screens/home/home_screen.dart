@@ -132,6 +132,22 @@ class _StatusPanel extends StatelessWidget {
     this.connectedPort,
   });
 
+  /// Shorten a USB/serial port name for the status badge.
+  /// "USB Serial Device (COM6)" → "COM6"
+  /// "/dev/ttyUSB0" → "ttyUSB0"
+  /// "InertiaX-A" → "InertiaX-A" (≤14 chars: keep as-is)
+  static String _shortPortName(String name) {
+    // Extract COM port number from Windows path
+    final comMatch = RegExp(r'(COM\d+)').firstMatch(name);
+    if (comMatch != null) return comMatch.group(1)!;
+    // Extract device name from Unix path
+    final devMatch = RegExp(r'/dev/(.+)$').firstMatch(name);
+    if (devMatch != null) return devMatch.group(1)!;
+    // Truncate anything longer than 14 characters
+    if (name.length > 14) return '${name.substring(0, 12)}…';
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
     final col = context.col;
@@ -149,7 +165,7 @@ class _StatusPanel extends StatelessWidget {
             // TODO(i18n): add 'platform' key for 'Plataforma' / 'Platform'
             label: 'Plataforma',
             status: isConnected
-                ? (connectedPort ?? AppStrings.get('connected'))
+                ? _shortPortName(connectedPort ?? AppStrings.get('connected'))
                 : AppStrings.get('disconnected'),
             isOk: isConnected,
             onTap: () => context.push('/connection'),

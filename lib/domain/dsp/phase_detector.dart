@@ -94,7 +94,12 @@ class PhaseDetector {
               (forceAccept && bodyWeightN > 50)) {
             // Accepted: either stable enough or max attempts reached.
             _effectiveUnweightDelta = useAdaptiveThreshold
-                ? math.max(5.0 * bodyWeightStd, 20.0)   // floor: 20 N
+                // Adaptive: 5×SD with a meaningful floor.
+                // Floor = max(30 N, 2.5% BW) so quiet-standing micro-shifts
+                // (which the 50 Hz filter suppresses to <5 N RMS) never
+                // accidentally trigger descent detection.
+                ? math.max(5.0 * bodyWeightStd,
+                    math.max(30.0, bodyWeightN * 0.025))
                 : PhysicsConstants.cmjWeightThreshold;   // fixed: 80 N
 
             // Compute dynamic flight/landing thresholds as % of body weight.

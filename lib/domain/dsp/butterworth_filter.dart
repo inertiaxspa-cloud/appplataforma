@@ -114,4 +114,20 @@ class ButterworthOnline {
     _w1[0] = _w1[1] = 0.0;
     _w2[0] = _w2[1] = 0.0;
   }
+
+  /// Pre-warm both biquad sections to the steady-state for a constant
+  /// input [dcValue]. Eliminates the cold-start transient that would
+  /// otherwise corrupt the first ~50 samples of a new test (the transient
+  /// introduces a large negative velocity bias in the impulse integral).
+  ///
+  /// Call this before the first sample of each test, using the current
+  /// body-weight force reading.
+  void prewarm(double dcValue) {
+    final w1 = ButterworthFilter._initDC(dcValue, ButterworthFilter._a1);
+    _w1[0] = w1[0]; _w1[1] = w1[1];
+    // Section 1 DC gain = 1 → steady-state output of section 1 = dcValue.
+    // Pre-warm section 2 with the same value.
+    final w2 = ButterworthFilter._initDC(dcValue, ButterworthFilter._a2);
+    _w2[0] = w2[0]; _w2[1] = w2[1];
+  }
 }

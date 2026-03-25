@@ -157,6 +157,15 @@ class SignalProcessor {
 
   int get platformCount => _platformCount == 0 ? 1 : _platformCount;
 
+  /// Pre-warm the internal Butterworth filter to steady-state for [forceN].
+  /// Call this right after creating a new [SignalProcessor] for a test,
+  /// passing the athlete's current body-weight force from the live display.
+  /// This prevents the cold-start transient from corrupting the impulse-
+  /// momentum height calculation.
+  void prewarmFilter(double forceN) {
+    if (forceN > 20) _bw.prewarm(forceN);
+  }
+
   void reset() {
     _bw.reset();
     _lastRawBML = _lastRawBMR = _lastRawBSL = _lastRawBSR = 0;

@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/physics_constants.dart';
 import '../../data/models/raw_sample.dart';
@@ -65,11 +67,16 @@ class LiveDataState {
 
 class LiveDataNotifier extends StateNotifier<LiveDataState> {
   static const int _bufferSize = PhysicsConstants.chartBufferSize; // 5000
+  // Chart update interval: publish new chart data every N samples.
+  // 50 samples @ 1000 Hz = 50 ms ≈ 20 fps — smooth on mobile, low CPU.
+  static const int _chartUpdateEvery = 50;
 
-  final List<double> _t = [];
-  final List<double> _fTotal = [];
-  final List<double> _fLeft  = [];
-  final List<double> _fRight = [];
+  // ListQueue gives O(1) addLast + removeFirst — avoids the O(n) shift
+  // that List.removeAt(0) causes at 1000 samples/second.
+  final ListQueue<double> _t      = ListQueue(_bufferSize + 1);
+  final ListQueue<double> _fTotal = ListQueue(_bufferSize + 1);
+  final ListQueue<double> _fLeft  = ListQueue(_bufferSize + 1);
+  final ListQueue<double> _fRight = ListQueue(_bufferSize + 1);
   double _t0 = 0;
 
   final SignalProcessor _processor;
@@ -84,31 +91,33 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
     if (_t0 == 0) _t0 = tAbs;
     final tRel = tAbs - _t0;
 
-    _t.add(tRel);
-    _fTotal.add(processed.forceTotal);
+    _t.addLast(tRel);
+    _fTotal.addLast(processed.forceTotal);
     // Single platform → left=master board, right=slave board
     // Dual platform   → left=Platform A,   right=Platform B
     if (processed.platformCount == 1) {
-      _fLeft.add(processed.forceMasterSide);
-      _fRight.add(processed.forceSlaveSide);
+      _fLeft.addLast(processed.forceMasterSide);
+      _fRight.addLast(processed.forceSlaveSide);
     } else {
-      _fLeft.add(processed.forcePlatformA);
-      _fRight.add(processed.forcePlatformB);
+      _fLeft.addLast(processed.forcePlatformA);
+      _fRight.addLast(processed.forcePlatformB);
     }
 
+    // O(1) removal from the front — critical at 1000 Hz.
     while (_t.length > _bufferSize) {
-      _t.removeAt(0);
-      _fTotal.removeAt(0);
-      _fLeft.removeAt(0);
-      _fRight.removeAt(0);
+      _t.removeFirst();
+      _fTotal.removeFirst();
+      _fLeft.removeFirst();
+      _fRight.removeFirst();
     }
 
     final n = state.samplesReceived + 1;
+    final bool doChartUpdate = n % _chartUpdateEvery == 0;
     final nextState = LiveDataState(
-      timeS:         n % 33 == 0 ? List.unmodifiable(_t)      : state.timeS,
-      forceTotalN:   n % 33 == 0 ? List.unmodifiable(_fTotal) : state.forceTotalN,
-      forceLeftN:    n % 33 == 0 ? List.unmodifiable(_fLeft)  : state.forceLeftN,
-      forceRightN:   n % 33 == 0 ? List.unmodifiable(_fRight) : state.forceRightN,
+      timeS:         doChartUpdate ? List<double>.from(_t)      : state.timeS,
+      forceTotalN:   doChartUpdate ? List<double>.from(_fTotal) : state.forceTotalN,
+      forceLeftN:    doChartUpdate ? List<double>.from(_fLeft)  : state.forceLeftN,
+      forceRightN:   doChartUpdate ? List<double>.from(_fRight) : state.forceRightN,
       currentForceN:    processed.forceTotal,
       currentSmoothedN: processed.smoothedTotal,
       currentRawSum:    processed.rawSumA,
@@ -136,6 +145,10 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
     _processor.reset();
     state = const LiveDataState();
   }
+
+  /// Current processor instance — exposed so [TestStateNotifier] can
+  /// read the latest smoothed force for ButterworthOnline pre-warming.
+  SignalProcessor get processor => _processor;
 
 }
 

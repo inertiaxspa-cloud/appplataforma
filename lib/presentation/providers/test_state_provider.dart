@@ -13,6 +13,7 @@ import '../../domain/entities/calibration_data.dart';
 import '../../domain/entities/test_result.dart';
 import 'connection_provider.dart';
 import 'calibration_provider.dart';
+import 'live_data_provider.dart';
 import '../screens/settings/settings_screen.dart';
 
 // ── Test state ─────────────────────────────────────────────────────────────
@@ -94,6 +95,13 @@ class TestStateNotifier extends StateNotifier<TestState> {
     final cal = _ref.read(calibrationProvider).activeCalibration
         ?? CalibrationData.defaultCalibration();
     _processor = SignalProcessor(cal);
+
+    // Pre-warm the Butterworth filter with the athlete's current body-weight
+    // force from the live display. This eliminates the cold-start transient
+    // (filter starts at 0 instead of BW) that corrupts the impulse-momentum
+    // integral and causes grossly underestimated jump heights on Android.
+    final currentForce = _ref.read(liveDataProvider).currentSmoothedN;
+    if (currentForce > 50) _processor!.prewarmFilter(currentForce);
 
     // Apply algorithm settings to phase detector.
     final settings = _ref.read(settingsProvider);
@@ -377,11 +385,12 @@ class TestStateNotifier extends StateNotifier<TestState> {
     );
 
     // Sanity check: impulse height must be plausible vs. flight-time height.
-    // If impulse gives <40% of flight-time height (and we had a real jump),
-    // the integration is corrupted — fall back to flight-time unconditionally.
+    // If impulse gives <60% of flight-time height (and we had a real jump),
+    // the integration is suspect — fall back to flight-time unconditionally.
+    // (60% threshold: normal impulse vs flight-time difference is <15%.)
     final bool impulseIsPlausible = flightTimeS < 0.10 ||
         (heightFlightM <= 0) ||
-        (heightImpulseM >= heightFlightM * 0.40);
+        (heightImpulseM >= heightFlightM * 0.60);
 
     final double heightM  = (settings.useImpulseHeight && impulseIsPlausible)
         ? heightImpulseM

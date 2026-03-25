@@ -77,19 +77,72 @@ class HistoryScreen extends ConsumerWidget {
 
 // ── Session list ──────────────────────────────────────────────────────────────
 
-class _SessionList extends StatelessWidget {
+class _SessionList extends ConsumerStatefulWidget {
   final List<Map<String, dynamic>> sessions;
   const _SessionList({required this.sessions});
 
   @override
+  ConsumerState<_SessionList> createState() => _SessionListState();
+}
+
+class _SessionListState extends ConsumerState<_SessionList> {
+  /// Local optimistic copy — items are removed immediately on dismiss so that
+  /// there is no race between the Dismissible animation and provider rebuild.
+  late List<Map<String, dynamic>> _sessions;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessions = List<Map<String, dynamic>>.from(widget.sessions);
+  }
+
+  @override
+  void didUpdateWidget(_SessionList old) {
+    super.didUpdateWidget(old);
+    // Sync local copy whenever the provider delivers a fresh list
+    // (e.g. after a delete refresh or manual reload).
+    if (widget.sessions != old.sessions) {
+      setState(() => _sessions = List<Map<String, dynamic>>.from(widget.sessions));
+    }
+  }
+
+  void _removeSession(Map<String, dynamic> session) {
+    final id = session['id'] as int?;
+    // 1. Remove from local list immediately — animation stays smooth.
+    setState(() => _sessions.removeWhere((s) => s['id'] == id));
+    // 2. Delete from DB asynchronously.
+    if (id != null) {
+      DatabaseHelper.instance.deleteSession(id).then((_) {
+        // 3. Refresh provider so the count and other screens stay in sync.
+        if (mounted) ref.invalidate(sessionHistoryProvider);
+      }).catchError((e) {
+        // Restore item on error and show a snackbar.
+        if (mounted) {
+          setState(() {
+            if (!_sessions.any((s) => s['id'] == id)) _sessions.add(session);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al borrar: $e'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final grouped = <String, List<Map<String, dynamic>>>{};
-    for (final s in sessions) {
+    for (final s in _sessions) {
       final dt  = DateTime.tryParse(s['performed_at'] as String? ?? '') ?? DateTime.now();
       final key = DateFormat('EEEE, d MMM yyyy', AppStrings.currentLanguage).format(dt);
       (grouped[key] ??= []).add(s);
     }
     final dates = grouped.keys.toList();
+
+    if (_sessions.isEmpty) return const _EmptyHistory();
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -104,7 +157,10 @@ class _SessionList extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(date, style: IXTextStyles.sectionHeader()),
             ),
-            ...daySessions.map((s) => _SessionTile(session: s)),
+            ...daySessions.map((s) => _SessionTile(
+              session: s,
+              onDelete: () => _removeSession(s),
+            )),
           ],
         );
       },
@@ -114,7 +170,10 @@ class _SessionList extends StatelessWidget {
 
 class _SessionTile extends ConsumerWidget {
   final Map<String, dynamic> session;
-  const _SessionTile({required this.session});
+  /// Called after the user confirms deletion. The parent handles actual DB
+  /// deletion and provider refresh — keeping it out of the Dismissible callback.
+  final VoidCallback onDelete;
+  const _SessionTile({required this.session, required this.onDelete});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -187,10 +246,11 @@ class _SessionTile extends ConsumerWidget {
         );
         return confirmed == true;
       },
-      onDismissed: (_) async {
-        final id = session['id'] as int?;
-        if (id != null) await DatabaseHelper.instance.deleteSession(id);
-        ref.invalidate(sessionHistoryProvider);
+      onDismissed: (_) {
+        // Delegate deletion to the parent stateful widget — this keeps the
+        // Dismissible callback synchronous and avoids the widget-tree tear-down
+        // race that caused the black screen / hang.
+        onDelete();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

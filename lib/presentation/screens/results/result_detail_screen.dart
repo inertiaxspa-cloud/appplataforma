@@ -43,10 +43,15 @@ class ResultDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
+  // Guard against saving the same result more than once (e.g. widget rebuild,
+  // or back-navigation re-pushing the route with sessionId still null).
+  bool _saved = false;
+
   @override
   void initState() {
     super.initState();
-    if (widget.result.sessionId == null) {
+    if (widget.result.sessionId == null && !_saved) {
+      _saved = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _saveResult());
     }
   }
