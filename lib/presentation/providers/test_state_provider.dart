@@ -376,7 +376,14 @@ class TestStateNotifier extends StateNotifier<TestState> {
       takeoffIdx:  takeoffIdx,
     );
 
-    final double heightM  = settings.useImpulseHeight
+    // Sanity check: impulse height must be plausible vs. flight-time height.
+    // If impulse gives <40% of flight-time height (and we had a real jump),
+    // the integration is corrupted — fall back to flight-time unconditionally.
+    final bool impulseIsPlausible = flightTimeS < 0.10 ||
+        (heightFlightM <= 0) ||
+        (heightImpulseM >= heightFlightM * 0.40);
+
+    final double heightM  = (settings.useImpulseHeight && impulseIsPlausible)
         ? heightImpulseM
         : heightFlightM;
     final double heightCm = heightM * 100;
@@ -496,7 +503,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
           peakPowerSayersW:  peakPowerRegression,
           peakPowerImpulseW: peakPowerImpulse,
           symmetry: symmetry,
-          jumpHeightFlightTimeCm: 0.0,
+          jumpHeightFlightTimeCm: heightFlightM * 100,
           landingPeakForceN: 0.0,
           contactTimeMs: contactMs, rsiMod: rsiMod,
         ),
@@ -526,7 +533,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         peakPowerSayersW:  peakPowerRegression,
         peakPowerImpulseW: peakPowerImpulse,
         symmetry: symmetry,
-        jumpHeightFlightTimeCm: 0.0,
+        jumpHeightFlightTimeCm: heightFlightM * 100,
         landingPeakForceN: 0.0,
       ),
       statusMessage: 'Salto completado',

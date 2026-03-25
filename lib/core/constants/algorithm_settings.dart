@@ -73,7 +73,7 @@ class AlgorithmSettings {
   final CopFrequencyMethod copFrequency;
 
   const AlgorithmSettings({
-    this.jumpHeight   = JumpHeightMethod.impulseMomentum,
+    this.jumpHeight   = JumpHeightMethod.flightTime,
     this.peakPower    = PeakPowerMethod.sayers,
     this.symmetry     = SymmetryMethod.asymmetryIndex,
     this.imtpOnset    = ImtpOnsetMethod.statisticalSD,
