@@ -130,6 +130,20 @@ class SignalProcessor {
 
     // ── Total force & smoothing ─────────────────────────────────────────────
     final forceTotal = forcePlatformA + forcePlatformB;
+
+    // ── Spike / outlier rejection ────────────────────────────────────────────
+    // At 921600 baud over Android USB-OTG, occasional framing errors produce
+    // corrupted CSV lines whose ADC values are astronomically large.  A single
+    // such sample contaminates the Butterworth state for hundreds of subsequent
+    // samples.  Reject any sample that exceeds the physical maximum for a
+    // human on a force platform (two 100-kg athletes jumping simultaneously
+    // = ~20 kN; set guard at 30 kN to leave ample headroom).
+    // The filter is NOT updated, so its state stays clean.
+    const double _kMaxForceN = 30000.0;
+    if (forceTotal.isNaN || forceTotal.isInfinite || forceTotal > _kMaxForceN || forceTotal < -1000.0) {
+      return null;
+    }
+
     final smoothed   = _bw.process(forceTotal);
 
     return ProcessedSample(

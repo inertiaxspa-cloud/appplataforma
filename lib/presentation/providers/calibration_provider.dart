@@ -77,23 +77,28 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
       'A_SL': rawASL,
       'A_SR': rawASR,
     };
-    // Also add the zero-weight calibration point (for backward compat)
+    // Also add the zero-weight calibration point (for backward compat).
+    // REPLACE any existing tare (weightKg == 0) rather than appending,
+    // so that re-taring never duplicates the point.
     final rawSum = rawAML + rawAMR + rawASL + rawASR;
+    final tarePt = CalibrationPoint(
+      weightKg: 0,
+      rawSum: rawSum,
+      rawAML: rawAML,
+      rawAMR: rawAMR,
+      rawASL: rawASL,
+      rawASR: rawASR,
+    );
     final points = [
-      ...state.pendingPoints,
-      CalibrationPoint(
-        weightKg: 0,
-        rawSum: rawSum,
-        rawAML: rawAML,
-        rawAMR: rawAMR,
-        rawASL: rawASL,
-        rawASR: rawASR,
-      ),
+      ...state.pendingPoints.where((p) => p.weightKg != 0),
+      tarePt,
     ];
     state = state.copyWith(pendingPoints: points);
   }
 
   /// Add a calibration point with per-cell raw readings at a known weight.
+  /// If a point with the same [weightKg] already exists it is REPLACED,
+  /// preventing accidental duplicates when re-measuring the same load.
   void addPoint(
     double weightKg,
     double rawSum, {
@@ -102,16 +107,18 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
     double rawASL = 0,
     double rawASR = 0,
   }) {
+    final newPt = CalibrationPoint(
+      weightKg: weightKg,
+      rawSum: rawSum,
+      rawAML: rawAML,
+      rawAMR: rawAMR,
+      rawASL: rawASL,
+      rawASR: rawASR,
+    );
+    // Remove any existing point at the same weight before appending.
     final points = [
-      ...state.pendingPoints,
-      CalibrationPoint(
-        weightKg: weightKg,
-        rawSum: rawSum,
-        rawAML: rawAML,
-        rawAMR: rawAMR,
-        rawASL: rawASL,
-        rawASR: rawASR,
-      ),
+      ...state.pendingPoints.where((p) => p.weightKg != weightKg),
+      newPt,
     ];
     state = state.copyWith(pendingPoints: points);
   }

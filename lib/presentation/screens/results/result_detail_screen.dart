@@ -44,15 +44,18 @@ class ResultDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
-  // Guard against saving the same result more than once (e.g. widget rebuild,
-  // or back-navigation re-pushing the route with sessionId still null).
-  bool _saved = false;
+  // Process-level deduplication: tracks ISO-8601 timestamps of results that
+  // have already been saved in this app session.  Prevents double-insertion
+  // when the widget is destroyed and recreated (e.g. back-navigation) while
+  // the TestResult object still reports sessionId == null (it is immutable).
+  static final Set<String> _savedTimestamps = {};
 
   @override
   void initState() {
     super.initState();
-    if (widget.result.sessionId == null && !_saved) {
-      _saved = true;
+    final key = widget.result.computedAt.toIso8601String();
+    if (widget.result.sessionId == null && !_savedTimestamps.contains(key)) {
+      _savedTimestamps.add(key);
       WidgetsBinding.instance.addPostFrameCallback((_) => _saveResult());
     }
   }

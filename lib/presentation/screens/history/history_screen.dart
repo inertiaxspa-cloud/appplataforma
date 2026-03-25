@@ -225,21 +225,25 @@ class _SessionTile extends ConsumerWidget {
       confirmDismiss: (_) async {
         final id = session['id'] as int?;
         if (id == null) return false;
+        // IMPORTANT: use the dialog builder's own context (dlgCtx) for
+        // Navigator.pop, NOT the tile's context.  showDialog() pushes the
+        // dialog onto the *root* navigator; using the tile's context (shell
+        // inner navigator) pops the history tab instead → black screen.
         final confirmed = await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(
+          builder: (dlgCtx) => AlertDialog(
             backgroundColor: col.surface,
             title: Text(AppStrings.get('delete_session')),
             content:
                 Text(AppStrings.get('delete_confirmation')),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => Navigator.pop(dlgCtx, false),
                   child: Text(AppStrings.get('cancel'))),
               TextButton(
                   style:
                       TextButton.styleFrom(foregroundColor: AppColors.danger),
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => Navigator.pop(dlgCtx, true),
                   child: Text(AppStrings.get('delete'))),
             ],
           ),

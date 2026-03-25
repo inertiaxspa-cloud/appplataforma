@@ -148,6 +148,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     super.initState();
     _loadPolarities();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Always start a fresh calibration session — discard any leftover
+      // pending points from a previous (possibly incomplete) visit.
+      ref.read(calibrationProvider.notifier).clearPendingPoints();
+
       _liveSub = ref.listenManual<LiveDataState>(
         liveDataProvider,
         (_, next) {
