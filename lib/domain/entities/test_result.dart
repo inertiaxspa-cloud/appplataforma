@@ -1,17 +1,19 @@
 import 'dart:convert';
 
+import 'package:inertiax/core/l10n/app_strings.dart';
+
 enum TestType { cmj, cmjArms, sj, dropJump, multiJump, cop, imtp }
 
 extension TestTypeExt on TestType {
   String get displayName {
     switch (this) {
-      case TestType.cmj:       return 'CMJ — Contramovimiento';
-      case TestType.cmjArms:   return 'CMJ + Brazos';
-      case TestType.sj:        return 'SJ — Sentadilla';
-      case TestType.dropJump:  return 'DJ — Caída';
-      case TestType.multiJump: return 'Multi-Salto (RSI)';
-      case TestType.cop:       return 'Equilibrio (CoP)';
-      case TestType.imtp:      return 'IMTP — Tracción';
+      case TestType.cmj:       return AppStrings.get('test_cmj');
+      case TestType.cmjArms:   return AppStrings.get('test_cmj_arms');
+      case TestType.sj:        return AppStrings.get('test_sj');
+      case TestType.dropJump:  return AppStrings.get('test_dj');
+      case TestType.multiJump: return AppStrings.get('test_multijump');
+      case TestType.cop:       return AppStrings.get('test_cop');
+      case TestType.imtp:      return AppStrings.get('test_imtp');
     }
   }
 

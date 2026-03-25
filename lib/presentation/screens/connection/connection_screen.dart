@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/connection/connection_datasource.dart';
 import '../../providers/connection_provider.dart';
 import '../../theme/app_theme.dart';
@@ -53,7 +54,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Conectar Plataforma'),
+        title: Text(AppStrings.get('connect_platform')),
         actions: [
           IconButton(
             icon: _scanning
@@ -259,17 +260,17 @@ class _EmptyPorts extends StatelessWidget {
         children: [
           Icon(Icons.usb_off, size: 56, color: col.textDisabled),
           const SizedBox(height: 16),
-          Text('No se encontraron puertos',
+          Text(AppStrings.get('no_ports_found'),
               style: TextStyle(color: col.textSecondary,
                   fontSize: 15, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Text('Conecta el RECEPTOR por cable USB y presiona Buscar.',
+          Text(AppStrings.get('connect_receiver'),
               style: TextStyle(color: col.textDisabled, fontSize: 12),
               textAlign: TextAlign.center),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: const Icon(Icons.search, size: 18),
-            label: Text(isScanning ? 'Buscando...' : 'Buscar dispositivos'),
+            label: Text(isScanning ? AppStrings.get('searching') : AppStrings.get('search_devices')),
             onPressed: isScanning ? null : onScan,
           ),
         ],

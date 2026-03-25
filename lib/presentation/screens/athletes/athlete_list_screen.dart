@@ -29,7 +29,7 @@ class AthleteListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_outlined),
-            tooltip: 'Nuevo atleta',
+            tooltip: AppStrings.get('new_athlete'),
             onPressed: () => _showFormDialog(context, ref, null),
           ),
         ],
@@ -43,15 +43,15 @@ class AthleteListScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
               const SizedBox(height: 12),
-              const Text('No se pudieron cargar los atletas.',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(AppStrings.get('could_not_load_athletes'),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              const Text('Intenta reiniciar la aplicación.',
-                  style: TextStyle(fontSize: 13)),
+              Text(AppStrings.get('restart_app'),
+                  style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
+                label: Text(AppStrings.get('retry')),
                 onPressed: () => ref.invalidate(athleteNotifierProvider),
               ),
             ],
@@ -175,7 +175,7 @@ class _AthleteCard extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.show_chart_rounded,
                     size: 18, color: AppColors.primary),
-                tooltip: 'Progreso',
+                tooltip: AppStrings.get('progress'),
                 onPressed: () =>
                     context.push('/athletes/progress', extra: athlete),
               ),
@@ -197,23 +197,23 @@ class _AthleteCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.col.surface,
-        title: Text('Eliminar atleta',
+        title: Text(AppStrings.get('delete_athlete'),
             style: TextStyle(color: ctx.col.textPrimary)),
         content: Text(
           '¿Eliminar a ${athlete.name}?\n'
-          'Se eliminarán también todos sus tests guardados.',
+          '${AppStrings.get('delete_athlete_confirmation')}',
           style: TextStyle(color: ctx.col.textSecondary, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancelar',
+            child: Text(AppStrings.get('cancel'),
                 style: TextStyle(color: ctx.col.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: Text(AppStrings.get('delete'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -333,7 +333,7 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
         : double.tryParse(_weightCtrl.text.trim());
     if (_weightCtrl.text.trim().isNotEmpty && (bwKg == null || bwKg <= 0 || bwKg > 500)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Peso inválido. Ingresa un valor entre 1 y 500 kg.')),
+        SnackBar(content: Text(AppStrings.get('invalid_weight'))),
       );
       return;
     }
@@ -364,7 +364,7 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
     final col = context.col;
     return AlertDialog(
       backgroundColor: col.surface,
-      title: Text(_isEdit ? 'Editar atleta' : 'Nuevo atleta',
+      title: Text(_isEdit ? AppStrings.get('edit_athlete') : AppStrings.get('new_athlete'),
           style: TextStyle(color: col.textPrimary)),
       content: Column(
         mainAxisSize: MainAxisSize.min,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/calibration_data.dart';
 import '../../providers/calibration_provider.dart';
 import '../../providers/live_data_provider.dart';
@@ -250,7 +251,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calibración'),
+        title: Text(AppStrings.get('calibration_title')),
         actions: [
           if (cal.activeCalibration != null)
             Padding(
@@ -342,13 +343,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 1: Tare ─────────────────────────────────────────────
             _StepCard(
               step: 0, currentStep: _step,
-              title: 'Paso 1 — Plataforma vacía',
+              title: AppStrings.get('step_1'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Deja la plataforma sin peso y sin movimiento.\n'
-                    'Presiona el botón para registrar la referencia de vacío.',
+                    AppStrings.get('empty_platform_instruction'),
                     style: TextStyle(color: col.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
@@ -356,7 +356,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.sensors, size: 18),
-                      label: const Text('Calibrar vacío'),
+                      label: Text(AppStrings.get('calibrate_empty')),
                       onPressed: (!isCollecting && _step == 0)
                           ? _startCollectTare
                           : null,
@@ -370,7 +370,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 2: Add weights ───────────────────────────────────────
             _StepCard(
               step: 1, currentStep: _step,
-              title: 'Paso 2 — Agrega un peso conocido',
+              title: AppStrings.get('step_2'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -417,17 +417,17 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                         child: TextField(
                           controller: _weightCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Peso (kg)',
+                          decoration: InputDecoration(
+                            labelText: AppStrings.get('weight_label'),
                             suffixText: 'kg',
-                            hintText: 'ej. 20',
+                            hintText: AppStrings.get('weight_hint'),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.sensors, size: 16),
-                        label: const Text('Agregar'),
+                        label: Text(AppStrings.get('add_point')),
                         onPressed: (!isCollecting && _step == 1)
                             ? _startCollectPoint
                             : null,
@@ -462,23 +462,23 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
             // ── Step 3: Compute & save ────────────────────────────────────
             _StepCard(
               step: 2, currentStep: _step,
-              title: 'Paso 3 — Guardar calibración',
+              title: AppStrings.get('step_3'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name field
                   TextField(
                     controller: _nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre de esta calibración',
-                      hintText: 'Ej: Calibración campo 15-mar',
-                      prefixIcon: Icon(Icons.label_outline, size: 18),
+                    decoration: InputDecoration(
+                      labelText: AppStrings.get('calibration_name'),
+                      hintText: AppStrings.get('calibration_hint'),
+                      prefixIcon: const Icon(Icons.label_outline, size: 18),
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Method selector label
-                  Text('MÉTODO DE CALIBRACIÓN',
+                  Text(AppStrings.get('calibration_method'),
                       style: IXTextStyles.metricLabel),
                   const SizedBox(height: 8),
 
@@ -934,8 +934,8 @@ class _CollectionProgressCard extends StatelessWidget {
               ),
               TextButton(
                 onPressed: onCancel,
-                child: const Text('Cancelar Calibración',
-                    style: TextStyle(fontSize: 11)),
+                child: Text(AppStrings.get('cancel_calibration'),
+                    style: const TextStyle(fontSize: 11)),
               ),
             ],
           ),

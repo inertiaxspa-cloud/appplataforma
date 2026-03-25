@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/algorithm_settings.dart';
 import '../../../core/constants/physics_constants.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/services/supabase_service.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/sync_provider.dart';
@@ -186,7 +187,7 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuración'),
+        title: Text(AppStrings.get('configure_settings')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -198,12 +199,12 @@ class SettingsScreen extends ConsumerWidget {
         children: [
 
           // ── Idioma / Language ────────────────────────────────────────────
-          _SectionHeader('Idioma / Language'),
+          _SectionHeader(AppStrings.get('language')),
           _SettingCard(children: [
             _PickerTile(
-              label:    'Idioma',
+              label:    AppStrings.get('language'),
               options:  const ['es', 'en'],
-              labels:   const ['Español', 'English'],
+              labels:   [AppStrings.get('spanish'), AppStrings.get('english')],
               selected: currentLang,
               onChanged: (v) {
                 langNotifier.setLanguage(v);
@@ -217,12 +218,12 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Apariencia ──────────────────────────────────────────────────
-          _SectionHeader('Apariencia'),
+          _SectionHeader(AppStrings.get('appearance')),
           _SettingCard(children: [
             _PickerTile(
-              label:    'Tema',
+              label:    AppStrings.get('theme'),
               options:  const ['dark', 'light', 'outdoor'],
-              labels:   const ['Oscuro', 'Claro', 'Exterior (sol)'],
+              labels:   [AppStrings.get('dark_theme'), AppStrings.get('light_theme'), AppStrings.get('outdoor_theme')],
               selected: settings.themeMode,
               onChanged: (v) => upd((s) => s.copyWith(themeMode: v)),
             ),
@@ -231,11 +232,11 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Hardware ────────────────────────────────────────────────────
-          _SectionHeader('Hardware'),
+          _SectionHeader(AppStrings.get('hardware')),
           _SettingCard(children: [
             _SliderTile(
-              label: 'Separación entre plataformas',
-              subtitle: 'Distancia entre el centro de cada plataforma',
+              label: AppStrings.get('platform_separation'),
+              subtitle: AppStrings.get('platform_separation_subtitle'),
               value: settings.platformSeparationCm,
               min: 20, max: 60, unit: 'cm',
               onChanged: (v) =>
@@ -246,17 +247,17 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Unidades ────────────────────────────────────────────────────
-          _SectionHeader('Unidades'),
+          _SectionHeader(AppStrings.get('weight_unit')),
           _SettingCard(children: [
             _PickerTile(
-              label:    'Peso',
+              label:    AppStrings.get('weight_unit'),
               options:  const ['kg', 'lb'],
               selected: settings.weightUnit,
               onChanged: (v) => upd((s) => s.copyWith(weightUnit: v)),
             ),
             Divider(color: context.col.border, height: 1),
             _PickerTile(
-              label:    'Altura de salto',
+              label:    AppStrings.get('jump_height_unit'),
               options:  const ['cm', 'in'],
               selected: settings.heightUnit,
               onChanged: (v) => upd((s) => s.copyWith(heightUnit: v)),
@@ -266,19 +267,19 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Tests ───────────────────────────────────────────────────────
-          _SectionHeader('Tests'),
+          _SectionHeader(AppStrings.get('tests_section')),
           _SettingCard(children: [
             _SwitchTile(
-              label:    'Guardar tests automáticamente',
-              subtitle: 'Guarda cada resultado en la base de datos local',
+              label:    AppStrings.get('auto_save_tests'),
+              subtitle: AppStrings.get('auto_save_subtitle'),
               value:    settings.autoSaveTests,
               onChanged: (v) =>
                   upd((s) => s.copyWith(autoSaveTests: v)),
             ),
             Divider(color: context.col.border, height: 1),
             _SwitchTile(
-              label:    'Retroalimentación sonora',
-              subtitle: 'Sonido al iniciar/terminar fases del test',
+              label:    AppStrings.get('sound_feedback'),
+              subtitle: AppStrings.get('sound_feedback_subtitle'),
               value:    settings.soundFeedback,
               onChanged: (v) => upd((s) => s.copyWith(soundFeedback: v)),
             ),
@@ -287,18 +288,18 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Avanzado ────────────────────────────────────────────────────
-          _SectionHeader('Avanzado'),
+          _SectionHeader(AppStrings.get('advanced')),
           _SettingCard(children: [
             _SwitchTile(
-              label:    'Mostrar datos raw',
-              subtitle: 'Muestra valores ADC sin procesar en el monitor',
+              label:    AppStrings.get('show_raw_data'),
+              subtitle: AppStrings.get('show_raw_subtitle'),
               value:    settings.showRawData,
               onChanged: (v) => upd((s) => s.copyWith(showRawData: v)),
             ),
             Divider(color: context.col.border, height: 1),
             _SwitchTile(
-              label:    'Modo Ingeniero',
-              subtitle: 'Muestra valores técnicos de celdas, algoritmos y señal cruda',
+              label:    AppStrings.get('engineer_mode'),
+              subtitle: AppStrings.get('engineer_mode_subtitle'),
               value:    settings.engineerMode,
               onChanged: (v) => upd((s) => s.copyWith(engineerMode: v)),
             ),
@@ -310,12 +311,12 @@ class SettingsScreen extends ConsumerWidget {
           Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              title: Text('Configuración Avanzada',
+              title: Text(AppStrings.get('advanced_config'),
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: context.col.textPrimary)),
-              subtitle: Text('Métodos de cálculo para investigadores',
+              subtitle: Text(AppStrings.get('advanced_config_subtitle'),
                   style: TextStyle(fontSize: 11, color: context.col.textSecondary)),
               leading: Icon(Icons.science_outlined,
                   color: context.col.textSecondary, size: 20),
@@ -326,30 +327,30 @@ class SettingsScreen extends ConsumerWidget {
               children: [
 
                 // Saltos
-                _AlgoSubHeader('Saltos'),
+                _AlgoSubHeader(AppStrings.get('jumps_section')),
                 _SettingCard(children: [
                   _PickerTile(
-                    label:    'Altura de salto',
+                    label:    AppStrings.get('jump_height_method'),
                     options:  const ['flightTime', 'impulseMomentum'],
-                    labels:   const ['Tiempo vuelo', 'Impulso-Momento'],
+                    labels:   [AppStrings.get('flight_time_method'), AppStrings.get('impulse_momentum_method')],
                     selected: settings.algo.jumpHeight.name,
                     subtitle: settings.algo.jumpHeight == JumpHeightMethod.impulseMomentum
-                        ? 'Cálculo por área bajo la curva de fuerza (más preciso)'
-                        : 'Cálculo por tiempo en el aire',
+                        ? AppStrings.get('impulse_momentum_desc')
+                        : AppStrings.get('flight_time_desc'),
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
                             jumpHeight: JumpHeightMethod.values.byName(v)))),
                   ),
                   Divider(color: context.col.border, height: 1),
                   _PickerTile(
-                    label:    'Potencia pico',
+                    label:    AppStrings.get('peak_power'),
                     options:  const ['sayers', 'harman', 'impulseBased'],
-                    labels:   const ['Sayers', 'Harman', 'Impulso'],
+                    labels:   [AppStrings.get('sayers_method'), AppStrings.get('harman_method'), AppStrings.get('impulse_based')],
                     selected: settings.algo.peakPower.name,
                     subtitle: switch (settings.algo.peakPower) {
-                      PeakPowerMethod.sayers       => 'Ecuación de Sayers (1999)',
-                      PeakPowerMethod.harman       => 'Ecuación de Harman (1991)',
-                      PeakPowerMethod.impulseBased => 'Calculado directamente de la curva de fuerza',
+                      PeakPowerMethod.sayers       => AppStrings.get('sayers_eq'),
+                      PeakPowerMethod.harman       => AppStrings.get('harman_eq'),
+                      PeakPowerMethod.impulseBased => AppStrings.get('impulse_based_desc'),
                     },
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
@@ -357,13 +358,13 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   Divider(color: context.col.border, height: 1),
                   _PickerTile(
-                    label:    'Índice de simetría',
+                    label:    AppStrings.get('symmetry_index'),
                     options:  const ['asymmetryIndex', 'limbSymmetryIndex'],
-                    labels:   const ['AI', 'LSI'],
+                    labels:   [AppStrings.get('asymmetry_index_key'), AppStrings.get('limb_symmetry_index')],
                     selected: settings.algo.symmetry.name,
                     subtitle: settings.algo.symmetry == SymmetryMethod.limbSymmetryIndex
-                        ? 'Relación entre extremidad más débil y más fuerte'
-                        : 'Diferencia porcentual respecto al 50% ideal',
+                        ? AppStrings.get('lsi_desc')
+                        : AppStrings.get('ai_desc'),
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
                             symmetry: SymmetryMethod.values.byName(v)))),
@@ -373,16 +374,16 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
 
                 // Detección de fases
-                _AlgoSubHeader('Detección de fases'),
+                _AlgoSubHeader(AppStrings.get('phase_detection')),
                 _SettingCard(children: [
                   _PickerTile(
-                    label:    'Inicio de movimiento (CMJ/SJ)',
+                    label:    AppStrings.get('movement_onset'),
                     options:  const ['fixed80N', 'adaptive5SD'],
-                    labels:   const ['80N fijo', '5×DS'],
+                    labels:   [AppStrings.get('fixed_80n'), AppStrings.get('adaptive_5sd')],
                     selected: settings.algo.unweighting.name,
                     subtitle: settings.algo.unweighting == UnweightingMethod.adaptive5SD
-                        ? 'Se adapta automáticamente al peso del atleta (recomendado)'
-                        : 'Umbral fijo de 80 N bajo el peso corporal',
+                        ? AppStrings.get('adaptive_5sd_desc')
+                        : AppStrings.get('fixed_80n_desc'),
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
                             unweighting: UnweightingMethod.values.byName(v)))),
@@ -392,16 +393,16 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
 
                 // IMTP
-                _AlgoSubHeader('IMTP'),
+                _AlgoSubHeader(AppStrings.get('imtp_section')),
                 _SettingCard(children: [
                   _PickerTile(
-                    label:    'Inicio del tirón',
+                    label:    AppStrings.get('pull_onset'),
                     options:  const ['fixedThreshold', 'statisticalSD'],
-                    labels:   const ['BW+50N', '5×DS'],
+                    labels:   [AppStrings.get('bw_50n'), AppStrings.get('adaptive_5sd')],
                     selected: settings.algo.imtpOnset.name,
                     subtitle: settings.algo.imtpOnset == ImtpOnsetMethod.statisticalSD
-                        ? 'Adaptativo basado en variabilidad del atleta (recomendado)'
-                        : 'Umbral fijo de 50 N sobre el peso corporal',
+                        ? AppStrings.get('stat_sd_desc')
+                        : AppStrings.get('bw_50n_desc'),
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
                             imtpOnset: ImtpOnsetMethod.values.byName(v)))),
@@ -411,16 +412,16 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
 
                 // CoP / Balance
-                _AlgoSubHeader('CoP / Balance'),
+                _AlgoSubHeader(AppStrings.get('cop_section')),
                 _SettingCard(children: [
                   _PickerTile(
-                    label:    'Frecuencia dominante',
+                    label:    AppStrings.get('dominant_frequency'),
                     options:  const ['zeroCrossing', 'fft95'],
-                    labels:   const ['Cruces-cero', 'FFT f₉₅'],
+                    labels:   [AppStrings.get('zero_crossing'), AppStrings.get('fft_f95')],
                     selected: settings.algo.copFrequency.name,
                     subtitle: settings.algo.copFrequency == CopFrequencyMethod.fft95
-                        ? 'Análisis espectral de la señal (más preciso)'
-                        : 'Método simplificado (más rápido)',
+                        ? AppStrings.get('fft_desc')
+                        : AppStrings.get('zero_crossing_desc'),
                     onChanged: (v) => upd((s) => s.copyWith(
                         algo: s.algo.copyWith(
                             copFrequency: CopFrequencyMethod.values.byName(v)))),
@@ -435,24 +436,24 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Sincronización ──────────────────────────────────────────────
-          _SectionHeader('Sincronización en la nube'),
+          _SectionHeader(AppStrings.get('cloud_sync')),
           const _SyncSection(),
 
           const SizedBox(height: 16),
 
           // ── Acerca de ───────────────────────────────────────────────────
-          _SectionHeader('Acerca de'),
+          _SectionHeader(AppStrings.get('about')),
           _SettingCard(children: [
-            _InfoTile(label: 'Versión', value: '1.0.0'),
+            _InfoTile(label: AppStrings.get('version'), value: '1.0.0'),
             Divider(color: context.col.border, height: 1),
-            _InfoTile(label: 'Firmware soportado', value: 'v2.3+'),
+            _InfoTile(label: AppStrings.get('firmware_supported'), value: 'v2.3+'),
             Divider(color: context.col.border, height: 1),
             _InfoTile(
-                label: 'Frecuencia de muestreo',
+                label: AppStrings.get('sampling_frequency'),
                 value: '${PhysicsConstants.samplingRateHz} Hz'),
             Divider(color: context.col.border, height: 1),
             _InfoTile(
-                label: 'Baud rate',
+                label: AppStrings.get('baud_rate'),
                 value: '${PhysicsConstants.baudRate}'),
           ]),
 
@@ -892,7 +893,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                 await notifier.syncPending();
               },
               icon: const Icon(Icons.sync_problem, size: 16),
-              label: const Text('Re-sincronizar todo', style: TextStyle(fontSize: 12)),
+              label: Text(AppStrings.get('resync_all'), style: const TextStyle(fontSize: 12)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.warning,
                 side: BorderSide(color: AppColors.warning.withAlpha(150)),

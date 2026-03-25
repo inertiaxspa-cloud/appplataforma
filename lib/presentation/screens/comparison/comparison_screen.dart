@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/local/database_helper.dart';
 import '../../../domain/entities/athlete.dart';
 import '../../../domain/entities/test_result.dart';
@@ -52,7 +53,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Comparativo de Sesiones'),
+        title: Text(AppStrings.get('comparison_sessions')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.canPop() ? context.pop() : context.go('/history'),
@@ -67,7 +68,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Atleta', style: TextStyle(fontSize: 11, color: col.textSecondary)),
+                Text(AppStrings.get('athlete_name'), style: TextStyle(fontSize: 11, color: col.textSecondary)),
                 const SizedBox(height: 4),
                 athletesAsync.when(
                   loading: () => const SizedBox(
@@ -81,7 +82,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Tipo de test',
+                Text(AppStrings.get('test_type_label'),
                     style: TextStyle(fontSize: 11, color: col.textSecondary)),
                 const SizedBox(height: 6),
                 _TestTypeChips(
@@ -95,9 +96,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           // ── Body ────────────────────────────────────────────────────────────
           Expanded(
             child: _athleteId == null
-                ? const _Placeholder(
+                ? _Placeholder(
                     icon: Icons.person_search,
-                    message: 'Selecciona un atleta para comparar sesiones',
+                    message: AppStrings.get('select_athlete_compare'),
                   )
                 : _ComparisonBody(
                     athleteId: _athleteId!,
@@ -137,7 +138,7 @@ class _AthletePicker extends StatelessWidget {
         child: DropdownButton<int?>(
           value: selectedId,
           isExpanded: true,
-          hint: Text('Seleccionar atleta…',
+          hint: Text(AppStrings.get('select_athlete'),
               style: TextStyle(color: col.textSecondary, fontSize: 13)),
           dropdownColor: col.surface,
           style: TextStyle(color: col.textPrimary, fontSize: 13),
@@ -238,8 +239,8 @@ class _ComparisonBody extends ConsumerWidget {
           return _Placeholder(
             icon: Icons.bar_chart,
             message: sessions.isEmpty
-                ? 'No hay sesiones de ${testType.displayName} para este atleta'
-                : 'Se necesitan al menos 2 sesiones para comparar',
+                ? '${AppStrings.get('no_sessions_for')} ${testType.displayName}'
+                : AppStrings.get('min_sessions'),
           );
         }
 
@@ -460,7 +461,7 @@ class _TrendChart extends StatelessWidget {
                         touchedSpots.map((s) {
                           final i = s.x.toInt();
                           final date = i >= 0 && i < sessions.length
-                              ? DateFormat('d MMM, HH:mm', 'es')
+                              ? DateFormat('d MMM, HH:mm', AppStrings.currentLanguage)
                                   .format(sessions[i].date)
                               : '';
                           return LineTooltipItem(
@@ -482,7 +483,7 @@ class _TrendChart extends StatelessWidget {
             child: Text(
               '${lowerIsBetter ? "Mejor (mín)" : "Mejor"}: '
               '${bestVal.toStringAsFixed(2)} $unit  ·  '
-              '${DateFormat("d MMM yyyy", "es").format(sessions[bestIndex].date)}',
+              '${DateFormat("d MMM yyyy", AppStrings.currentLanguage).format(sessions[bestIndex].date)}',
               style: const TextStyle(
                   fontSize: 10, color: AppColors.success),
             ),

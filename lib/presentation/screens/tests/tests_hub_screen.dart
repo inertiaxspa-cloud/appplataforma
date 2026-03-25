@@ -49,7 +49,7 @@ class TestsHubScreen extends ConsumerWidget {
               backgroundColor: col.background,
               elevation: 0,
               title: Text(
-                'Tests',
+                AppStrings.get('tests_section'),
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -75,11 +75,9 @@ class TestsHubScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            // TODO(i18n): add 'calibrate_before_test' and
-                            // 'connect_before_test' keys
                             isConnected
-                                ? 'Calibra la plataforma antes de realizar tests.'
-                                : 'Conecta la plataforma para realizar tests.',
+                                ? AppStrings.get('calibrate_before_test')
+                                : AppStrings.get('connect_before_test'),
                             style: TextStyle(
                                 fontSize: 12, color: col.textPrimary),
                           ),
@@ -139,11 +137,9 @@ class _TestRow extends StatelessWidget {
         onTap: enabled
             ? () => context.push(item.route)
             : () {
-                // TODO(i18n): add 'connect_platform_first' and
-                // 'calibrate_platform_first' keys to AppStrings
                 final msg = !isConnected
-                    ? 'Conecta la plataforma primero'
-                    : 'Calibra la plataforma antes de hacer un test';
+                    ? AppStrings.get('connect_platform_first')
+                    : AppStrings.get('calibrate_platform_first');
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(msg),
                   behavior: SnackBarBehavior.floating,
@@ -192,7 +188,7 @@ class _TestRow extends StatelessWidget {
               ),
               // Info button — always tappable regardless of connection state
               IconButton(
-                tooltip: '¿Qué es este test?',
+                tooltip: AppStrings.get('what_is_this_test'),
                 icon: Icon(Icons.info_outline_rounded,
                     color: col.textDisabled, size: 20),
                 onPressed: () =>

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/l10n/app_strings.dart';
@@ -201,6 +202,7 @@ class _InertiaXAppState extends ConsumerState<InertiaXApp> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    final language = ref.watch(languageProvider);
     return MaterialApp.router(
       title: 'InertiaX Force',
       debugShowCheckedModeBanner: false,
@@ -208,6 +210,16 @@ class _InertiaXAppState extends ConsumerState<InertiaXApp> {
       darkTheme: AppTheme.dark,
       themeMode: settings.flutterThemeMode,
       routerConfig: _router,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+      ],
+      locale: Locale(language),
     );
   }
 }

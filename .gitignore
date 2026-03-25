@@ -50,3 +50,4 @@ InertiaX_Analisis.exe
 InertiaX-Windows/
 InertiaX-Windows.zip
 build/
+.claude/settings.local.json

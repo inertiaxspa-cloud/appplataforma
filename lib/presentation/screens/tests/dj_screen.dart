@@ -14,6 +14,7 @@ import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class DjScreen extends ConsumerStatefulWidget {
   const DjScreen({super.key});
@@ -75,13 +76,13 @@ class _DjScreenState extends ConsumerState<DjScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('DJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            Text('Salto desde Caída',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+            const Text('DJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(AppStrings.get('dj_subtitle'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
         leading: IconButton(
@@ -94,7 +95,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial DJ',
+            tooltip: AppStrings.get('dj_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.dj),
           ),
         ],
@@ -201,7 +202,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar Test'),
+                            label: Text(AppStrings.get('cancel_test')),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),
@@ -210,7 +211,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                           )
                         : ElevatedButton.icon(
                             icon: const Icon(Icons.play_arrow, size: 20),
-                            label: const Text('Iniciar DJ'),
+                            label: Text(AppStrings.get('start_dj')),
                             onPressed: _startCountdown,
                           ),
                   ),
@@ -242,7 +243,7 @@ class _HeightSelector extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ALTURA DE CAÍDA', style: IXTextStyles.metricLabel),
+          Text(AppStrings.get('drop_height'), style: IXTextStyles.metricLabel),
           const SizedBox(height: 8),
           Row(
             children: _heights.map((h) {
@@ -293,18 +294,18 @@ class _CountdownOverlay extends StatelessWidget {
   final VoidCallback onCancel;
   const _CountdownOverlay({required this.countdownN, required this.onCancel});
 
-  String get _label => countdownN > 0 ? '$countdownN' : '¡Quieto!';
   Color get _color => countdownN > 0 ? AppColors.warning : AppColors.success;
 
   @override
   Widget build(BuildContext context) {
+    final label = countdownN > 0 ? '$countdownN' : AppStrings.get('quiet');
     return Container(
       color: context.col.surface,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
         children: [
           Text(
-            'Prepárate...',
+            AppStrings.get('get_ready'),
             style: TextStyle(
               fontSize: 14,
               color: context.col.textSecondary,
@@ -313,7 +314,7 @@ class _CountdownOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _label,
+            label,
             style: TextStyle(
               fontSize: 72,
               fontWeight: FontWeight.w800,
@@ -330,7 +331,7 @@ class _CountdownOverlay extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.close, size: 18),
-              label: const Text('Cancelar'),
+              label: Text(AppStrings.get('cancel')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.col.textSecondary,
                 side: BorderSide(color: context.col.border),

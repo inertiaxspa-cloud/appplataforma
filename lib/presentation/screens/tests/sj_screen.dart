@@ -13,6 +13,7 @@ import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class SjScreen extends ConsumerStatefulWidget {
   const SjScreen({super.key});
@@ -71,13 +72,13 @@ class _SjScreenState extends ConsumerState<SjScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('SJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            Text('Salto en Sentadilla',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+            const Text('SJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(AppStrings.get('sj_subtitle'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
         leading: IconButton(
@@ -90,7 +91,7 @@ class _SjScreenState extends ConsumerState<SjScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial SJ',
+            tooltip: AppStrings.get('sj_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.sj),
           ),
         ],
@@ -112,9 +113,8 @@ class _SjScreenState extends ConsumerState<SjScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Rodilla doblada en ángulo recto, sin contramovimiento. '
-                    'Mantén la posición 2s, luego salta.',
-                    style: TextStyle(color: AppColors.info, fontSize: 13),
+                    AppStrings.get('sj_instruction'),
+                    style: const TextStyle(color: AppColors.info, fontSize: 13),
                   ),
                 ),
               ],
@@ -180,7 +180,7 @@ class _SjScreenState extends ConsumerState<SjScreen> {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar Test'),
+                            label: Text(AppStrings.get('cancel_test')),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),
@@ -189,7 +189,7 @@ class _SjScreenState extends ConsumerState<SjScreen> {
                           )
                         : ElevatedButton.icon(
                             icon: const Icon(Icons.play_arrow, size: 20),
-                            label: const Text('Iniciar SJ'),
+                            label: Text(AppStrings.get('start_sj')),
                             onPressed: _startCountdown,
                           ),
                   ),
@@ -209,18 +209,18 @@ class _CountdownOverlay extends StatelessWidget {
   final VoidCallback onCancel;
   const _CountdownOverlay({required this.countdownN, required this.onCancel});
 
-  String get _label => countdownN > 0 ? '$countdownN' : '¡Quieto!';
   Color get _color => countdownN > 0 ? AppColors.warning : AppColors.success;
 
   @override
   Widget build(BuildContext context) {
+    final label = countdownN > 0 ? '$countdownN' : AppStrings.get('quiet');
     return Container(
       color: context.col.surface,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
         children: [
           Text(
-            'Prepárate...',
+            AppStrings.get('get_ready'),
             style: TextStyle(
               fontSize: 14,
               color: context.col.textSecondary,
@@ -229,7 +229,7 @@ class _CountdownOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _label,
+            label,
             style: TextStyle(
               fontSize: 72,
               fontWeight: FontWeight.w800,
@@ -246,7 +246,7 @@ class _CountdownOverlay extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.close, size: 18),
-              label: const Text('Cancelar'),
+              label: Text(AppStrings.get('cancel')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.col.textSecondary,
                 side: BorderSide(color: context.col.border),

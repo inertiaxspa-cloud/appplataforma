@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/local/database_helper.dart';
 import '../../../domain/entities/athlete.dart';
 import '../../../domain/entities/test_result.dart';
@@ -161,7 +162,7 @@ class _AthleteProgressScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Progreso'),
+        title: Text(AppStrings.get('progress')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -214,7 +215,7 @@ class _AthleteProgressScreenState
                     const Icon(Icons.error_outline,
                         color: AppColors.danger, size: 36),
                     const SizedBox(height: 8),
-                    Text('Error al cargar: $e',
+                    Text('${AppStrings.get('error_loading')} $e',
                         style: TextStyle(
                             color: col.textSecondary, fontSize: 13)),
                   ],

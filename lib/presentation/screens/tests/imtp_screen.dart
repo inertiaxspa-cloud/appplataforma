@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/test_result.dart';
 import '../../providers/live_data_provider.dart';
 import '../../providers/test_state_provider.dart';
@@ -93,13 +94,13 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('IMTP', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            Text('Tracción Isométrica',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+            const Text('IMTP', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(AppStrings.get('imtp_subtitle'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
         leading: IconButton(
@@ -112,7 +113,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial IMTP',
+            tooltip: AppStrings.get('imtp_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.imtp),
           ),
         ],
@@ -184,7 +185,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
       case _ImtpPhase.idle:
         return ElevatedButton.icon(
           icon: const Icon(Icons.play_arrow, size: 20),
-          label: const Text('Iniciar Test'),
+          label: Text(AppStrings.get('start_test')),
           onPressed: _startCountdown,
         );
       case _ImtpPhase.countdown:
@@ -200,7 +201,7 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
       case _ImtpPhase.pulling:
         return OutlinedButton.icon(
           icon: const Icon(Icons.stop, size: 18),
-          label: const Text('Terminar ahora'),
+          label: Text(AppStrings.get('finish_now')),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.warning,
             side: const BorderSide(color: AppColors.warning),
@@ -219,11 +220,11 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
 class _Instructions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const steps = [
-      '1. Coloca la barra a la altura del muslo medio (rodilla levemente flexionada)',
-      '2. Asegura la barra — NO debe moverse',
-      '3. Espera la cuenta regresiva, luego tira con fuerza máxima',
-      '4. Mantén el esfuerzo hasta que suene el tono',
+    final steps = [
+      AppStrings.get('imtp_step1'),
+      AppStrings.get('imtp_step2'),
+      AppStrings.get('imtp_step3'),
+      AppStrings.get('imtp_step4'),
     ];
     return Container(
       margin: const EdgeInsets.all(16),
@@ -236,7 +237,7 @@ class _Instructions extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('INSTRUCCIONES', style: IXTextStyles.sectionHeader()),
+          Text(AppStrings.get('imtp_instructions'), style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 10),
           ...steps.map((s) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -285,7 +286,7 @@ class _PullProgressBar extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            '¡TIRA! ${maxS - elapsedS} s',
+            '${AppStrings.get('pull_action')} ${maxS - elapsedS} s',
             style: IXTextStyles.metricValue(color: AppColors.danger)
                 .copyWith(fontSize: 24),
           ),
@@ -316,7 +317,7 @@ class _LivePeakForce extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('FUERZA APLICADA (N)', style: IXTextStyles.metricLabel),
+          Text(AppStrings.get('applied_force'), style: IXTextStyles.metricLabel),
           const SizedBox(width: 12),
           Text(
             '${forceN.toStringAsFixed(0)} N',

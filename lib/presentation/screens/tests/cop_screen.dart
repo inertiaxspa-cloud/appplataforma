@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../data/models/processed_sample.dart';
 import '../../../domain/dsp/metrics/cop_metrics.dart';
 import '../../providers/live_data_provider.dart';
@@ -137,7 +138,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Equilibrio — CoP'),
+        title: Text(AppStrings.get('cop_title')),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -148,7 +149,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial Equilibrio',
+            tooltip: AppStrings.get('cop_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.cop),
           ),
         ],
@@ -255,8 +256,8 @@ class _CopScreenState extends ConsumerState<CopScreen> {
                         icon: const Icon(Icons.timer_outlined, size: 20),
                         label: Text(
                             _eyes == _EyeCondition.open
-                                ? 'Iniciar — Ojos Abiertos'
-                                : 'Iniciar — Ojos Cerrados'),
+                                ? AppStrings.get('start_open_eyes')
+                                : AppStrings.get('start_closed_eyes')),
                         onPressed: _startMeasurement,
                       ),
               ),
@@ -295,7 +296,7 @@ class _ConfigPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CONFIGURACIÓN', style: IXTextStyles.sectionHeader()),
+          Text(AppStrings.get('configuration'), style: IXTextStyles.sectionHeader()),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -303,7 +304,7 @@ class _ConfigPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Postura', style: IXTextStyles.metricLabel),
+                    Text(AppStrings.get('stance'), style: IXTextStyles.metricLabel),
                     const SizedBox(height: 6),
                     _SegmentedRow<_StanceMode>(
                       values: _StanceMode.values,
@@ -319,7 +320,7 @@ class _ConfigPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Ojos', style: IXTextStyles.metricLabel),
+                    Text(AppStrings.get('eyes'), style: IXTextStyles.metricLabel),
                     const SizedBox(height: 6),
                     _SegmentedRow<_EyeCondition>(
                       values: _EyeCondition.values,
@@ -403,7 +404,7 @@ class _TimerDisplay extends StatelessWidget {
     if (phase == _CopPhase.idle) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text('$totalS segundos de medición',
+        child: Text('$totalS ${AppStrings.get('measurement_seconds')}',
             style: TextStyle(color: context.col.textSecondary, fontSize: 13)),
       );
     }
@@ -439,18 +440,27 @@ class _TimerDisplay extends StatelessWidget {
 enum _CopPhase { idle, measuring, done }
 
 enum _StanceMode {
-  bipedal('Ambos pies (Bipodal)'),
-  left('Un pie — Izq.'),
-  right('Un pie — Der.');
+  bipedal,
+  left,
+  right;
 
-  final String label;
-  const _StanceMode(this.label);
+  String get label {
+    switch (this) {
+      case _StanceMode.bipedal: return AppStrings.get('bipedal');
+      case _StanceMode.left:    return AppStrings.get('left_foot');
+      case _StanceMode.right:   return AppStrings.get('right_foot');
+    }
+  }
 }
 
 enum _EyeCondition {
-  open('Abiertos'),
-  closed('Cerrados');
+  open,
+  closed;
 
-  final String label;
-  const _EyeCondition(this.label);
+  String get label {
+    switch (this) {
+      case _EyeCondition.open:   return AppStrings.get('eyes_open');
+      case _EyeCondition.closed: return AppStrings.get('eyes_closed');
+    }
+  }
 }

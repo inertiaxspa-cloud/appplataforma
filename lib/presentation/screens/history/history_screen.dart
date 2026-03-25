@@ -38,7 +38,7 @@ class HistoryScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.compare_arrows),
-            tooltip: 'Comparar sesiones',
+            tooltip: AppStrings.get('compare_sessions'),
             onPressed: () => context.push('/compare'),
           ),
           IconButton(
@@ -55,13 +55,12 @@ class HistoryScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
               const SizedBox(height: 12),
-              const Text('No se pudo cargar el historial.',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text(AppStrings.get('cannot_load_history'),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 icon: const Icon(Icons.refresh),
-                // TODO(i18n): use AppStrings.get('retry') here
-                label: const Text('Reintentar'),
+                label: Text(AppStrings.get('retry')),
                 onPressed: () => ref.invalidate(sessionHistoryProvider),
               ),
             ],
@@ -87,7 +86,7 @@ class _SessionList extends StatelessWidget {
     final grouped = <String, List<Map<String, dynamic>>>{};
     for (final s in sessions) {
       final dt  = DateTime.tryParse(s['performed_at'] as String? ?? '') ?? DateTime.now();
-      final key = DateFormat('EEEE, d MMM yyyy', 'es').format(dt);
+      final key = DateFormat('EEEE, d MMM yyyy', AppStrings.currentLanguage).format(dt);
       (grouped[key] ??= []).add(s);
     }
     final dates = grouped.keys.toList();
@@ -171,18 +170,18 @@ class _SessionTile extends ConsumerWidget {
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: col.surface,
-            title: const Text('Eliminar sesión'),
+            title: Text(AppStrings.get('delete_session')),
             content:
-                const Text('¿Estás seguro? Esta acción no se puede deshacer.'),
+                Text(AppStrings.get('delete_confirmation')),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar')),
+                  child: Text(AppStrings.get('cancel'))),
               TextButton(
                   style:
                       TextButton.styleFrom(foregroundColor: AppColors.danger),
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Eliminar')),
+                  child: Text(AppStrings.get('delete'))),
             ],
           ),
         );
@@ -194,10 +193,10 @@ class _SessionTile extends ConsumerWidget {
         ref.invalidate(sessionHistoryProvider);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sesión eliminada'),
+            SnackBar(
+              content: Text(AppStrings.get('session_deleted')),
               backgroundColor: AppColors.danger,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -220,7 +219,7 @@ class _SessionTile extends ConsumerWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('No se pudo cargar el resultado: $e'),
+                    content: Text('${AppStrings.get('could_not_load_result')}: $e'),
                     backgroundColor: Colors.red.shade700,
                   ),
                 );
@@ -262,7 +261,7 @@ class _SessionTile extends ConsumerWidget {
                 IconButton(
                   icon: Icon(Icons.compare_arrows,
                       size: 18, color: col.textSecondary),
-                  tooltip: 'Comparar sesiones',
+                  tooltip: AppStrings.get('compare_sessions'),
                   splashRadius: 20,
                   onPressed: () => context.push('/compare', extra: {
                     'athleteId': athleteId,

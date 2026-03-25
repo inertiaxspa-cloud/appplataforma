@@ -13,6 +13,7 @@ import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class CmjScreen extends ConsumerStatefulWidget {
   const CmjScreen({super.key});
@@ -72,13 +73,13 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('CMJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            Text('Salto con Contramovimiento',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+            const Text('CMJ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(AppStrings.get('cmj_subtitle'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
         leading: IconButton(
@@ -91,7 +92,7 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial CMJ',
+            tooltip: AppStrings.get('cmj_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.cmj),
           ),
         ],
@@ -152,7 +153,7 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('PESO MEDIDO', style: IXTextStyles.metricLabel),
+                        Text(AppStrings.get('measured_weight'), style: IXTextStyles.metricLabel),
                         const SizedBox(width: 12),
                         Text(
                           '${(test.bodyWeightN! / 9.81).toStringAsFixed(1)} kg',
@@ -169,7 +170,7 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
                     child: test.isActive
                         ? OutlinedButton.icon(
                             icon: const Icon(Icons.stop, size: 18),
-                            label: const Text('Cancelar Test'),
+                            label: Text(AppStrings.get('cancel_test')),
                             style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.danger,
                                 side: const BorderSide(color: AppColors.danger)),
@@ -177,7 +178,7 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
                           )
                         : ElevatedButton.icon(
                             icon: const Icon(Icons.play_arrow, size: 20),
-                            label: const Text('Iniciar CMJ'),
+                            label: Text(AppStrings.get('start_cmj')),
                             onPressed: _startCountdown,
                           ),
                   ),
@@ -232,18 +233,18 @@ class _CountdownOverlay extends StatelessWidget {
   final VoidCallback onCancel;
   const _CountdownOverlay({required this.countdownN, required this.onCancel});
 
-  String get _label => countdownN > 0 ? '$countdownN' : '¡Quieto!';
   Color get _color => countdownN > 0 ? AppColors.warning : AppColors.success;
 
   @override
   Widget build(BuildContext context) {
+    final label = countdownN > 0 ? '$countdownN' : AppStrings.get('quiet');
     return Container(
       color: context.col.surface,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
         children: [
           Text(
-            'Prepárate...',
+            AppStrings.get('get_ready'),
             style: TextStyle(
               fontSize: 14,
               color: context.col.textSecondary,
@@ -252,7 +253,7 @@ class _CountdownOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _label,
+            label,
             style: TextStyle(
               fontSize: 72,
               fontWeight: FontWeight.w800,
@@ -269,7 +270,7 @@ class _CountdownOverlay extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.close, size: 18),
-              label: const Text('Cancelar'),
+              label: Text(AppStrings.get('cancel')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.col.textSecondary,
                 side: BorderSide(color: context.col.border),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../theme/app_theme.dart';
 
 // ── Test metadata model ─────────────────────────────────────────────────────
@@ -25,15 +26,11 @@ class _TestInfo {
   });
 }
 
-const _infos = <String, _TestInfo>{
+final _infos = <String, _TestInfo>{
   'cmj': _TestInfo(
     title: 'CMJ',
     subtitle: 'Salto con Contramovimiento',
-    description:
-        'Mide la capacidad de producir fuerza rápidamente usando el ciclo '
-        'estiramiento-acortamiento (SSC). El atleta realiza un descenso rápido '
-        'seguido de un salto explosivo, aprovechando la energía elástica almacenada '
-        'en tendones y músculos.',
+    description: AppStrings.get('cmj_description'),
     metrics: [
       'Altura de salto (cm)',
       'Potencia pico (W/kg)',
@@ -54,11 +51,7 @@ const _infos = <String, _TestInfo>{
   'sj': _TestInfo(
     title: 'SJ',
     subtitle: 'Salto sin Contramovimiento',
-    description:
-        'Evalúa la fuerza concéntrica pura partiendo desde posición estática '
-        '(sin contramovimiento previo). Elimina la contribución del ciclo '
-        'estiramiento-acortamiento, reflejando la capacidad de producción de '
-        'fuerza concéntrica aislada.',
+    description: AppStrings.get('sj_description'),
     metrics: [
       'Altura de salto (cm)',
       'Potencia pico concéntrica (W/kg)',
@@ -78,11 +71,7 @@ const _infos = <String, _TestInfo>{
   'dj': _TestInfo(
     title: 'Drop Jump',
     subtitle: 'Salto desde Caída',
-    description:
-        'Mide la capacidad reactiva y el RSI (Reactive Strength Index). El atleta '
-        'cae desde una altura, contacta brevemente el suelo y salta de inmediato '
-        'con máxima altura. Evalúa la rigidez muscular y la eficiencia del ciclo '
-        'estiramiento-acortamiento rápido.',
+    description: AppStrings.get('dj_description'),
     metrics: [
       'RSI — Reactive Strength Index',
       'Altura de salto (cm)',
@@ -102,11 +91,7 @@ const _infos = <String, _TestInfo>{
   'multijump': _TestInfo(
     title: 'Multi-Salto',
     subtitle: 'Saltos Consecutivos',
-    description:
-        'Evalúa la resistencia a la fatiga y la consistencia entre saltos '
-        'repetidos. Permite analizar el decaimiento del rendimiento a lo largo '
-        'de la serie y la capacidad del atleta de mantener potencia y simetría '
-        'bajo fatiga.',
+    description: AppStrings.get('multijump_description'),
     metrics: [
       'Altura promedio (cm)',
       'Mejor / peor salto (cm)',
@@ -127,11 +112,7 @@ const _infos = <String, _TestInfo>{
   'imtp': _TestInfo(
     title: 'IMTP',
     subtitle: 'Tracción Isométrica a Media Altura',
-    description:
-        'Mide la fuerza máxima isométrica y la tasa de desarrollo de fuerza (RFD). '
-        'El atleta ejerce tracción máxima sobre una barra fija mientras se registra '
-        'la curva de fuerza en el tiempo. Es el patrón oro para evaluar la fuerza '
-        'máxima sin fatiga dinámica.',
+    description: AppStrings.get('imtp_description'),
     metrics: [
       'Fuerza pico (N y N/kg)',
       'RFD — Rate of Force Development (N/s)',
@@ -151,11 +132,7 @@ const _infos = <String, _TestInfo>{
   'cop': _TestInfo(
     title: 'CoP',
     subtitle: 'Centro de Presión',
-    description:
-        'Evalúa el equilibrio y el control postural en condiciones estáticas. '
-        'Registra el desplazamiento del Centro de Presión (CoP) en el plano '
-        'horizontal, calculando métricas de estabilidad como velocidad media, '
-        'área de oscilación y frecuencias de movimiento.',
+    description: AppStrings.get('cop_description'),
     metrics: [
       'Área de elipse CoP (cm²)',
       'Velocidad media ML y AP (cm/s)',
@@ -188,7 +165,7 @@ class TestInfoScreen extends StatelessWidget {
 
     if (info == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Información del test')),
+        appBar: AppBar(title: Text(AppStrings.get('test_information'))),
         body: Center(
           child: Text(
             'Test "$testType" no encontrado.',
@@ -265,7 +242,7 @@ class TestInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             // Metrics section
-            _SectionHeader(label: 'MÉTRICAS QUE SE MIDEN'),
+            _SectionHeader(label: AppStrings.get('metrics_measured')),
             const SizedBox(height: 12),
             ...info.metrics.map(
               (m) => Padding(
@@ -299,7 +276,7 @@ class TestInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             // Protocol section
-            _SectionHeader(label: 'PROTOCOLO'),
+            _SectionHeader(label: AppStrings.get('test_protocol')),
             const SizedBox(height: 12),
             ...info.protocol.asMap().entries.map(
               (entry) => Padding(

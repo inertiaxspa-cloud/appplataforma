@@ -13,6 +13,7 @@ import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class MultiJumpScreen extends ConsumerStatefulWidget {
   const MultiJumpScreen({super.key});
@@ -74,14 +75,14 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Saltos Repetidos',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            Text('Multi-salto con RSI',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
+            Text(AppStrings.get('multijump_title'),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(AppStrings.get('multijump_subtitle'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
         leading: IconButton(
@@ -94,7 +95,7 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
-            tooltip: 'Ver tutorial Saltos Repetidos',
+            tooltip: AppStrings.get('multijump_see_tutorial'),
             onPressed: () => showTestTutorial(context, TestTutorials.multiJump),
           ),
         ],
@@ -111,9 +112,8 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
               border: Border.all(color: AppColors.info.withOpacity(0.3)),
             ),
             child: Text(
-              'Salta lo más fuerte y rápido posible, minimizando el tiempo '
-              'en el suelo. El sistema detecta cada salto automáticamente.',
-              style: TextStyle(color: AppColors.info, fontSize: 13),
+              AppStrings.get('multijump_instruction'),
+              style: const TextStyle(color: AppColors.info, fontSize: 13),
             ),
           ),
 
@@ -153,9 +153,9 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _LiveBadge(label: 'SALTOS', value: '0'),
-                  _LiveBadge(label: 'ALTURA MEDIA', value: '-- cm'),
-                  _LiveBadge(label: 'REACTIVIDAD PROM. (RSI)', value: '--'),
+                  _LiveBadge(label: AppStrings.get('jump_count_label'), value: '0'),
+                  _LiveBadge(label: AppStrings.get('avg_height_label'), value: '-- cm'),
+                  _LiveBadge(label: AppStrings.get('avg_rsi_label'), value: '--'),
                 ],
               ),
             ),
@@ -196,7 +196,7 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
                         child: test.isActive
                             ? OutlinedButton.icon(
                                 icon: const Icon(Icons.stop, size: 18),
-                                label: const Text('Terminar'),
+                                label: Text(AppStrings.get('finish_multijump')),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.warning,
                                   side: const BorderSide(
@@ -208,7 +208,7 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
                               )
                             : ElevatedButton.icon(
                                 icon: const Icon(Icons.play_arrow, size: 20),
-                                label: const Text('Iniciar'),
+                                label: Text(AppStrings.get('start_multijump')),
                                 onPressed: _startCountdown,
                               ),
                       ),
@@ -240,10 +240,10 @@ class _JumpTable extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
               children: [
-                _TH('N°', flex: 1),
-                _TH('Altura', flex: 2),
-                _TH('T. Contacto', flex: 2),
-                _TH('RSI', flex: 2),
+                _TH(AppStrings.get('table_header_n'), flex: 1),
+                _TH(AppStrings.get('table_header_height'), flex: 2),
+                _TH(AppStrings.get('table_header_contact'), flex: 2),
+                _TH(AppStrings.get('table_header_rsi'), flex: 2),
               ],
             ),
           ),
@@ -330,18 +330,18 @@ class _CountdownOverlay extends StatelessWidget {
   final VoidCallback onCancel;
   const _CountdownOverlay({required this.countdownN, required this.onCancel});
 
-  String get _label => countdownN > 0 ? '$countdownN' : '¡Quieto!';
   Color get _color => countdownN > 0 ? AppColors.warning : AppColors.success;
 
   @override
   Widget build(BuildContext context) {
+    final label = countdownN > 0 ? '$countdownN' : AppStrings.get('quiet');
     return Container(
       color: context.col.surface,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
         children: [
           Text(
-            'Prepárate...',
+            AppStrings.get('get_ready'),
             style: TextStyle(
               fontSize: 14,
               color: context.col.textSecondary,
@@ -350,7 +350,7 @@ class _CountdownOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _label,
+            label,
             style: TextStyle(
               fontSize: 72,
               fontWeight: FontWeight.w800,
@@ -367,7 +367,7 @@ class _CountdownOverlay extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.close, size: 18),
-              label: const Text('Cancelar'),
+              label: Text(AppStrings.get('cancel')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.col.textSecondary,
                 side: BorderSide(color: context.col.border),

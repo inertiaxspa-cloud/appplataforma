@@ -63,6 +63,7 @@ void main() async {
   };
 
   await initializeDateFormatting('es', null);
+  await initializeDateFormatting('en', null);
   await SupabaseService.initialize();
 
   // ── Restore saved language and prime AppStrings ───────────────────────────

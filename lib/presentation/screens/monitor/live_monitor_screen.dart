@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../providers/live_data_provider.dart';
 import '../../providers/connection_provider.dart';
 import '../settings/settings_screen.dart';
@@ -59,7 +60,7 @@ class _LiveMonitorScreenState extends ConsumerState<LiveMonitorScreen> {
     // ── Portrait layout (original) ─────────────────────────────────────────
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Monitor en Tiempo Real'),
+        title: Text(AppStrings.get('live_monitor')),
         actions: [
           if (showRaw)
             Padding(
@@ -185,7 +186,7 @@ class _LandscapeLayout extends StatelessWidget {
                           ),
                           // Force metrics
                           CompactMetricTile(
-                            label: 'FUERZA TOTAL',
+                            label: AppStrings.get('total_force'),
                             value: live.currentForceN.toStringAsFixed(0),
                             unit: 'N',
                             color: AppColors.forceTotal,
@@ -196,7 +197,7 @@ class _LandscapeLayout extends StatelessWidget {
                               color: col.border),
                           CompactMetricTile(
                             label: live.platformCount >= 2
-                                ? 'PLATAFORMA IZQ'
+                                ? AppStrings.get('left_platform')
                                 : 'IZQUIERDA',
                             value: live.forceLeftN.isNotEmpty
                                 ? live.forceLeftN.last.toStringAsFixed(0)
@@ -210,7 +211,7 @@ class _LandscapeLayout extends StatelessWidget {
                               color: col.border),
                           CompactMetricTile(
                             label: live.platformCount >= 2
-                                ? 'PLATAFORMA DER'
+                                ? AppStrings.get('right_platform')
                                 : 'DERECHA',
                             value: live.forceRightN.isNotEmpty
                                 ? live.forceRightN.last.toStringAsFixed(0)
@@ -318,14 +319,14 @@ class _MonitorBody extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   CompactMetricTile(
-                    label: 'FUERZA TOTAL',
+                    label: AppStrings.get('total_force'),
                     value: live.currentForceN.toStringAsFixed(0),
                     unit: 'N',
                     color: AppColors.forceTotal,
                   ),
                   _Divider(),
                   CompactMetricTile(
-                    label: live.platformCount >= 2 ? 'PLATAFORMA IZQ' : 'IZQUIERDA',
+                    label: live.platformCount >= 2 ? AppStrings.get('left_platform') : 'IZQUIERDA',
                     value: live.forceLeftN.isNotEmpty
                         ? live.forceLeftN.last.toStringAsFixed(0)
                         : '—',
@@ -334,7 +335,7 @@ class _MonitorBody extends StatelessWidget {
                   ),
                   _Divider(),
                   CompactMetricTile(
-                    label: live.platformCount >= 2 ? 'PLATAFORMA DER' : 'DERECHA',
+                    label: live.platformCount >= 2 ? AppStrings.get('right_platform') : 'DERECHA',
                     value: live.forceRightN.isNotEmpty
                         ? live.forceRightN.last.toStringAsFixed(0)
                         : '—',

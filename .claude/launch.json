@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "InertiaX App (Desktop)",
-      "runtimeExecutable": "py",
-      "runtimeArgs": ["C:/Users/Lenovo/Downloads/app.py"],
-      "port": 0
+      "name": "inertiax-web",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "C:\\flutter_sdk\\flutter\\bin\\flutter.bat run -d web-server --web-port 8080 --web-hostname 0.0.0.0"],
+      "port": 8080
+    },
+    {
+      "name": "inertiax-dashboard",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "py -m http.server 8081 --directory C:\\Users\\Lenovo\\Downloads\\App2\\docs"],
+      "port": 8081
     }
   ]
 }
