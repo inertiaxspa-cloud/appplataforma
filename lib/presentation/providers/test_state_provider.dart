@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/algorithm_settings.dart';
 import '../../core/services/sound_service.dart';
+import '../../data/datasources/local/database_helper.dart';
 import '../../data/models/processed_sample.dart';
 import '../../data/models/raw_sample.dart';
 import '../../domain/dsp/butterworth_filter.dart';
@@ -600,6 +602,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         statusMessage: 'Drop Jump completado',
       );
       if (settings.soundFeedback) SoundService.success();
+      _autoSaveResult(state.result);
       return;
     }
 
@@ -628,6 +631,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
       ),
       statusMessage: 'Salto completado',
     );
+    _autoSaveResult(state.result);
   }
 
   // ── finishTest: called by IMTP and MultiJump "Done" buttons ──────────────
@@ -646,6 +650,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         result:        _buildMultiJumpResult(),
         statusMessage: 'Multi-salto completado',
       );
+      _autoSaveResult(state.result);
     } else {
       state = const TestState();
     }
@@ -753,6 +758,39 @@ class TestStateNotifier extends StateNotifier<TestState> {
       ),
       statusMessage: 'IMTP completado',
     );
+    _autoSaveResult(state.result);
+  }
+
+  // ── Auto-save result to SQLite immediately on completion ─────────────────
+
+  Future<void> _autoSaveResult(TestResult? result) async {
+    if (result == null) return;
+    final settings = _ref.read(settingsProvider);
+    if (!settings.autoSaveTests) return;
+    final athlete = _ref.read(selectedAthleteProvider);
+    if (athlete?.id == null) return;
+
+    final calId = _ref.read(calibrationProvider).activeCalibration?.id;
+    double bwKg = athlete?.bodyWeightKg ?? 0;
+    if (result is JumpResult && result.bodyWeightN > 0) {
+      bwKg = result.bodyWeightN / 9.81;
+    }
+
+    try {
+      await DatabaseHelper.instance.insertTestSession({
+        'athlete_id':     athlete!.id,
+        'test_type':      result.testType.name,
+        'performed_at':   result.computedAt.toIso8601String(),
+        'body_weight_kg': bwKg,
+        'calibration_id': calId,
+        'platform_count': result.platformCount,
+        'result_json':    result.toJson(),
+        'sync_status':    'pending',
+      });
+      debugPrint('[TestState] Auto-saved result to SQLite');
+    } catch (e) {
+      debugPrint('[TestState] Auto-save failed: $e');
+    }
   }
 
   // ── stopTest: cancel ──────────────────────────────────────────────────────
