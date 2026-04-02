@@ -268,9 +268,8 @@ class _AthleteSelector extends ConsumerWidget {
                     color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 12),
-              // TODO(i18n): add 'select_athlete' key for 'Seleccionar atleta' / 'Select athlete'
-              const Text('Seleccionar atleta',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+              Text(AppStrings.get('select_athlete'),
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
               const Spacer(),
               const Icon(Icons.chevron_right, color: AppColors.primary),
             ],
@@ -388,8 +387,7 @@ class _TestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final col = context.col;
     return Tooltip(
-      // TODO(i18n): add 'connect_platform_first' key
-      message: enabled ? '' : 'Conecta la plataforma primero',
+      message: enabled ? '' : AppStrings.get('connect_platform_first'),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
