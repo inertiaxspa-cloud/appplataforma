@@ -237,9 +237,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
       for (final row in rows) {
         try {
-          // ── Ensure athlete has a Supabase UUID ──────────────────────────
+          // ── Ensure athlete exists in Supabase ─────────────────────────
           final athleteId  = row['athlete_id'] as int?;
-          String? athUuid  = row['athlete_supabase_uuid'] as String?;
+          String? athUuid;
 
           // Skip sessions whose athlete already failed in this batch.
           if (athleteId != null && failedAthletes.contains(athleteId)) {
@@ -250,14 +250,16 @@ class SyncNotifier extends StateNotifier<SyncState> {
           }
 
           // Use cache first (avoids repeated Supabase calls for same athlete).
-          if (athleteId != null && athUuid == null && athleteUuidCache.containsKey(athleteId)) {
+          if (athleteId != null && athleteUuidCache.containsKey(athleteId)) {
             athUuid = athleteUuidCache[athleteId];
           }
 
+          // ALWAYS upsert athlete to guarantee it exists in Supabase.
+          // The old UUID stored locally may be stale (e.g. deleted from dashboard).
           if (athleteId != null && athUuid == null) {
             final athleteRow = <String, dynamic>{
               'id':             row['a_id'],
-              'supabase_uuid':  null,
+              'supabase_uuid':  row['athlete_supabase_uuid'],
               'name':           row['a_name'],
               'sport':          row['a_sport'],
               'body_weight_kg': row['a_bwkg'],
@@ -280,10 +282,6 @@ class SyncNotifier extends StateNotifier<SyncState> {
                   where: 'id = ?', whereArgs: [row['id']]);
               continue;
             }
-          }
-
-          if (athleteId != null && athUuid != null) {
-            athleteUuidCache[athleteId] = athUuid;
           }
 
           // ── Push session (with 1 retry) ──────────────────────────────────
