@@ -11,6 +11,7 @@ import '../../domain/dsp/metrics/jump_metrics.dart';
 import '../../domain/dsp/signal_processor.dart';
 import '../../domain/entities/calibration_data.dart';
 import '../../domain/entities/test_result.dart';
+import 'athlete_provider.dart';
 import 'connection_provider.dart';
 import 'calibration_provider.dart';
 import 'live_data_provider.dart';
@@ -114,15 +115,41 @@ class TestStateNotifier extends StateNotifier<TestState> {
     _jumps.clear();
     _mjContactStart = 0;
     _phaseDetector.reset();
-    _phaseDetector.startSettling();
 
-    if (settings.soundFeedback) SoundService.countdown();
-    state = TestState(
-      testType:      type,
-      status:        TestStatus.settling,
-      phase:         JumpPhase.settling,
-      statusMessage: 'Mídete quieto sobre la plataforma...',
-    );
+    // DJ uses a completely different protocol: platform starts EMPTY.
+    // Athlete stands on a box, drops onto the platform, rebounds, lands.
+    // BW comes from the athlete profile, not from settling.
+    if (type == TestType.dropJump) {
+      final athlete = _ref.read(selectedAthleteProvider);
+      final bwKg = athlete?.bodyWeightKg ?? 0;
+      final bwN = bwKg * 9.81;
+      if (bwN < 50) {
+        state = TestState(
+          testType: type,
+          status: TestStatus.failed,
+          error: 'Configura el peso del atleta antes del Drop Jump.',
+        );
+        return;
+      }
+      _phaseDetector.startDjWaiting(athleteBwN: bwN);
+      if (settings.soundFeedback) SoundService.countdown();
+      state = TestState(
+        testType:      type,
+        status:        TestStatus.running,
+        phase:         JumpPhase.djWaiting,
+        bodyWeightN:   bwN,
+        statusMessage: 'Plataforma libre — salta del cajón cuando estés listo',
+      );
+    } else {
+      _phaseDetector.startSettling();
+      if (settings.soundFeedback) SoundService.countdown();
+      state = TestState(
+        testType:      type,
+        status:        TestStatus.settling,
+        phase:         JumpPhase.settling,
+        statusMessage: 'Mídete quieto sobre la plataforma...',
+      );
+    }
 
     _rawSub?.close();
     _rawSub = _ref.listen<AsyncValue<RawSample>>(rawSampleStreamProvider,
@@ -212,6 +239,20 @@ class TestStateNotifier extends StateNotifier<TestState> {
             _computeAndFinish(platformCount);
           });
         }
+
+      // ── DJ-specific phases ──────────────────────────────────────────────
+      case JumpPhase.djWaiting:
+        // Should not transition TO djWaiting via event, only via startDjWaiting.
+        break;
+
+      case JumpPhase.djContact:
+        // Athlete has landed on platform from the box drop.
+        if (_ref.read(settingsProvider).soundFeedback) SoundService.phase();
+        HapticFeedback.heavyImpact();
+        state = state.copyWith(
+          phase:         JumpPhase.djContact,
+          statusMessage: '¡Contacto! Rebota YA',
+        );
 
       default:
         break;
@@ -511,10 +552,20 @@ class TestStateNotifier extends StateNotifier<TestState> {
     final testType = state.testType ?? TestType.cmj;
 
     if (testType == TestType.dropJump) {
-      final contactMs = (eccentric * 1000).clamp(50.0, 2000.0);
-      final rsiMod    = heightM > 0 && contactMs > 0
+      // DJ uses real ground contact time (impact → takeoff) from phase detector,
+      // NOT eccentric duration (which is meaningless for DJ).
+      final djContactS = _phaseDetector.djContactTimeS;
+      final contactMs = djContactS != null
+          ? (djContactS * 1000).clamp(50.0, 2000.0)
+          : (eccentric * 1000).clamp(50.0, 2000.0); // fallback for legacy
+      final rsi = heightM > 0 && contactMs > 0
           ? heightM / (contactMs / 1000)
           : 0.0;
+
+      // Peak landing force: the maximum force during the contact phase.
+      // For DJ, peak force during contact IS the peak landing force.
+      final peakLandingForceN = peakForceN;
+
       state = state.copyWith(
         status: TestStatus.completed,
         phase:  JumpPhase.landed,
@@ -535,8 +586,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
           peakPowerImpulseW: peakPowerImpulse,
           symmetry: symmetry,
           jumpHeightFlightTimeCm: heightFlightM * 100,
-          landingPeakForceN: 0.0,
-          contactTimeMs: contactMs, rsiMod: rsiMod,
+          landingPeakForceN: peakLandingForceN,
+          contactTimeMs: contactMs, rsiMod: rsi,
         ),
         statusMessage: 'Drop Jump completado',
       );

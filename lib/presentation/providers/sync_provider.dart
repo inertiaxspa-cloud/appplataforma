@@ -58,6 +58,7 @@ class SyncState {
 class SyncNotifier extends StateNotifier<SyncState> {
   StreamSubscription<AuthState>? _authSub;
   bool _syncing = false; // guard contra llamadas concurrentes
+  DateTime? _lastSyncAttempt; // rate limiting: min 30s between syncs
 
   SyncNotifier()
       : super(const SyncState(status: SyncStatus.unauthenticated)) {
@@ -174,9 +175,33 @@ class SyncNotifier extends StateNotifier<SyncState> {
   /// Pushes all sessions with sync_status='pending' or 'error' to Supabase.
   Future<void> syncPending({bool forceAll = false}) async {
     if (!state.isAuthenticated || _syncing) return;
+
+    // Rate limit: minimum 30 seconds between sync attempts to prevent abuse.
+    if (_lastSyncAttempt != null &&
+        DateTime.now().difference(_lastSyncAttempt!) < const Duration(seconds: 30)) {
+      return;
+    }
     _syncing = true;
+    _lastSyncAttempt = DateTime.now();
 
     final db = await DatabaseHelper.instance.database;
+
+    state = state.copyWith(status: SyncStatus.syncing, clearError: true, clearSuccess: true);
+
+    // ── Step 0: Verify Supabase is reachable ────────────────────────────────
+    try {
+      await SupabaseService.instance.checkConnection();
+    } catch (e) {
+      final errMsg = e.toString().replaceAll('Exception: ', '');
+      if (mounted) {
+        state = state.copyWith(
+          status: SyncStatus.error,
+          errorMessage: errMsg,
+        );
+      }
+      _syncing = false;
+      return;
+    }
 
     // Re-queue previous errors so they get retried.
     await db.update('test_sessions', {'sync_status': 'pending'},
@@ -188,9 +213,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
           where: "sync_status = 'synced'");
     }
 
-    state = state.copyWith(status: SyncStatus.syncing, clearError: true);
-
     String? lastError; // Keep last error detail for user display.
+    final failedAthletes = <int>{}; // Athletes that failed upsert — skip their sessions.
 
     try {
       // Fetch pending sessions joined with athlete data.
@@ -217,6 +241,14 @@ class SyncNotifier extends StateNotifier<SyncState> {
           final athleteId  = row['athlete_id'] as int?;
           String? athUuid  = row['athlete_supabase_uuid'] as String?;
 
+          // Skip sessions whose athlete already failed in this batch.
+          if (athleteId != null && failedAthletes.contains(athleteId)) {
+            await db.update('test_sessions',
+                {'sync_status': 'error'},
+                where: 'id = ?', whereArgs: [row['id']]);
+            continue;
+          }
+
           // Use cache first (avoids repeated Supabase calls for same athlete).
           if (athleteId != null && athUuid == null && athleteUuidCache.containsKey(athleteId)) {
             athUuid = athleteUuidCache[athleteId];
@@ -231,21 +263,41 @@ class SyncNotifier extends StateNotifier<SyncState> {
               'body_weight_kg': row['a_bwkg'],
               'notes':          row['a_notes'],
             };
-            athUuid = await SupabaseService.instance.upsertAthlete(athleteRow);
-            // Persist UUID locally so future syncs don't repeat this.
-            await db.update('athletes', {'supabase_uuid': athUuid},
-                where: 'id = ?', whereArgs: [athleteId]);
-            athleteUuidCache[athleteId] = athUuid;
+            try {
+              athUuid = await SupabaseService.instance.upsertAthlete(athleteRow);
+              // Persist UUID locally so future syncs don't repeat this.
+              await db.update('athletes', {'supabase_uuid': athUuid},
+                  where: 'id = ?', whereArgs: [athleteId]);
+              athleteUuidCache[athleteId] = athUuid;
+            } catch (e) {
+              // Athlete upsert failed — mark this athlete and skip all its sessions.
+              failedAthletes.add(athleteId);
+              final errMsg = e.toString().replaceAll('Exception: ', '');
+              lastError = 'Atleta "${row['a_name']}": $errMsg';
+              debugPrint('[Sync] Athlete $athleteId failed: $errMsg');
+              await db.update('test_sessions',
+                  {'sync_status': 'error'},
+                  where: 'id = ?', whereArgs: [row['id']]);
+              continue;
+            }
           }
 
           if (athleteId != null && athUuid != null) {
             athleteUuidCache[athleteId] = athUuid;
           }
 
-          // ── Push session ─────────────────────────────────────────────────
+          // ── Push session (with 1 retry) ──────────────────────────────────
           final sessionMap = Map<String, dynamic>.from(row);
-          final sessionUuid = await SupabaseService.instance
-              .upsertSession(sessionMap, athUuid);
+          String? sessionUuid;
+          try {
+            sessionUuid = await SupabaseService.instance
+                .upsertSession(sessionMap, athUuid);
+          } catch (_) {
+            // Retry once after a brief pause.
+            await Future.delayed(const Duration(milliseconds: 500));
+            sessionUuid = await SupabaseService.instance
+                .upsertSession(sessionMap, athUuid);
+          }
 
           await db.update(
             'test_sessions',
@@ -276,7 +328,7 @@ class SyncNotifier extends StateNotifier<SyncState> {
         // Show the ACTUAL error detail so user can diagnose.
         final msg = errorCount > 0
             ? 'Subidas $synced/${rows.length}. Fallaron $errorCount.\n${lastError ?? ''}'
-            : 'Sincronización completa ($synced sesiones).';
+            : AppStrings.get('sync_complete').replaceFirst('{n}', '$synced');
         state = state.copyWith(
           status:         errorCount > 0 ? SyncStatus.error : SyncStatus.success,
           pendingCount:   pendingLeft + errorCount,

@@ -361,6 +361,7 @@ class AppStrings {
       // Account / sync messages
       'account_created_loggedin': '¡Cuenta creada! Sesión iniciada correctamente.',
       'account_created_verify': 'Cuenta creada. Verifica tu email para iniciar sesión.',
+      'sync_complete': 'Sincronización completa ({n} sesiones).',
       // Comparison screen (v19)
       'none_selected': '— Sin seleccionar —',
       'showing_last_n': 'Mostrando las últimas 8 de',
@@ -768,6 +769,7 @@ class AppStrings {
       // Account / sync messages
       'account_created_loggedin': 'Account created! Logged in successfully.',
       'account_created_verify': 'Account created. Verify your email to sign in.',
+      'sync_complete': 'Sync complete ({n} sessions).',
       // Comparison screen (v19)
       'none_selected': '— None selected —',
       'showing_last_n': 'Showing last 8 of',

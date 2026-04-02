@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -120,13 +121,26 @@ class SupabaseService {
     return value;
   }
 
+  // ── Connectivity check ────────────────────────────────────────────────────
+
+  /// Quick SELECT to verify Supabase is reachable and the user token is valid.
+  /// Throws a descriptive error if connection fails.
+  Future<void> checkConnection() async {
+    final user = currentUser;
+    if (user == null) throw StateError('No hay sesión activa de Supabase.');
+    try {
+      await _client.from('athletes').select('id').limit(1);
+    } catch (e) {
+      throw Exception('Supabase no accesible: ${_friendlyError(e)}');
+    }
+  }
+
   // ── Data sync ─────────────────────────────────────────────────────────────
 
   /// Upserts an athlete row. Returns the Supabase UUID used.
   ///
-  /// Strategy: look up the existing row first so we never change its `id` (PK).
-  /// Changing the PK would break the FK from test_sessions.athlete_uuid and
-  /// cause a 409 Conflict on every subsequent sync attempt.
+  /// Uses onConflict on (user_id, local_id) UNIQUE constraint to merge
+  /// instead of failing when the athlete already exists with a different PK.
   Future<String> upsertAthlete(Map<String, dynamic> athlete) async {
     final user = currentUser;
     if (user == null) throw StateError('No hay sesión activa de Supabase.');
@@ -148,33 +162,47 @@ class SupabaseService {
           const Uuid().v4();
 
       // 3. Upsert by PK — never changes `id`, only updates profile fields.
-      await _client.from('athletes').upsert({
-        'id':             uuid,
-        'user_id':        userId,
-        'local_id':       localId,
-        'name':           athlete['name'],
-        'sport':          athlete['sport'],
-        'body_weight_kg': athlete['body_weight_kg'],
-        'notes':          athlete['notes'],
-      });
+      await _client.from('athletes').upsert(
+        {
+          'id':             uuid,
+          'user_id':        userId,
+          'local_id':       localId,
+          'name':           athlete['name'] ?? 'Sin nombre',
+          'sport':          athlete['sport'],
+          'body_weight_kg': athlete['body_weight_kg'],
+          'notes':          athlete['notes'],
+        },
+        onConflict: 'user_id,local_id',
+      );
       return uuid;
     } catch (e) {
+      debugPrint('[Supabase] upsertAthlete failed for local_id=$localId: $e');
       throw Exception(_friendlyError(e));
     }
   }
 
   /// Upserts a test session. Returns the Supabase UUID used.
+  /// [athleteUuid] must not be null — caller must ensure athlete was synced first.
   Future<String> upsertSession(
       Map<String, dynamic> session, String? athleteUuid) async {
     final user = currentUser;
     if (user == null) throw StateError('No hay sesión activa de Supabase.');
+    if (athleteUuid == null || athleteUuid.isEmpty) {
+      throw StateError('athlete_uuid es null — sincroniza el atleta primero.');
+    }
     final userId = user.id;
     final uuid =
         (session['supabase_uuid'] as String?) ?? const Uuid().v4();
 
+    // Sanitise performed_at — SQLite stores as TEXT 'YYYY-MM-DD HH:MM:SS',
+    // but Supabase timestamptz needs ISO 8601 with timezone.
+    String? performedAt = session['performed_at'] as String?;
+    if (performedAt != null && !performedAt.contains('T')) {
+      // Convert 'YYYY-MM-DD HH:MM:SS' → 'YYYY-MM-DDTHH:MM:SS+00:00'
+      performedAt = '${performedAt.replaceFirst(' ', 'T')}+00:00';
+    }
+
     try {
-      // Upsert por clave primaria (id = UUID). No usar onConflict porque
-      // test_sessions no tiene restricción UNIQUE en (user_id, local_id).
       await _client.from('test_sessions').upsert({
         'id':               uuid,
         'user_id':          userId,
@@ -182,7 +210,7 @@ class SupabaseService {
         'local_athlete_id': session['athlete_id'],
         'local_id':         session['id'],
         'test_type':        session['test_type'],
-        'performed_at':     session['performed_at'],
+        'performed_at':     performedAt,
         'body_weight_kg':   session['body_weight_kg'],
         'platform_count':   session['platform_count'] ?? 1,
         'metrics_json': _parseMetricsJson(session['result_json']),
@@ -190,6 +218,7 @@ class SupabaseService {
       });
       return uuid;
     } catch (e) {
+      debugPrint('[Supabase] upsertSession failed for local_id=${session['id']}: $e');
       throw Exception(_friendlyError(e));
     }
   }

@@ -4,11 +4,13 @@ import '../../data/models/processed_sample.dart';
 
 enum JumpPhase {
   idle,
-  settling,     // measuring body weight
-  waiting,      // waiting for movement (CMJ/DJ)
+  settling,     // measuring body weight (CMJ/SJ/IMTP/MultiJump)
+  waiting,      // waiting for movement (CMJ/SJ)
   descent,      // eccentric phase
   flight,       // airborne
   landed,       // post-landing
+  djWaiting,    // DJ: platform empty, waiting for drop impact
+  djContact,    // DJ: ground contact (landing→takeoff)
 }
 
 /// Event emitted when a significant phase transition occurs.
@@ -72,6 +74,10 @@ class PhaseDetector {
   // Fixed thresholds
   static const double _settleDuration = PhysicsConstants.settleDurationS;
   static const double _stdOk          = PhysicsConstants.stdThreshold;
+
+  // DJ-specific: impact detection threshold (empty platform → first contact)
+  static const double _djImpactThreshold = 20.0; // N — any force above = impact
+  double? _djContactStartTime;  // timestamp of first impact
 
   /// Feed a processed sample. Returns a [PhaseEvent] on transition, else null.
   PhaseEvent? update(ProcessedSample sample) {
@@ -152,6 +158,39 @@ class PhaseDetector {
 
       case JumpPhase.landed:
         return null;
+
+      // ── DROP JUMP specific phases ───────────────────────────────────────
+      // DJ starts with empty platform. Athlete drops from a box.
+      // Sequence: djWaiting → djContact → flight → landed
+
+      case JumpPhase.djWaiting:
+        // Platform is empty (~0 N). Wait for first impact (force > threshold).
+        // Use a fixed 20 N threshold — any force above this is an impact.
+        if (f > _djImpactThreshold) {
+          _consecutiveLandSamples++;
+          if (_consecutiveLandSamples >= 3) { // 3 ms debounce for impact
+            _consecutiveLandSamples = 0;
+            _descentStartTime = t; // marks the start of ground contact
+            return _transition(JumpPhase.djContact, t, landingForceN: f);
+          }
+        } else {
+          _consecutiveLandSamples = 0;
+        }
+        return null;
+
+      case JumpPhase.djContact:
+        // Ground contact phase: athlete absorbs landing + pushes off.
+        // Ends when force drops below flight threshold for 10 samples (takeoff).
+        if (f < _effectiveFlightThreshold) {
+          _consecutiveFlightSamples++;
+          if (_consecutiveFlightSamples >= _minFlightSamples) {
+            _consecutiveFlightSamples = 0;
+            return _transition(JumpPhase.flight, t, takeoffForceN: f);
+          }
+        } else {
+          _consecutiveFlightSamples = 0;
+        }
+        return null;
     }
   }
 
@@ -162,6 +201,7 @@ class PhaseDetector {
   }) {
     final from = _phase;
     _phase = to;
+    if (to == JumpPhase.djContact) _djContactStartTime = t;
     if (to == JumpPhase.flight) _takeoffTime = t;
     if (to == JumpPhase.landed) _landingTime = t;
     return PhaseEvent(
@@ -179,6 +219,24 @@ class PhaseDetector {
     _settlingSamples.clear();
     _settleStartTime = null;
     _settleAttempts = 0;
+  }
+
+  /// Start DJ mode: platform is empty, waiting for the athlete to drop from a box.
+  /// [athleteBwN] is the body weight from the athlete profile (used for thresholds).
+  void startDjWaiting({required double athleteBwN}) {
+    _phase = JumpPhase.djWaiting;
+    bodyWeightN = athleteBwN;
+    bodyWeightStd = 0;
+    _djContactStartTime = null;
+    _descentStartTime = null;
+    _takeoffTime = null;
+    _landingTime = null;
+    _consecutiveFlightSamples = 0;
+    _consecutiveLandSamples = 0;
+
+    // Set thresholds based on athlete's known BW.
+    _effectiveFlightThreshold = math.max(athleteBwN * 0.05, 20.0);
+    _effectiveLandThreshold   = math.max(athleteBwN * 0.20, 50.0);
   }
 
   /// After a multi-jump landing, reset to waiting while keeping bodyWeight.
@@ -199,6 +257,7 @@ class PhaseDetector {
     _descentStartTime = null;
     _takeoffTime = null;
     _landingTime = null;
+    _djContactStartTime = null;
     bodyWeightN = 0;
     bodyWeightStd = 0;
     _effectiveUnweightDelta = PhysicsConstants.cmjWeightThreshold;
@@ -218,9 +277,16 @@ class PhaseDetector {
           ? _takeoffTime! - _descentStartTime!
           : null;
 
-  double? get descentStartTime => _descentStartTime;
-  double? get takeoffTime      => _takeoffTime;
-  double? get landingTime      => _landingTime;
+  double? get descentStartTime    => _descentStartTime;
+  double? get takeoffTime         => _takeoffTime;
+  double? get landingTime         => _landingTime;
+  double? get djContactStartTime  => _djContactStartTime;
+
+  /// DJ ground contact time: first impact → takeoff (seconds).
+  double? get djContactTimeS {
+    if (_djContactStartTime == null || _takeoffTime == null) return null;
+    return _takeoffTime! - _djContactStartTime!;
+  }
 
   /// Effective unweighting threshold in use (N below body weight).
   double get effectiveUnweightDeltaN => _effectiveUnweightDelta;

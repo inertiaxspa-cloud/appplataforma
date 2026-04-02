@@ -27,6 +27,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
   bool _counting = false;
   int _countdownN = 3;
   Timer? _countdownTimer;
+  double _selectedDropHeight = 0.30; // metres
 
   @override
   void dispose() {
@@ -105,7 +106,8 @@ class _DjScreenState extends ConsumerState<DjScreen> {
           // Height selector
           _HeightSelector(
             enabled: !test.isActive && !_counting,
-            selected: _dropHeightFromState(test),
+            selected: _selectedDropHeight,
+            onChanged: (h) => setState(() => _selectedDropHeight = h),
           ),
 
           // Phase indicator row
@@ -224,7 +226,6 @@ class _DjScreenState extends ConsumerState<DjScreen> {
     );
   }
 
-  double _dropHeightFromState(TestState test) => 0.30; // 30cm default
 }
 
 // ── Drop Height Selector ──────────────────────────────────────────────────────
@@ -232,7 +233,8 @@ class _DjScreenState extends ConsumerState<DjScreen> {
 class _HeightSelector extends StatelessWidget {
   final bool enabled;
   final double selected;
-  const _HeightSelector({required this.enabled, required this.selected});
+  final ValueChanged<double>? onChanged;
+  const _HeightSelector({required this.enabled, required this.selected, this.onChanged});
 
   static const _heights = [0.20, 0.30, 0.40, 0.50, 0.60];
 
@@ -251,6 +253,8 @@ class _HeightSelector extends StatelessWidget {
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                  onTap: enabled ? () => onChanged?.call(h) : null,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
@@ -276,6 +280,7 @@ class _HeightSelector extends StatelessWidget {
                             : context.col.textSecondary,
                       ),
                     ),
+                  ),
                   ),
                 ),
               );
