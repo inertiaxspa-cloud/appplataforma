@@ -14,6 +14,7 @@ import '../../data/models/raw_sample.dart';
 import '../../domain/dsp/signal_processor.dart';
 import '../../domain/entities/calibration_data.dart';
 import 'calibration_provider.dart';
+import '../screens/settings/settings_screen.dart';
 
 // ── Connection state ───────────────────────────────────────────────────────
 
@@ -79,8 +80,9 @@ final signalProcessorProvider = Provider<SignalProcessor>((ref) {
 
 class ConnectionNotifier extends StateNotifier<ConnectionState> {
   final ConnectionDataSource _ds;
+  final Ref _ref;
 
-  ConnectionNotifier(this._ds) : super(const ConnectionState());
+  ConnectionNotifier(this._ds, this._ref) : super(const ConnectionState());
 
   Future<void> refreshTargets() async {
     final targets = await _ds.listTargets();
@@ -92,8 +94,14 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   Future<void> connect(ConnectionTarget target) async {
     if (_connecting || state.isConnected) return; // prevenir doble conexión
     _connecting = true;
+    final baudRate = _ref.read(settingsProvider).serialBaudRate;
     try {
-      await _ds.open(target);
+      await _ds.open(target, baudRate: baudRate);
+      // Send start-streaming command. The v2.3 firmware streams continuously
+      // and ignores this; the legacy firmware (A;0;L;R format) requires it
+      // to begin sending data.
+      await Future.delayed(const Duration(milliseconds: 200));
+      await _ds.sendCommand('1');
       state = state.copyWith(
         isConnected: true,
         connectedName: target.displayName,
@@ -109,6 +117,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   // C7 fix: reset _connecting, wrap close in try-catch, clear error.
   Future<void> disconnect() async {
     _connecting = false;
+    try { await _ds.sendCommand('0'); } catch (_) {}
     try { await _ds.close(); } catch (_) {}
     state = state.copyWith(isConnected: false, connectedName: null, error: null);
   }
@@ -117,5 +126,5 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
 final connectionProvider =
     StateNotifierProvider<ConnectionNotifier, ConnectionState>((ref) {
   final ds = ref.watch(connectionDataSourceProvider);
-  return ConnectionNotifier(ds);
+  return ConnectionNotifier(ds, ref);
 });

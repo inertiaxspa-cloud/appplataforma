@@ -38,11 +38,11 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   }
 
   @override
-  Future<void> open(ConnectionTarget target) async {
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     _port = SerialPort(target.id);
 
     final config = SerialPortConfig()
-      ..baudRate = 921600
+      ..baudRate = baudRate
       ..bits     = 8
       ..stopBits = 1
       ..parity   = SerialPortParity.none;

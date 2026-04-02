@@ -32,7 +32,7 @@ class AndroidUsbDataSource implements ConnectionDataSource {
   }
 
   @override
-  Future<void> open(ConnectionTarget target) async {
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     final devices = await UsbSerial.listDevices();
     final device = devices.firstWhere(
       (d) => d.deviceName == target.id,
@@ -46,7 +46,7 @@ class AndroidUsbDataSource implements ConnectionDataSource {
     if (!ok) throw Exception('Cannot open ${target.id}');
 
     await _port!.setPortParameters(
-      921600,
+      baudRate,
       UsbPort.DATABITS_8,
       UsbPort.STOPBITS_1,
       UsbPort.PARITY_NONE,

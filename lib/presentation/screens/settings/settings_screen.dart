@@ -29,6 +29,7 @@ class AppSettings {
   final String heightUnit;   // 'cm' or 'in'
   final String language;     // 'es' or 'en'
   final String themeMode;    // 'system', 'dark', 'light'
+  final int    serialBaudRate; // 9600 | 19200 | 38400 | 57600 | 115200 | 230400 | 460800 | 921600
   final AlgorithmSettings algo;
 
   const AppSettings({
@@ -43,6 +44,7 @@ class AppSettings {
     this.heightUnit           = 'cm',
     this.language             = 'es',
     this.themeMode            = 'dark',
+    this.serialBaudRate       = 921600,
     this.algo                 = const AlgorithmSettings(),
   });
 
@@ -82,6 +84,7 @@ class AppSettings {
     String? heightUnit,
     String? language,
     String? themeMode,
+    int?    serialBaudRate,
     AlgorithmSettings? algo,
   }) => AppSettings(
     platformSeparationCm: platformSeparationCm ?? this.platformSeparationCm,
@@ -95,6 +98,7 @@ class AppSettings {
     heightUnit:           heightUnit           ?? this.heightUnit,
     language:             language             ?? this.language,
     themeMode:            themeMode            ?? this.themeMode,
+    serialBaudRate:       serialBaudRate       ?? this.serialBaudRate,
     algo:                 algo                 ?? this.algo,
   );
 }
@@ -122,8 +126,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       engineerMode:  p.getBool('engineer_mode')  ?? false,
       weightUnit:    p.getString('weight_unit')  ?? 'kg',
       heightUnit:    p.getString('height_unit')  ?? 'cm',
-      language:      p.getString('language')     ?? 'es',
-      themeMode:     p.getString('theme_mode')   ?? 'dark',
+      language:       p.getString('language')      ?? 'es',
+      themeMode:      p.getString('theme_mode')    ?? 'dark',
+      serialBaudRate: p.getInt('serial_baud_rate') ?? 921600,
       algo: AlgorithmSettings(
         jumpHeight:   _e(JumpHeightMethod.values,   'algo_jump_height',
                         JumpHeightMethod.impulseMomentum),
@@ -152,6 +157,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await p.setString('height_unit',     state.heightUnit);
     await p.setString('language',        state.language);
     await p.setString('theme_mode',      state.themeMode);
+    await p.setInt('serial_baud_rate',   state.serialBaudRate);
     // Algorithm settings
     await p.setString('algo_jump_height', state.algo.jumpHeight.name);
     await p.setString('algo_peak_power',  state.algo.peakPower.name);
@@ -241,6 +247,14 @@ class SettingsScreen extends ConsumerWidget {
               min: 20, max: 60, unit: 'cm',
               onChanged: (v) =>
                   upd((s) => s.copyWith(platformSeparationCm: v.roundToDouble())),
+            ),
+            Divider(color: context.col.border, height: 1),
+            _PickerTile(
+              label:    AppStrings.get('serial_baud_rate'),
+              subtitle: AppStrings.get('serial_baud_rate_subtitle'),
+              options:  const ['9600', '19200', '57600', '115200', '230400', '460800', '921600'],
+              selected: settings.serialBaudRate.toString(),
+              onChanged: (v) => upd((s) => s.copyWith(serialBaudRate: int.parse(v))),
             ),
           ]),
 

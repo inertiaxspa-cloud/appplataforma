@@ -8,7 +8,8 @@ abstract class ConnectionDataSource {
   Future<List<ConnectionTarget>> listTargets();
 
   /// Open a connection to [target].
-  Future<void> open(ConnectionTarget target);
+  /// [baudRate] is only used by serial/USB backends; BLE ignores it.
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600});
 
   /// Close the current connection.
   Future<void> close();

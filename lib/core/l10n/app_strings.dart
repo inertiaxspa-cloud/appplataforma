@@ -592,6 +592,9 @@ class AppStrings {
       // P3.1 — SJ countermovement warning
       'sj_countermovement_warning': 'Contramovimiento detectado',
       'select_athlete_first': 'Selecciona un atleta antes de iniciar el test',
+      // Serial baud rate
+      'serial_baud_rate': 'Velocidad serial (baud rate)',
+      'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Firmware legacy: 115200',
     },
     'en': {
       // Navigation
@@ -1169,6 +1172,9 @@ class AppStrings {
       // P3.1 — SJ countermovement warning
       'sj_countermovement_warning': 'Countermovement detected',
       'select_athlete_first': 'Select an athlete before starting the test',
+      // Serial baud rate
+      'serial_baud_rate': 'Serial baud rate',
+      'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Legacy firmware: 115200',
     },
   };
 

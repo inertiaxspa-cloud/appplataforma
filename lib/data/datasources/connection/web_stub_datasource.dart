@@ -15,7 +15,7 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   Future<List<ConnectionTarget>> listTargets() async => [];
 
   @override
-  Future<void> open(ConnectionTarget target) async {
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     throw UnsupportedError('Serial port not available on web');
   }
 
@@ -41,7 +41,7 @@ class AndroidUsbDataSource implements ConnectionDataSource {
   Future<List<ConnectionTarget>> listTargets() async => [];
 
   @override
-  Future<void> open(ConnectionTarget target) async {
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     throw UnsupportedError('USB serial not available on web');
   }
 

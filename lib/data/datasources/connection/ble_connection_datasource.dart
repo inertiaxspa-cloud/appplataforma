@@ -80,7 +80,7 @@ class BleConnectionDataSource implements ConnectionDataSource {
   // ── Connect ───────────────────────────────────────────────────────────────
 
   @override
-  Future<void> open(ConnectionTarget target) async {
+  Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     _device = BluetoothDevice.fromId(target.id);
 
     await _device!.connect(
