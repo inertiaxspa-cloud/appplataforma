@@ -17,6 +17,7 @@ import 'athlete_provider.dart';
 import 'connection_provider.dart';
 import 'calibration_provider.dart';
 import 'live_data_provider.dart';
+import '../screens/history/history_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
 // ── Test state ─────────────────────────────────────────────────────────────
@@ -787,6 +788,8 @@ class TestStateNotifier extends StateNotifier<TestState> {
         'result_json':    result.toJson(),
         'sync_status':    'pending',
       });
+      // Invalidate history provider so the history screen shows the new result.
+      _ref.invalidate(sessionHistoryProvider);
       debugPrint('[TestState] Auto-saved result to SQLite');
     } catch (e) {
       debugPrint('[TestState] Auto-save failed: $e');
