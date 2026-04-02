@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class ErrorScreen extends StatefulWidget {
   final String? errorMessage;
@@ -22,10 +23,10 @@ class _ErrorScreenState extends State<ErrorScreen> {
   String get _displayMessage =>
       widget.errorMessage ??
       widget.details?.exceptionAsString() ??
-      'Error desconocido.';
+      AppStrings.get('error_unknown');
 
   String get _stackTrace =>
-      widget.details?.stack?.toString() ?? 'Sin stack trace disponible.';
+      widget.details?.stack?.toString() ?? AppStrings.get('error_no_stack');
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +58,9 @@ class _ErrorScreenState extends State<ErrorScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Algo salió mal',
-                style: TextStyle(
+              Text(
+                AppStrings.get('error_title'),
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -68,9 +69,9 @@ class _ErrorScreenState extends State<ErrorScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'La app encontró un error inesperado. Puedes intentar reiniciarla.',
-                style: TextStyle(
+              Text(
+                AppStrings.get('error_body'),
+                style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                   height: 1.5,
@@ -101,10 +102,10 @@ class _ErrorScreenState extends State<ErrorScreen> {
                                 size: 16,
                                 color: AppColors.textSecondary),
                             const SizedBox(width: 8),
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Detalles técnicos',
-                                style: TextStyle(
+                                AppStrings.get('error_technical_details'),
+                                style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
@@ -141,9 +142,9 @@ class _ErrorScreenState extends State<ErrorScreen> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              const Text(
-                                'Stack trace:',
-                                style: TextStyle(
+                              Text(
+                                AppStrings.get('error_stack_trace'),
+                                style: const TextStyle(
                                   fontSize: 11,
                                   color: AppColors.textDisabled,
                                   fontWeight: FontWeight.w600,
@@ -178,9 +179,9 @@ class _ErrorScreenState extends State<ErrorScreen> {
                 width: double.infinity,
                 child: FilledButton.icon(
                   icon: const Icon(Icons.refresh_rounded, size: 20),
-                  label: const Text(
-                    'Reiniciar app',
-                    style:
+                  label: Text(
+                    AppStrings.get('error_restart_app'),
+                    style: const
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   onPressed: () {

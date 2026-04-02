@@ -1,6 +1,6 @@
 name: inertiax
 description: InertiaX Force Platform Analysis App
-version: 1.0.21+21
+version: 1.0.22+22
 publish_to: none
 
 environment:

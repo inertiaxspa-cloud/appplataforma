@@ -112,15 +112,16 @@ class ImtpMetrics {
 
     // Symmetry from peak sample
     final peakIdx  = pull.indexOf(peak);
-    final pkSample = samples[onsetIdx + peakIdx.clamp(0, samples.length - onsetIdx - 1)];
+    final pkIdx    = (onsetIdx + peakIdx).clamp(0, samples.length - 1);
+    final pkSample = samples[pkIdx];
     final sym = platformCount == 2
         ? JumpMetrics.symmetry2Platform(
-            totalPlatformAN: pkSample.forceTotal * (pkSample.leftPercent  / 100.0),
-            totalPlatformBN: pkSample.forceTotal * (pkSample.rightPercent / 100.0),
+            totalPlatformAN: pkSample.forcePlatformA,
+            totalPlatformBN: pkSample.forcePlatformB,
           )
         : JumpMetrics.symmetry1Platform(
-            masterSideN: pkSample.forceTotal * (pkSample.masterPercent / 100.0),
-            slaveSideN:  pkSample.forceTotal * (pkSample.slavePercent  / 100.0),
+            masterSideN: pkSample.forcePlatformA,
+            slaveSideN:  pkSample.forcePlatformB,
           );
 
     return ImtpResult(

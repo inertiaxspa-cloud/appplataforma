@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -73,8 +74,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 athletesAsync.when(
                   loading: () => const SizedBox(
                       height: 40, child: LinearProgressIndicator()),
-                  error: (e, _) => Text('Error: $e',
-                      style: const TextStyle(color: AppColors.danger)),
+                  error: (e, _) => Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+                      const SizedBox(height: 12),
+                      Text(AppStrings.get('error_loading'), style: const TextStyle(color: AppColors.danger)),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: Text(AppStrings.get('retry')),
+                        onPressed: () => ref.invalidate(athleteListProvider),
+                      ),
+                    ],
+                  ),
                   data: (athletes) => _AthletePicker(
                     athletes: athletes,
                     selectedId: _athleteId,
@@ -232,15 +245,20 @@ class _ComparisonBody extends ConsumerWidget {
                 DateTime.tryParse(row['performed_at'] as String? ?? '') ??
                     DateTime.now();
             sessions.add(_SessionEntry(date: dt, result: result));
-          } catch (_) {}
+          } catch (e) { debugPrint('[Comparison] Parse error: $e'); }
+        }
+
+        if (sessions.isEmpty) {
+          return _Placeholder(
+            icon: Icons.bar_chart_outlined,
+            message: AppStrings.get('no_sessions_yet'),
+          );
         }
 
         if (sessions.length < 2) {
           return _Placeholder(
             icon: Icons.bar_chart,
-            message: sessions.isEmpty
-                ? '${AppStrings.get('no_sessions_for')} ${testType.displayName}'
-                : AppStrings.get('min_sessions'),
+            message: AppStrings.get('min_sessions'),
           );
         }
 

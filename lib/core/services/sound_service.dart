@@ -42,8 +42,10 @@ class SoundService {
       for (final note in notes) {
         beep(note[0], note[1]);
       }
-    } catch (_) {
+    } catch (e) {
       // Audio is non-critical — never crash the app.
+      // ignore: avoid_print
+      print('[Sound] Beep error: $e');
     }
   }
 }

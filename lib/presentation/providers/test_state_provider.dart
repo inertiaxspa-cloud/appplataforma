@@ -223,7 +223,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
       case JumpPhase.landed:
         // C10 fix: ignore duplicate landing events if already processing.
-        if (state.phase == JumpPhase.landed) break;
+        if (state.phase == JumpPhase.landed) return;
         HapticFeedback.heavyImpact();
         if (state.testType == TestType.multiJump) {
           _recordMultiJump(processed);
@@ -374,6 +374,14 @@ class TestStateNotifier extends StateNotifier<TestState> {
     // Phase-detection indices (_descentIdx, _takeoffIdx) remain valid because
     // filtfilt preserves array length.
     final forceFiltered = ButterworthFilter.filtfilt(_forceData);
+    if (forceFiltered.isEmpty) {
+      if (settings.soundFeedback) SoundService.error();
+      state = state.copyWith(
+        status: TestStatus.failed,
+        error: 'Filtrado produjo datos vacíos. Repite el test.',
+      );
+      return;
+    }
 
     // ── Flight-time height (always computed — used for MultiJump and as fallback)
     final flightTimeS = _phaseDetector.flightTimeS ?? 0;

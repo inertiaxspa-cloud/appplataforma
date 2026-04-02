@@ -28,7 +28,7 @@ final _latestSjHeightProvider =
   try {
     final result = TestResult.fromJson(json);
     if (result is JumpResult) return result.jumpHeightCm;
-  } catch (_) {}
+  } catch (e) { debugPrint('[ResultDetail] SJ height fetch error: $e'); }
   return null;
 });
 
@@ -37,7 +37,8 @@ final _latestSjHeightProvider =
 /// Auto-saves the result to SQLite on first display (when sessionId == null).
 class ResultDetailScreen extends ConsumerStatefulWidget {
   final TestResult result;
-  const ResultDetailScreen({super.key, required this.result});
+  final bool isFromHistory;
+  const ResultDetailScreen({super.key, required this.result, this.isFromHistory = false});
 
   @override
   ConsumerState<ResultDetailScreen> createState() => _ResultDetailScreenState();
@@ -53,10 +54,13 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
   @override
   void initState() {
     super.initState();
-    final key = widget.result.computedAt.toIso8601String();
-    if (widget.result.sessionId == null && !_savedTimestamps.contains(key)) {
-      _savedTimestamps.add(key);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _saveResult());
+    // Only auto-save NEW results (post-test). NEVER save when viewing from history.
+    if (!widget.isFromHistory) {
+      final key = widget.result.computedAt.toIso8601String();
+      if (widget.result.sessionId == null && !_savedTimestamps.contains(key)) {
+        _savedTimestamps.add(key);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _saveResult());
+      }
     }
   }
 

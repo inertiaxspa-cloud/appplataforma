@@ -198,7 +198,7 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
         segments: segments,
         cellOffsets: offsets.isNotEmpty
             ? offsets
-            : {'A_L': 0, 'A_R': 0, 'B_L': 0, 'B_R': 0},
+            : {'A_ML': 0, 'A_MR': 0, 'A_SL': 0, 'A_SR': 0},
         cellGains: cellGains,
         cellPolarities: cellPolarities ?? {},
         points: points,

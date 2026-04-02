@@ -73,6 +73,15 @@ class SupabaseService {
       return 'No se pudo conectar con el servidor. '
           'Verifica tu internet o espera un momento si es el primer uso.';
     }
+    if (msg.contains('unique constraint') || msg.contains('duplicate key')) {
+      return 'Este registro ya existe en la nube';
+    }
+    if (msg.contains('foreign key') || msg.contains('violates foreign key')) {
+      return 'Registro relacionado no encontrado en la nube';
+    }
+    if (msg.contains('null value') || msg.contains('not-null constraint')) {
+      return 'Faltan datos requeridos para sincronizar';
+    }
     // Pass through a sanitised version of the raw message so the user can
     // report it precisely.
     final sanitised = raw
@@ -88,7 +97,8 @@ class SupabaseService {
   Future<void> signIn(String email, String password) async {
     try {
       await _client.auth
-          .signInWithPassword(email: email, password: password);
+          .signInWithPassword(email: email, password: password)
+          .timeout(const Duration(seconds: 15));
     } catch (e) {
       throw Exception(_friendlyError(e));
     }
@@ -96,7 +106,8 @@ class SupabaseService {
 
   Future<void> signUp(String email, String password) async {
     try {
-      await _client.auth.signUp(email: email, password: password);
+      await _client.auth.signUp(email: email, password: password)
+          .timeout(const Duration(seconds: 15));
     } catch (e) {
       throw Exception(_friendlyError(e));
     }
@@ -104,7 +115,8 @@ class SupabaseService {
 
   Future<void> signOut() async {
     try {
-      await _client.auth.signOut();
+      await _client.auth.signOut()
+          .timeout(const Duration(seconds: 15));
     } catch (e) {
       throw Exception(_friendlyError(e));
     }
@@ -129,7 +141,8 @@ class SupabaseService {
     final user = currentUser;
     if (user == null) throw StateError('No hay sesión activa de Supabase.');
     try {
-      await _client.from('athletes').select('id').limit(1);
+      await _client.from('athletes').select('id').limit(1)
+          .timeout(const Duration(seconds: 15));
     } catch (e) {
       throw Exception('Supabase no accesible: ${_friendlyError(e)}');
     }
@@ -147,6 +160,13 @@ class SupabaseService {
     final userId  = user.id;
     final localId = athlete['id'];
 
+    // ── Input validation ──────────────────────────────────────────────────
+    final name = (athlete['name'] as String?) ?? '';
+    if (name.isEmpty) throw StateError('Nombre del atleta vacío');
+    if (name.length > 200) throw StateError('Nombre del atleta demasiado largo');
+    final bw = athlete['body_weight_kg'];
+    if (bw is num && (bw < 0 || bw > 500)) throw StateError('Peso inválido: $bw kg');
+
     try {
       // 1. Check if the athlete already exists in Supabase.
       final existing = await _client
@@ -154,7 +174,8 @@ class SupabaseService {
           .select('id')
           .eq('user_id', userId)
           .eq('local_id', localId)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 15));
 
       // 2. Use the existing UUID or generate a new one.
       final uuid = (existing?['id'] as String?) ??
@@ -173,7 +194,7 @@ class SupabaseService {
           'notes':          athlete['notes'],
         },
         onConflict: 'user_id,local_id',
-      );
+      ).timeout(const Duration(seconds: 15));
       return uuid;
     } catch (e) {
       debugPrint('[Supabase] upsertAthlete failed for local_id=$localId: $e');
@@ -190,6 +211,8 @@ class SupabaseService {
     if (athleteUuid == null || athleteUuid.isEmpty) {
       throw StateError('athlete_uuid es null — sincroniza el atleta primero.');
     }
+    final testType = session['test_type'] as String?;
+    if (testType == null || testType.isEmpty) throw StateError('Tipo de test vacío');
     final userId = user.id;
     final uuid =
         (session['supabase_uuid'] as String?) ?? const Uuid().v4();
@@ -215,7 +238,7 @@ class SupabaseService {
         'platform_count':   session['platform_count'] ?? 1,
         'metrics_json': _parseMetricsJson(session['result_json']),
         'notes': session['notes'],
-      });
+      }).timeout(const Duration(seconds: 15));
       return uuid;
     } catch (e) {
       debugPrint('[Supabase] upsertSession failed for local_id=${session['id']}: $e');

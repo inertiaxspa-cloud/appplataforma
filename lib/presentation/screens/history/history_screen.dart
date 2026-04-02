@@ -113,8 +113,12 @@ class _SessionListState extends ConsumerState<_SessionList> {
     // 2. Delete from DB asynchronously.
     if (id != null) {
       DatabaseHelper.instance.deleteSession(id).then((_) {
-        // 3. Refresh provider so the count and other screens stay in sync.
-        if (mounted) ref.invalidate(sessionHistoryProvider);
+        // 3. Delay the provider invalidation so the Dismissible animation
+        //    finishes before the widget tree is rebuilt. Without this delay,
+        //    the rebuild races with the animation and causes a black screen.
+        Future.delayed(const Duration(milliseconds: 350), () {
+          if (mounted) ref.invalidate(sessionHistoryProvider);
+        });
       }).catchError((e) {
         // Restore item on error and show a snackbar.
         if (mounted) {
@@ -203,7 +207,7 @@ class _SessionTile extends ConsumerWidget {
           case CoPResult r:
             heroValue = r.areaEllipseMm2.toStringAsFixed(0); heroUnit = 'mm²';
         }
-      } catch (_) {}
+      } catch (e) { debugPrint('[History] Result parse error: $e'); }
     }
 
     final athleteId = session['athlete_id'] as int?;

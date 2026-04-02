@@ -94,7 +94,7 @@ class ThemeColors extends ThemeExtension<ThemeColors> {
 
 extension ThemeColorsX on BuildContext {
   /// Access adaptive surface/text/border colours.
-  ThemeColors get col => Theme.of(this).extension<ThemeColors>()!;
+  ThemeColors get col => Theme.of(this).extension<ThemeColors>() ?? ThemeColors.dark;
 }
 
 class AppTheme {

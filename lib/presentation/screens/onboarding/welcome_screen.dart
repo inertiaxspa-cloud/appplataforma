@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_strings.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -41,9 +42,9 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'InertiaX Force',
-                style: TextStyle(
+              Text(
+                AppStrings.get('welcome_title'),
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -52,9 +53,9 @@ class WelcomeScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Plataforma de fuerza de alto rendimiento',
-                style: TextStyle(
+              Text(
+                AppStrings.get('welcome_subtitle'),
+                style: const TextStyle(
                   fontSize: 15,
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w400,
@@ -65,17 +66,17 @@ class WelcomeScreen extends StatelessWidget {
               // Feature bullets
               _BulletItem(
                 emoji: '⚡',
-                text: 'Mide fuerza en tiempo real',
+                text: AppStrings.get('welcome_bullet_force'),
               ),
               const SizedBox(height: 16),
               _BulletItem(
                 emoji: '📊',
-                text: 'Analiza cada salto',
+                text: AppStrings.get('welcome_bullet_analyze'),
               ),
               const SizedBox(height: 16),
               _BulletItem(
                 emoji: '☁️',
-                text: 'Sincroniza en la nube',
+                text: AppStrings.get('welcome_bullet_sync'),
               ),
               const Spacer(flex: 3),
               // Begin button
@@ -89,9 +90,9 @@ class WelcomeScreen extends StatelessWidget {
                     minimumSize: const Size(double.infinity, 56),
                     shape: const StadiumBorder(),
                   ),
-                  child: const Text(
-                    'Comenzar',
-                    style: TextStyle(
+                  child: Text(
+                    AppStrings.get('welcome_begin'),
+                    style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,

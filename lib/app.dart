@@ -140,17 +140,20 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
     GoRoute(path: '/tests/multijump', builder: (_, __) => const MultiJumpScreen()),
     GoRoute(path: '/tests/cop',       builder: (_, __) => const CopScreen()),
     GoRoute(path: '/tests/imtp',      builder: (_, __) => const ImtpScreen()),
-    // Ruta para resultados guardados (desde historial) y resultados nuevos (post-test)
+    // Resultados desde historial — solo lectura, NO auto-save
     GoRoute(
       path: '/results/:id',
       builder: (_, state) => ResultDetailScreen(
         result: state.extra as TestResult,
+        isFromHistory: true,
       ),
     ),
+    // Resultados nuevos (post-test) — auto-save habilitado
     GoRoute(
       path: '/results/new',
       builder: (_, state) => ResultDetailScreen(
         result: state.extra as TestResult,
+        isFromHistory: false,
       ),
     ),
     GoRoute(

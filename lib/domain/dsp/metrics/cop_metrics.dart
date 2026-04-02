@@ -246,7 +246,8 @@ class CopMetrics {
     final total = meanForceA + meanForceB;
     if (total <= 0) return 100.0;
     final ratio = meanForceA / total;
-    return 100.0 - (ratio - 0.5).abs() * 200.0;
+    final result = 100.0 - (ratio - 0.5).abs() * 200.0;
+    return math.max(0.0, math.min(100.0, result));
   }
 
   // ── Build CoPResult ───────────────────────────────────────────────────────

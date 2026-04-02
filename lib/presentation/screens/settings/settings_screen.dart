@@ -111,7 +111,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     T _e<T extends Enum>(List<T> values, String? key, T fallback) {
       final name = p.getString(key ?? '');
       if (name == null) return fallback;
-      try { return values.byName(name); } catch (_) { return fallback; }
+      try { return values.byName(name); } catch (e) { debugPrint('[Settings] Enum parse error for "$name": $e'); return fallback; }
     }
 
     state = AppSettings(
@@ -738,7 +738,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Sincronización en la nube no disponible en esta versión.',
+                  AppStrings.get('sync_not_available'),
                   style: TextStyle(
                       fontSize: 11,
                       color: context.col.textSecondary,
@@ -769,24 +769,25 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
       BuildContext context, SyncState sync, SyncNotifier notifier) {
     final col = context.col;
 
-    String lastSyncText = 'Sincronizado';
+    String lastSyncText = AppStrings.get('sync_synced');
     if (sync.lastSyncAt != null) {
       try {
         lastSyncText =
-            'Último sync: ${DateFormat("d MMM, HH:mm", "es").format(sync.lastSyncAt!)}';
-      } catch (_) {
+            '${AppStrings.get('sync_last_sync')}: ${DateFormat("d MMM, HH:mm", AppStrings.currentLanguage).format(sync.lastSyncAt!)}';
+      } catch (e) {
+        debugPrint('[Settings] Date format error: $e');
         lastSyncText =
-            'Último sync: ${sync.lastSyncAt!.toLocal().toString().substring(0, 16)}';
+            '${AppStrings.get('sync_last_sync')}: ${sync.lastSyncAt!.toLocal().toString().substring(0, 16)}';
       }
     }
 
     final statusLabel = switch (sync.status) {
-      SyncStatus.syncing => 'Sincronizando…',
+      SyncStatus.syncing => AppStrings.get('sync_syncing'),
       SyncStatus.success => lastSyncText,
-      SyncStatus.error   => 'Error: ${sync.errorMessage ?? "desconocido"}',
+      SyncStatus.error   => '${AppStrings.get('sync_error_prefix')}: ${sync.errorMessage ?? AppStrings.get('sync_error_unknown')}',
       _ => sync.pendingCount > 0
-          ? '${sync.pendingCount} sesión(es) pendiente(s)'
-          : 'Sin cambios pendientes',
+          ? '${sync.pendingCount} ${AppStrings.get('sync_pending_sessions')}'
+          : AppStrings.get('sync_no_pending'),
     };
 
     final statusColor = sync.status == SyncStatus.error
@@ -851,8 +852,8 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                 style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                child: const Text('Salir',
-                    style: TextStyle(color: AppColors.danger, fontSize: 12)),
+                child: Text(AppStrings.get('sync_sign_out'),
+                    style: const TextStyle(color: AppColors.danger, fontSize: 12)),
               ),
             ],
           ),
@@ -871,7 +872,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                           strokeWidth: 2, color: AppColors.textOnPrimary))
                   : const Icon(Icons.sync, size: 16),
               label: Text(
-                  sync.isBusy ? 'Sincronizando…' : 'Sincronizar ahora',
+                  sync.isBusy ? AppStrings.get('sync_syncing') : AppStrings.get('sync_now'),
                   style: const TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -943,8 +944,8 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
             const SizedBox(width: 8),
             Text(
               _isSignUp
-                  ? 'Crear cuenta InertiaX Cloud'
-                  : 'Cuenta InertiaX Cloud',
+                  ? AppStrings.get('sync_create_account')
+                  : AppStrings.get('sync_account_title'),
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -957,7 +958,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
           TextField(
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
-            decoration: _fieldDeco('Email'),
+            decoration: _fieldDeco(AppStrings.get('sync_email')),
             style: TextStyle(color: col.textPrimary, fontSize: 13),
           ),
           const SizedBox(height: 8),
@@ -966,7 +967,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
           TextField(
             controller: _passCtrl,
             obscureText: _obscure,
-            decoration: _fieldDeco('Contraseña').copyWith(
+            decoration: _fieldDeco(AppStrings.get('sync_password')).copyWith(
               suffixIcon: IconButton(
                 icon: Icon(
                     _obscure
@@ -1023,8 +1024,8 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                             color: AppColors.textOnPrimary))
                     : Text(
                         _isSignUp
-                            ? 'Registrarse'
-                            : 'Iniciar sesión',
+                            ? AppStrings.get('sync_register')
+                            : AppStrings.get('sync_sign_in'),
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600)),
@@ -1035,7 +1036,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
               onPressed: () =>
                   setState(() => _isSignUp = !_isSignUp),
               child: Text(
-                  _isSignUp ? 'Ya tengo cuenta' : 'Registrarse',
+                  _isSignUp ? AppStrings.get('sync_already_have_account') : AppStrings.get('sync_register'),
                   style: const TextStyle(
                       fontSize: 11, color: AppColors.primary)),
             ),

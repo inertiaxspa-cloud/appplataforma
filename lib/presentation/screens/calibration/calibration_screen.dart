@@ -26,7 +26,7 @@ class CalibrationScreen extends ConsumerStatefulWidget {
 class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   int _step = 0;
   final _weightCtrl = TextEditingController();
-  final _nameCtrl   = TextEditingController(text: 'Calibración');
+  final _nameCtrl   = TextEditingController(text: AppStrings.get('cal_default_name'));
   bool _saving = false;
   CalibrationMode _mode   = CalibrationMode.segmented;
   _CalMethod      _method = _CalMethod.perCell;
@@ -235,7 +235,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   Future<void> _compute() async {
     setState(() => _saving = true);
     await ref.read(calibrationProvider.notifier).computeAndSave(
-      name: _nameCtrl.text.trim().isEmpty ? 'Calibración' : _nameCtrl.text.trim(),
+      name: _nameCtrl.text.trim().isEmpty ? AppStrings.get('cal_default_name') : _nameCtrl.text.trim(),
       mode: _mode,
       cellOffsets: _method == _CalMethod.polynomial ? {} : null,
       cellPolarities: Map.of(_polarities),
@@ -270,8 +270,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   ),
                   child: Text(
                     cal.activeCalibration!.isPerCell
-                        ? 'Calibrado (por celda)'
-                        : 'Calibrado',
+                        ? AppStrings.get('calibrated_per_cell')
+                        : AppStrings.get('calibrated'),
                     style: IXTextStyles.metricLabel
                         .copyWith(color: AppColors.success),
                   ),
@@ -308,7 +308,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   Icon(Icons.tune, size: 14, color: context.col.textSecondary),
                   const SizedBox(width: 6),
                   Text(
-                    'Opciones avanzadas de hardware',
+                    AppStrings.get('cal_advanced_hw_options'),
                     style: TextStyle(
                       fontSize: 12,
                       color: context.col.textSecondary,
@@ -379,8 +379,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Coloca el peso sobre la plataforma, espera que deje de '
-                    'oscilar, ingresa el valor en kg y presiona "Agregar".',
+                    AppStrings.get('cal_place_weight_instruction'),
                     style: TextStyle(color: col.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
@@ -448,9 +447,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.arrow_forward, size: 16),
                         label: Text(
-                          'Continuar con '
-                          '${cal.pendingPoints.where((p) => p.weightKg > 0).length} '
-                          'punto(s)',
+                          AppStrings.get('cal_continue_with_points')
+                              .replaceFirst('{n}', '${cal.pendingPoints.where((p) => p.weightKg > 0).length}'),
                         ),
                         onPressed: !isCollecting
                             ? () => setState(() => _step = 2)
@@ -490,10 +488,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   _MethodCard(
                     selected: _method == _CalMethod.perCell,
                     icon: Icons.grid_4x4,
-                    title: 'Estándar (recomendado)',
-                    subtitle: 'Calibra cada sensor individualmente. '
-                        'Ideal para todo tipo de superficie.',
-                    badge: 'ESTÁNDAR',
+                    title: AppStrings.get('cal_method_standard_title'),
+                    subtitle: AppStrings.get('cal_method_standard_desc'),
+                    badge: AppStrings.get('cal_method_standard_badge'),
                     badgeColor: AppColors.success,
                     onTap: () => setState(() => _method = _CalMethod.perCell),
                   ),
@@ -503,10 +500,9 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   _MethodCard(
                     selected: _method == _CalMethod.polynomial,
                     icon: Icons.show_chart,
-                    title: 'Avanzado (polinomial)',
-                    subtitle: 'Calibración global con ajuste de curva. '
-                        'Para usuarios con experiencia técnica.',
-                    badge: 'CLÁSICO',
+                    title: AppStrings.get('cal_method_poly_title'),
+                    subtitle: AppStrings.get('cal_method_poly_desc'),
+                    badge: AppStrings.get('cal_method_poly_badge'),
                     badgeColor: AppColors.warning,
                     onTap: () => setState(() => _method = _CalMethod.polynomial),
                   ),
@@ -514,7 +510,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                   // Polynomial sub-selector
                   if (_method == _CalMethod.polynomial) ...[
                     const SizedBox(height: 12),
-                    Text('TIPO DE AJUSTE',
+                    Text(AppStrings.get('cal_fit_type'),
                         style: IXTextStyles.metricLabel),
                     const SizedBox(height: 8),
                     _PolyModeSelector(
@@ -536,8 +532,8 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                                   strokeWidth: 2, color: Colors.black))
                           : const Icon(Icons.save_outlined, size: 18),
                       label: Text(_saving
-                          ? 'Guardando...'
-                          : 'Guardar Calibración'),
+                          ? AppStrings.get('cal_saving')
+                          : AppStrings.get('cal_save_calibration')),
                       onPressed: _step == 2 && !_saving && !isCollecting
                           ? _compute
                           : null,
@@ -607,17 +603,17 @@ class _LiveReadingCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('LECTURA EN VIVO', style: IXTextStyles.metricLabel),
+                  Text(AppStrings.get('cal_live_reading'), style: IXTextStyles.metricLabel),
                   const SizedBox(height: 4),
                   Text(
                     smoothedN.toStringAsFixed(1),
                     style: IXTextStyles.metricValue(color: AppColors.primary),
                   ),
                   Tooltip(
-                    message: 'Estabilidad (%): menor % = medición más estable',
+                    message: AppStrings.get('cal_stability_tooltip'),
                     child: Text(
-                      'Estabilidad: ${cvPct.toStringAsFixed(1)}%'
-                      '${cvPct > 3.0 ? '  ⚠ Espera que se estabilice' : '  ✓'}',
+                      '${AppStrings.get('cal_stability_label')}: ${cvPct.toStringAsFixed(1)}%'
+                      '${cvPct > 3.0 ? '  \u26a0 ${AppStrings.get('cal_wait_stabilize')}' : '  \u2713'}',
                       style: TextStyle(
                         fontSize: 10,
                         color: cvPct > 3.0
@@ -641,20 +637,20 @@ class _LiveReadingCard extends StatelessWidget {
           // Per-cell badges
           Text(
             engineerMode
-                ? 'SENSORES POR ZONA (A_ML · A_MR · A_SL · A_SR)'
-                : 'SENSORES POR ZONA',
+                ? AppStrings.get('cal_sensors_by_zone_tech')
+                : AppStrings.get('cal_sensors_by_zone'),
             style: IXTextStyles.metricLabel,
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _CellBadge(label: 'A—Izq', techLabel: 'A_ML', value: rawAML, warn: amlBad, engineerMode: engineerMode),
+              _CellBadge(label: AppStrings.get('cal_cell_a_left'), techLabel: 'A_ML', value: rawAML, warn: amlBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'A—Der', techLabel: 'A_MR', value: rawAMR, warn: amrBad, engineerMode: engineerMode),
+              _CellBadge(label: AppStrings.get('cal_cell_a_right'), techLabel: 'A_MR', value: rawAMR, warn: amrBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'B—Izq', techLabel: 'A_SL', value: rawASL, warn: aslBad, engineerMode: engineerMode),
+              _CellBadge(label: AppStrings.get('cal_cell_b_left'), techLabel: 'A_SL', value: rawASL, warn: aslBad, engineerMode: engineerMode),
               const SizedBox(width: 8),
-              _CellBadge(label: 'B—Der', techLabel: 'A_SR', value: rawASR, warn: asrBad, engineerMode: engineerMode),
+              _CellBadge(label: AppStrings.get('cal_cell_b_right'), techLabel: 'A_SR', value: rawASR, warn: asrBad, engineerMode: engineerMode),
             ],
           ),
 
@@ -664,11 +660,10 @@ class _LiveReadingCard extends StatelessWidget {
               const Icon(Icons.warning_amber_rounded,
                   size: 13, color: AppColors.warning),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Sensor(es) con valor negativo — despliega "Opciones avanzadas '
-                  'de hardware" y activa la corrección del sensor afectado.',
-                  style: TextStyle(fontSize: 10, color: AppColors.warning),
+                  AppStrings.get('cal_negative_sensor_warning'),
+                  style: const TextStyle(fontSize: 10, color: AppColors.warning),
                 ),
               ),
             ]),
@@ -676,7 +671,7 @@ class _LiveReadingCard extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'A—Izq / A—Der = Plataforma A  ·  B—Izq / B—Der = Plataforma B',
+            AppStrings.get('cal_platform_legend'),
             style: TextStyle(fontSize: 9, color: col.textDisabled),
           ),
         ],
@@ -698,11 +693,11 @@ class _PolarityPanel extends StatelessWidget {
     required this.onToggle,
   });
 
-  static const _cells = [
-    ('A_ML', 'A — Izq', 'Plataforma A — Izquierda'),
-    ('A_MR', 'A — Der', 'Plataforma A — Derecha'),
-    ('A_SL', 'B — Izq', 'Plataforma B — Izquierda'),
-    ('A_SR', 'B — Der', 'Plataforma B — Derecha'),
+  static List<(String, String, String)> get _cells => [
+    ('A_ML', AppStrings.get('cal_cell_a_left'), AppStrings.get('cal_platform_a_left')),
+    ('A_MR', AppStrings.get('cal_cell_a_right'), AppStrings.get('cal_platform_a_right')),
+    ('A_SL', AppStrings.get('cal_cell_b_left'), AppStrings.get('cal_platform_b_left')),
+    ('A_SR', AppStrings.get('cal_cell_b_right'), AppStrings.get('cal_platform_b_right')),
   ];
 
   @override
@@ -729,11 +724,11 @@ class _PolarityPanel extends StatelessWidget {
             Icon(Icons.swap_vert, size: 14,
                 color: anyInverted ? AppColors.warning : col.textSecondary),
             const SizedBox(width: 6),
-            Text('CORRECCIÓN DE SENSORES', style: IXTextStyles.metricLabel),
+            Text(AppStrings.get('cal_sensor_correction'), style: IXTextStyles.metricLabel),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Invierte el signo de un sensor si su lectura es negativa',
+                AppStrings.get('cal_sensor_correction_hint'),
                 style: TextStyle(fontSize: 9, color: col.textDisabled),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -763,13 +758,13 @@ class _PolarityPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: AppColors.warning.withOpacity(0.3)),
               ),
-              child: const Row(children: [
-                Icon(Icons.info_outline, size: 12, color: AppColors.warning),
-                SizedBox(width: 6),
+              child: Row(children: [
+                const Icon(Icons.info_outline, size: 12, color: AppColors.warning),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Corrección de sensor activa. Se guardará automáticamente con la calibración.',
-                    style: TextStyle(fontSize: 10, color: AppColors.warning),
+                    AppStrings.get('cal_correction_active_note'),
+                    style: const TextStyle(fontSize: 10, color: AppColors.warning),
                   ),
                 ),
               ]),
@@ -875,7 +870,7 @@ class _PolarityRow extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              isInverted ? 'CORREGIDO' : 'Normal',
+              isInverted ? AppStrings.get('cal_corrected') : AppStrings.get('cal_normal'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
@@ -907,9 +902,7 @@ class _CollectionProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (progress / total).clamp(0.0, 1.0);
-    final label = phase == _CalPhase.collectingTare
-        ? 'Midiendo... espera'
-        : 'Midiendo... espera';
+    final label = AppStrings.get('cal_measuring_wait');
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -955,7 +948,7 @@ class _CollectionProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '${(pct * 100).toStringAsFixed(0)}% completado',
+            '${(pct * 100).toStringAsFixed(0)}% ${AppStrings.get('cal_pct_completed')}',
             style: TextStyle(fontSize: 11, color: context.col.textSecondary),
           ),
         ],
@@ -1136,11 +1129,11 @@ class _PolyModeSelector extends StatelessWidget {
 
   const _PolyModeSelector({required this.current, required this.onChange});
 
-  static const _options = [
-    (CalibrationMode.linear,    'Lineal',    'Grado 1 — mínimo 1 punto'),
-    (CalibrationMode.quadratic, 'Cuadrático','Grado 2 — mínimo 3 puntos'),
-    (CalibrationMode.cubic,     'Cúbico',    'Grado 3 — mínimo 4 puntos'),
-    (CalibrationMode.segmented, 'Segmentado','Tramos lineales — máxima precisión'),
+  static List<(CalibrationMode, String, String)> get _options => [
+    (CalibrationMode.linear,    AppStrings.get('cal_poly_linear'),    AppStrings.get('cal_poly_linear_hint')),
+    (CalibrationMode.quadratic, AppStrings.get('cal_poly_quadratic'), AppStrings.get('cal_poly_quadratic_hint')),
+    (CalibrationMode.cubic,     AppStrings.get('cal_poly_cubic'),     AppStrings.get('cal_poly_cubic_hint')),
+    (CalibrationMode.segmented, AppStrings.get('cal_poly_segmented'), AppStrings.get('cal_poly_segmented_hint')),
   ];
 
   @override

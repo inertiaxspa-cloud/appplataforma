@@ -81,14 +81,18 @@ class SyncNotifier extends StateNotifier<SyncState> {
         SupabaseService.instance.authStateChanges.listen((auth) {
       final u = auth.session?.user;
       if (u != null) {
-        state = state.copyWith(
-            status: SyncStatus.idle,
-            userEmail: u.email,
-            clearError: true);
+        if (mounted) {
+          state = state.copyWith(
+              status: SyncStatus.idle,
+              userEmail: u.email,
+              clearError: true);
+        }
         _refreshPendingCount();
       } else {
-        state = const SyncState(
-            status: SyncStatus.unauthenticated, pendingCount: 0);
+        if (mounted) {
+          state = const SyncState(
+              status: SyncStatus.unauthenticated, pendingCount: 0);
+        }
       }
     });
   }
@@ -186,7 +190,9 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
     final db = await DatabaseHelper.instance.database;
 
-    state = state.copyWith(status: SyncStatus.syncing, clearError: true, clearSuccess: true);
+    if (mounted) {
+      state = state.copyWith(status: SyncStatus.syncing, clearError: true, clearSuccess: true);
+    }
 
     // ── Step 0: Verify Supabase is reachable ────────────────────────────────
     try {

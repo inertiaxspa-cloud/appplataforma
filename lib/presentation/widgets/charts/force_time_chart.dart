@@ -27,7 +27,7 @@ class ForceTimeChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (timeS.isEmpty) return _empty(context);
+    if (timeS.isEmpty || forceTotalN.isEmpty) return _empty(context);
 
     final tEnd   = timeS.last;
     final tStart = tEnd - windowS;

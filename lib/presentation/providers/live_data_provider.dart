@@ -78,12 +78,14 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
   final ListQueue<double> _fLeft  = ListQueue(_bufferSize + 1);
   final ListQueue<double> _fRight = ListQueue(_bufferSize + 1);
   double _t0 = 0;
+  bool _disposed = false;
 
   final SignalProcessor _processor;
 
   LiveDataNotifier(this._processor) : super(const LiveDataState());
 
   void onRawSample(RawSample raw) {
+    if (_disposed) return;
     final processed = _processor.process(raw);
     if (processed == null) return;
 
@@ -153,6 +155,7 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
 
   @override
   void dispose() {
+    _disposed = true;
     _t.clear(); _fTotal.clear(); _fLeft.clear(); _fRight.clear();
     super.dispose();
   }

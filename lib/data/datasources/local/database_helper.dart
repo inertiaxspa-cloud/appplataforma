@@ -270,7 +270,8 @@ class DatabaseHelper {
 
   Future<int> insertTestSession(Map<String, dynamic> session) async {
     final db = await database;
-    return db.insert('test_sessions', session);
+    return db.insert('test_sessions', session,
+        conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<int> updateTestSession(Map<String, dynamic> session) async {

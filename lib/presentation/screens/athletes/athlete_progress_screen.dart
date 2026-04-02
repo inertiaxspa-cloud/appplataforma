@@ -77,7 +77,8 @@ final _athleteProgressProvider =
           symmetryPct: sym,
           result: result,
         ));
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[Progress] Result parse error: $e');
         continue;
       }
     }
