@@ -66,6 +66,9 @@ class PhaseDetector {
   int _settleAttempts = 0;
   static const int _maxSettleAttempts = 5; // ~5s max before forcing acceptance
 
+  // SJ countermovement detection (warning, not blocking)
+  bool countermovementDetected = false;
+
   // Phase timestamps
   double? _descentStartTime;
   double? _takeoffTime;
@@ -126,6 +129,10 @@ class PhaseDetector {
         return null;
 
       case JumpPhase.waiting:
+        // SJ countermovement warning: flag if force drops > 5% below BW
+        if (f < bodyWeightN * 0.95) {
+          countermovementDetected = true;
+        }
         if (f < bodyWeightN - _effectiveUnweightDelta) {
           _descentStartTime = t;
           return _transition(JumpPhase.descent, t);
@@ -219,6 +226,7 @@ class PhaseDetector {
     _settlingSamples.clear();
     _settleStartTime = null;
     _settleAttempts = 0;
+    countermovementDetected = false;
   }
 
   /// Start DJ mode: platform is empty, waiting for the athlete to drop from a box.
@@ -254,6 +262,7 @@ class PhaseDetector {
     _settlingSamples.clear();
     _settleStartTime = null;
     _settleAttempts = 0;
+    countermovementDetected = false;
     _descentStartTime = null;
     _takeoffTime = null;
     _landingTime = null;

@@ -131,6 +131,28 @@ class _CmjScreenState extends ConsumerState<CmjScreen> {
                 ref.read(testStateProvider.notifier).stopTest();
               },
             )
+          else if (test.status == TestStatus.failed)
+            Container(
+              color: context.col.surface,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+                  const SizedBox(height: 12),
+                  Text(
+                    test.error ?? AppStrings.get('test_failed'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: AppColors.danger),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text(AppStrings.get('retry')),
+                    onPressed: () => ref.read(testStateProvider.notifier).stopTest(),
+                  ),
+                ],
+              ),
+            )
           else if (_counting)
             _CountdownOverlay(
               countdownN: _countdownN,

@@ -580,6 +580,18 @@ class AppStrings {
       'sync_register': 'Registrarse',
       'sync_sign_in': 'Iniciar sesión',
       'sync_already_have_account': 'Ya tengo cuenta',
+      // P2.1 — Failed state
+      'test_failed': 'El test ha fallado',
+      // P2.3 — DJ status messages
+      'dj_waiting_message': 'Plataforma libre — salta del cajón cuando estés listo',
+      'dj_contact_message': '¡Contacto! Rebota YA',
+      'dj_completed': 'Drop Jump completado',
+      'dj_configure_weight': 'Configura el peso del atleta antes del Drop Jump.',
+      // P2.4 — DJ no contact
+      'dj_no_contact': 'No se detectó contacto. Repite el salto.',
+      // P3.1 — SJ countermovement warning
+      'sj_countermovement_warning': 'Contramovimiento detectado',
+      'select_athlete_first': 'Selecciona un atleta antes de iniciar el test',
     },
     'en': {
       // Navigation
@@ -1145,6 +1157,18 @@ class AppStrings {
       'sync_register': 'Register',
       'sync_sign_in': 'Sign in',
       'sync_already_have_account': 'Already have account',
+      // P2.1 — Failed state
+      'test_failed': 'Test failed',
+      // P2.3 — DJ status messages
+      'dj_waiting_message': 'Platform clear — drop from the box when ready',
+      'dj_contact_message': 'Contact! Rebound NOW',
+      'dj_completed': 'Drop Jump completed',
+      'dj_configure_weight': 'Set the athlete weight before the Drop Jump.',
+      // P2.4 — DJ no contact
+      'dj_no_contact': 'Contact not detected. Repeat the jump.',
+      // P3.1 — SJ countermovement warning
+      'sj_countermovement_warning': 'Countermovement detected',
+      'select_athlete_first': 'Select an athlete before starting the test',
     },
   };
 

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -190,7 +190,13 @@ class DatabaseHelper {
           'ALTER TABLE calibration_points ADD COLUMN raw_asl REAL NOT NULL DEFAULT 0',
           'ALTER TABLE calibration_points ADD COLUMN raw_asr REAL NOT NULL DEFAULT 0',
         ]) {
-          try { await db.execute(sql); } catch (_) { /* column already exists */ }
+          try { await db.execute(sql); } catch (e) {
+            final msg = e.toString().toLowerCase();
+            if (!msg.contains('duplicate column') && !msg.contains('already exists')) {
+              debugPrint('[DB] Migration v2 failed: $e');
+              rethrow;
+            }
+          }
         }
       }
       if (v == 3) {
@@ -198,7 +204,13 @@ class DatabaseHelper {
         try {
           await db.execute(
               "ALTER TABLE calibrations ADD COLUMN cell_polarities_json TEXT NOT NULL DEFAULT '{}'");
-        } catch (_) { /* column already exists */ }
+        } catch (e) {
+          final msg = e.toString().toLowerCase();
+          if (!msg.contains('duplicate column') && !msg.contains('already exists')) {
+            debugPrint('[DB] Migration v3 failed: $e');
+            rethrow;
+          }
+        }
       }
     }
   }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/algorithm_settings.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/services/sound_service.dart';
 import '../../data/datasources/local/database_helper.dart';
 import '../../data/models/processed_sample.dart';
@@ -97,6 +98,16 @@ class TestStateNotifier extends StateNotifier<TestState> {
   TestStateNotifier(this._ref) : super(const TestState());
 
   Future<void> startTest(TestType type) async {
+    final athlete = _ref.read(selectedAthleteProvider);
+    if (athlete?.id == null) {
+      state = TestState(
+        testType: type,
+        status: TestStatus.failed,
+        error: AppStrings.get('select_athlete_first'),
+      );
+      return;
+    }
+
     final cal = _ref.read(calibrationProvider).activeCalibration
         ?? CalibrationData.defaultCalibration();
     _processor = SignalProcessor(cal);
@@ -130,7 +141,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         state = TestState(
           testType: type,
           status: TestStatus.failed,
-          error: 'Configura el peso del atleta antes del Drop Jump.',
+          error: AppStrings.get('dj_configure_weight'),
         );
         return;
       }
@@ -141,7 +152,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         status:        TestStatus.running,
         phase:         JumpPhase.djWaiting,
         bodyWeightN:   bwN,
-        statusMessage: 'Plataforma libre — salta del cajón cuando estés listo',
+        statusMessage: AppStrings.get('dj_waiting_message'),
       );
     } else {
       _phaseDetector.startSettling();
@@ -254,7 +265,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         HapticFeedback.heavyImpact();
         state = state.copyWith(
           phase:         JumpPhase.djContact,
-          statusMessage: '¡Contacto! Rebota YA',
+          statusMessage: AppStrings.get('dj_contact_message'),
         );
 
       default:
@@ -472,8 +483,15 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     // ── Peak / mean force ─────────────────────────────────────────────────
     final peakForceN = peakF;
-    final meanForceN =
-        forceFiltered.fold(0.0, (s, f) => s + f) / forceFiltered.length;
+    // Mean force over the concentric phase only [minIdx, takeoffIdx].
+    double meanForceN = 0;
+    if (takeoffIdx > minIdx) {
+      double sum = 0;
+      for (int i = minIdx; i <= takeoffIdx && i < forceFiltered.length; i++) {
+        sum += forceFiltered[i];
+      }
+      meanForceN = sum / (takeoffIdx - minIdx + 1);
+    }
 
     // ── RFD / TTP: onset = first sample past minIdx exceeding BW + 20 N ──
     int onsetIdx = minIdx;
@@ -566,9 +584,15 @@ class TestStateNotifier extends StateNotifier<TestState> {
       // DJ uses real ground contact time (impact → takeoff) from phase detector,
       // NOT eccentric duration (which is meaningless for DJ).
       final djContactS = _phaseDetector.djContactTimeS;
-      final contactMs = djContactS != null
-          ? (djContactS * 1000).clamp(50.0, 2000.0)
-          : (eccentric * 1000).clamp(50.0, 2000.0); // fallback for legacy
+      if (djContactS == null) {
+        if (settings.soundFeedback) SoundService.error();
+        state = state.copyWith(
+          status: TestStatus.failed,
+          error: AppStrings.get('dj_no_contact'),
+        );
+        return;
+      }
+      final contactMs = (djContactS * 1000).clamp(50.0, 2000.0);
       final rsi = heightM > 0 && contactMs > 0
           ? heightM / (contactMs / 1000)
           : 0.0;
@@ -600,7 +624,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
           landingPeakForceN: peakLandingForceN,
           contactTimeMs: contactMs, rsiMod: rsi,
         ),
-        statusMessage: 'Drop Jump completado',
+        statusMessage: AppStrings.get('dj_completed'),
       );
       if (settings.soundFeedback) SoundService.success();
       _autoSaveResult(state.result);
@@ -815,6 +839,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
   }
 
   // ── Post-test data access (for PDF export) ───────────────────────────────
+
+  /// Whether a countermovement was detected during an SJ test (warning only).
+  bool get countermovementDetected => _phaseDetector.countermovementDetected;
 
   /// Filtered force signal from the last completed test (N).
   /// Remains available until the next [startTest] call.

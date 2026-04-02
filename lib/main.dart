@@ -64,7 +64,11 @@ void main() async {
 
   await initializeDateFormatting('es', null);
   await initializeDateFormatting('en', null);
-  await SupabaseService.initialize();
+  try {
+    await SupabaseService.initialize();
+  } catch (e) {
+    debugPrint('[Init] Supabase init failed (offline?): $e');
+  }
 
   // ── Restore saved language and prime AppStrings ───────────────────────────
   final savedLang = await initLanguage();

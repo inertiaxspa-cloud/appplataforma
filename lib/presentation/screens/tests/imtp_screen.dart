@@ -166,6 +166,35 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
                 });
               },
             )
+          else if (test.status == TestStatus.failed)
+            Container(
+              color: context.col.surface,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+                  const SizedBox(height: 12),
+                  Text(
+                    test.error ?? AppStrings.get('test_failed'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: AppColors.danger),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text(AppStrings.get('retry')),
+                    onPressed: () {
+                      ref.read(testStateProvider.notifier).stopTest();
+                      setState(() {
+                        _phase = _ImtpPhase.idle;
+                        _countdownN = 3;
+                        _elapsedS = 0;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            )
           else
             Container(
               color: context.col.surface,

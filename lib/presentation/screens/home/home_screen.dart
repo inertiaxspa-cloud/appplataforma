@@ -295,7 +295,7 @@ class _AthleteSelector extends ConsumerWidget {
               radius: 20,
               backgroundColor: AppColors.primary.withOpacity(0.15),
               child: Text(
-                selected!.name.substring(0, 1).toUpperCase(),
+                selected!.name.isNotEmpty ? selected!.name[0].toUpperCase() : '?',
                 style: const TextStyle(
                     color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 16),
               ),

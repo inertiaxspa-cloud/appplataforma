@@ -53,13 +53,17 @@ class StatusBadge extends StatelessWidget {
 }
 
 /// Phase indicator row (settling → descent → flight → landed).
+/// For Drop Jump, pass [testType] = 'dropJump' to show DJ-specific phases.
 class PhaseIndicatorRow extends StatelessWidget {
-  final String currentPhase; // 'idle','settling','waiting','descent','flight','landed'
+  final String currentPhase; // 'idle','settling','waiting','descent','flight','landed','djWaiting','djContact'
+  final String? testType;
 
-  const PhaseIndicatorRow({super.key, required this.currentPhase});
+  const PhaseIndicatorRow({super.key, required this.currentPhase, this.testType});
 
-  static const _phases = ['settling', 'descent', 'flight', 'landed'];
-  static const _labels = ['Reposo', 'Descenso', 'Vuelo', 'Aterrizaje'];
+  static const _defaultPhases = ['settling', 'descent', 'flight', 'landed'];
+  static const _defaultLabels = ['Reposo', 'Descenso', 'Vuelo', 'Aterrizaje'];
+  static const _djPhases = ['djWaiting', 'djContact', 'flight', 'landed'];
+  static const _djLabels = ['Esperando', 'Contacto', 'Vuelo', 'Aterrizaje'];
   static const _activeColors = [
     AppColors.textDisabled,
     AppColors.info,
@@ -67,13 +71,20 @@ class PhaseIndicatorRow extends StatelessWidget {
     AppColors.warning,
   ];
 
+  List<String> get _effectivePhases =>
+      testType == 'dropJump' ? _djPhases : _defaultPhases;
+  List<String> get _effectiveLabels =>
+      testType == 'dropJump' ? _djLabels : _defaultLabels;
+
   @override
   Widget build(BuildContext context) {
     final col = context.col;
+    final phases = _effectivePhases;
+    final labels = _effectiveLabels;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_phases.length, (i) {
-        final isActive = currentPhase == _phases[i] ||
+      children: List.generate(phases.length, (i) {
+        final isActive = currentPhase == phases[i] ||
             (currentPhase == 'waiting' && i == 0);
         final color = isActive ? _activeColors[i] : col.textDisabled;
         return Padding(
@@ -92,14 +103,14 @@ class PhaseIndicatorRow extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                _labels[i],
+                labels[i],
                 style: TextStyle(
                   fontSize: 11,
                   color: color,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
-              if (i < _phases.length - 1) ...[
+              if (i < phases.length - 1) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.arrow_forward_ios, size: 8, color: col.border),
               ],

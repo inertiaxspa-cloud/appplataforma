@@ -121,6 +121,28 @@ class _SjScreenState extends ConsumerState<SjScreen> {
             ),
           ),
 
+          // Countermovement warning badge
+          if (notifier.countermovementDetected)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.get('sj_countermovement_warning'),
+                    style: const TextStyle(color: AppColors.warning, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+
           // Phase indicators
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -152,6 +174,28 @@ class _SjScreenState extends ConsumerState<SjScreen> {
               onRepeat: () {
                 ref.read(testStateProvider.notifier).stopTest();
               },
+            )
+          else if (test.status == TestStatus.failed)
+            Container(
+              color: context.col.surface,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+                  const SizedBox(height: 12),
+                  Text(
+                    test.error ?? AppStrings.get('test_failed'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: AppColors.danger),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text(AppStrings.get('retry')),
+                    onPressed: () => ref.read(testStateProvider.notifier).stopTest(),
+                  ),
+                ],
+              ),
             )
           else if (_counting)
             _CountdownOverlay(

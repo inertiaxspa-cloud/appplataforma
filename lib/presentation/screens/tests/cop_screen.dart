@@ -1,19 +1,24 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../data/datasources/local/database_helper.dart';
 import '../../../data/models/processed_sample.dart';
 import '../../../domain/dsp/metrics/cop_metrics.dart';
+import '../../../domain/entities/test_result.dart';
+import '../../providers/athlete_provider.dart';
+import '../../providers/calibration_provider.dart';
 import '../../providers/live_data_provider.dart';
+import '../history/history_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cards/symmetry_gauge.dart';
 import '../../widgets/charts/force_time_chart.dart';
 import '../../widgets/common/post_test_panel.dart';
 import '../../widgets/test_tutorial.dart';
-import '../../../domain/entities/test_result.dart';
 
 // Duration of each CoP measurement window
 const _testDurationS = 30;
@@ -97,7 +102,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
     });
   }
 
-  void _finishMeasurement() {
+  Future<void> _finishMeasurement() async {
     _liveSub?.close();
     _liveSub = null;
     // Read platform separation from settings (cm → mm)
@@ -120,6 +125,27 @@ class _CopScreenState extends ConsumerState<CopScreen> {
       _lastResult = result;
       _phase = _CopPhase.done;
     });
+
+    // Auto-save CoP result
+    final athlete = ref.read(selectedAthleteProvider);
+    if (athlete?.id != null) {
+      final calId = ref.read(calibrationProvider).activeCalibration?.id;
+      try {
+        await DatabaseHelper.instance.insertTestSession({
+          'athlete_id': athlete!.id,
+          'test_type': TestType.cop.name,
+          'performed_at': _lastResult!.computedAt.toIso8601String(),
+          'body_weight_kg': athlete.bodyWeightKg ?? 0,
+          'calibration_id': calId,
+          'platform_count': _lastResult!.platformCount,
+          'result_json': _lastResult!.toJson(),
+          'sync_status': 'pending',
+        });
+        ref.invalidate(sessionHistoryProvider);
+      } catch (e) {
+        debugPrint('[CoP] Auto-save failed: $e');
+      }
+    }
   }
 
   void _cancel() {
