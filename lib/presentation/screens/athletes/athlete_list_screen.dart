@@ -325,7 +325,12 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
   }
 
   Future<void> _save() async {
-    if (_nameCtrl.text.trim().isEmpty) return;
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.get('name_required_error'))),
+      );
+      return;
+    }
 
     // Validar peso antes de guardar
     final bwKg = _weightCtrl.text.trim().isEmpty
@@ -373,11 +378,13 @@ class _AthleteFormDialogState extends State<_AthleteFormDialog> {
             controller: _nameCtrl,
             decoration: InputDecoration(labelText: AppStrings.get('name_required')),
             autofocus: !_isEdit,
+            maxLength: 100,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _sportCtrl,
             decoration: InputDecoration(labelText: AppStrings.get('sport_label')),
+            maxLength: 50,
           ),
           const SizedBox(height: 12),
           TextField(

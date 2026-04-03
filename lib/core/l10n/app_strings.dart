@@ -595,6 +595,18 @@ class AppStrings {
       // Serial baud rate
       'serial_baud_rate': 'Velocidad serial (baud rate)',
       'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Firmware legacy: 115200',
+      // Calibration connection guard
+      'device_not_connected': 'Dispositivo no conectado',
+      'connect_before_calibration': 'Conecta la plataforma de fuerza antes de calibrar.',
+      'go_to_connection': 'Ir a Conexión',
+      // Diagnostic checklist
+      'diag_checklist': 'Lista de verificación',
+      'diag_power': '¿La plataforma está encendida?',
+      'diag_cable': '¿El cable USB está bien conectado?',
+      'diag_port': '¿Seleccionaste el puerto correcto?',
+      'diag_baud': '¿Está configurado el baud rate correcto?',
+      // Athlete validation
+      'name_required_error': 'El nombre del atleta es obligatorio',
     },
     'en': {
       // Navigation
@@ -1175,6 +1187,18 @@ class AppStrings {
       // Serial baud rate
       'serial_baud_rate': 'Serial baud rate',
       'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Legacy firmware: 115200',
+      // Calibration connection guard
+      'device_not_connected': 'Device not connected',
+      'connect_before_calibration': 'Connect the force platform before calibrating.',
+      'go_to_connection': 'Go to Connection',
+      // Diagnostic checklist
+      'diag_checklist': 'Troubleshooting checklist',
+      'diag_power': 'Is the platform powered on?',
+      'diag_cable': 'Is the USB cable properly connected?',
+      'diag_port': 'Did you select the correct port?',
+      'diag_baud': 'Is the baud rate configured correctly?',
+      // Athlete validation
+      'name_required_error': 'Athlete name is required',
     },
   };
 

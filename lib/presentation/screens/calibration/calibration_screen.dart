@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/calibration_data.dart';
 import '../../providers/calibration_provider.dart';
+import '../../providers/connection_provider.dart';
 import '../../providers/live_data_provider.dart';
 import '../../theme/app_theme.dart';
 import '../settings/settings_screen.dart';
@@ -248,10 +249,43 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isConnected = ref.watch(connectionProvider).isConnected;
     final cal = ref.watch(calibrationProvider);
     final col = context.col;
     final isCollecting = _phase != _CalPhase.idle;
     final isEngineer = ref.watch(settingsProvider).engineerMode;
+
+    // Guard: cannot calibrate without an active connection
+    if (!isConnected) {
+      return Scaffold(
+        appBar: AppBar(title: Text(AppStrings.get('calibration_title'))),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.usb_off, size: 56, color: col.textDisabled),
+                const SizedBox(height: 16),
+                Text(AppStrings.get('device_not_connected'),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,
+                        color: col.textPrimary)),
+                const SizedBox(height: 8),
+                Text(AppStrings.get('connect_before_calibration'),
+                    style: TextStyle(fontSize: 13, color: col.textSecondary),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.usb, size: 18),
+                  label: Text(AppStrings.get('go_to_connection')),
+                  onPressed: () => context.push('/connection'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

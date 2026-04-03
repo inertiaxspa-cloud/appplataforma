@@ -126,7 +126,8 @@ class SupabaseService {
     if (value is String) {
       try {
         return jsonDecode(value);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[Supabase] Corrupt JSON: $e');
         return null; // JSON corrupto — no bloquear la sincronización
       }
     }

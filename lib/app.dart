@@ -24,6 +24,7 @@ import 'presentation/screens/results/result_detail_screen.dart';
 import 'presentation/screens/comparison/comparison_screen.dart';
 import 'presentation/screens/onboarding/welcome_screen.dart';
 import 'presentation/screens/onboarding/test_info_screen.dart';
+import 'presentation/screens/error/error_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'domain/entities/test_result.dart';
 
@@ -79,6 +80,9 @@ class _AppShell extends ConsumerWidget {
 
 GoRouter _buildRouter(String initialLocation) => GoRouter(
   initialLocation: initialLocation,
+  errorPageBuilder: (context, state) => MaterialPage(
+    child: ErrorScreen(errorMessage: 'Route not found: ${state.uri}'),
+  ),
   routes: [
     // ── Shell with 4 branches (bottom tabs) ──────────────────────────────
     StatefulShellRoute.indexedStack(
@@ -128,9 +132,11 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
     GoRoute(path: '/athletes',        builder: (_, __) => const AthleteListScreen()),
     GoRoute(
       path: '/athletes/progress',
-      builder: (_, state) => AthleteProgressScreen(
-        athlete: state.extra as Athlete,
-      ),
+      builder: (_, state) {
+        final athlete = state.extra as Athlete?;
+        if (athlete == null) return const ErrorScreen(errorMessage: 'No athlete data');
+        return AthleteProgressScreen(athlete: athlete);
+      },
     ),
     GoRoute(path: '/connection',      builder: (_, __) => const ConnectionScreen()),
     GoRoute(path: '/calibration',     builder: (_, __) => const CalibrationScreen()),
@@ -143,18 +149,20 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
     // Resultados desde historial — solo lectura, NO auto-save
     GoRoute(
       path: '/results/:id',
-      builder: (_, state) => ResultDetailScreen(
-        result: state.extra as TestResult,
-        isFromHistory: true,
-      ),
+      builder: (_, state) {
+        final result = state.extra as TestResult?;
+        if (result == null) return const ErrorScreen(errorMessage: 'No result data');
+        return ResultDetailScreen(result: result, isFromHistory: true);
+      },
     ),
     // Resultados nuevos (post-test) — auto-save habilitado
     GoRoute(
       path: '/results/new',
-      builder: (_, state) => ResultDetailScreen(
-        result: state.extra as TestResult,
-        isFromHistory: false,
-      ),
+      builder: (_, state) {
+        final result = state.extra as TestResult?;
+        if (result == null) return const ErrorScreen(errorMessage: 'No result data');
+        return ResultDetailScreen(result: result, isFromHistory: false);
+      },
     ),
     GoRoute(
       path: '/compare',

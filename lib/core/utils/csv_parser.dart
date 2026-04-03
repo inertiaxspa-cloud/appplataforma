@@ -45,7 +45,8 @@ class CsvParser {
           packetsLostTotal: 0,
           firmwareVersion: FirmwareVersion.v1Legacy,
         );
-      } catch (_) {
+      } catch (e) {
+        assert(() { print('[CsvParser] Legacy parse error: $e'); return true; }());
         return null;
       }
     }
@@ -88,7 +89,8 @@ class CsvParser {
         packetsLostTotal: packetsLostTotal,
         firmwareVersion: FirmwareVersion.v23,
       );
-    } catch (_) {
+    } catch (e) {
+      assert(() { print('[CsvParser] v2.3 parse error: $e'); return true; }());
       return null;
     }
   }

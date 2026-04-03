@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/datasources/local/database_helper.dart';
@@ -28,7 +29,7 @@ class SelectedAthleteNotifier extends StateNotifier<Athlete?> {
       final list = rows.map(Athlete.fromMap).toList();
       final match = list.where((a) => a.id == id).firstOrNull;
       if (match != null) state = match;
-    } catch (_) {}
+    } catch (e) { debugPrint('[AthleteProvider] restore error: $e'); }
   }
 
   /// Select or deselect an athlete and persist the choice.

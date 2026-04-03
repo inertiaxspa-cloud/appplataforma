@@ -7,6 +7,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../data/datasources/connection/connection_datasource.dart';
 import '../../providers/connection_provider.dart';
 import '../../theme/app_theme.dart';
+import '../settings/settings_screen.dart';
 import '../../widgets/common/status_badge.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
@@ -72,6 +73,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
           if (conn.isConnected)
             _ConnectedBanner(
               name: conn.connectedName ?? AppStrings.get('connected'),
+              baudRate: ref.read(settingsProvider).serialBaudRate,
               onDisconnect: () =>
                   ref.read(connectionProvider.notifier).disconnect(),
             ),
@@ -95,8 +97,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
 class _ConnectedBanner extends StatelessWidget {
   final String name;
+  final int baudRate;
   final VoidCallback onDisconnect;
-  const _ConnectedBanner({required this.name, required this.onDisconnect});
+  const _ConnectedBanner({required this.name, required this.baudRate, required this.onDisconnect});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +117,7 @@ class _ConnectedBanner extends StatelessWidget {
               color: AppColors.success, size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(name,
+            child: Text('$name  @ $baudRate baud',
                 style: const TextStyle(color: AppColors.success, fontSize: 13)),
           ),
           TextButton(
@@ -289,11 +292,11 @@ class _DiagnosticChecklist extends StatefulWidget {
 class _DiagnosticChecklistState extends State<_DiagnosticChecklist> {
   final List<bool> _checked = [false, false, false, false];
 
-  static const _items = [
-    '¿La plataforma está encendida?',
-    '¿El cable USB está bien conectado?',
-    '¿Seleccionaste el puerto correcto?',
-    '¿Está configurado como 921600 baud?',
+  static List<String> _items() => [
+    AppStrings.get('diag_power'),
+    AppStrings.get('diag_cable'),
+    AppStrings.get('diag_port'),
+    AppStrings.get('diag_baud'),
   ];
 
   @override
@@ -317,7 +320,7 @@ class _DiagnosticChecklistState extends State<_DiagnosticChecklist> {
                     color: AppColors.warning, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'Lista de verificacion',
+                  AppStrings.get('diag_checklist'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -327,7 +330,7 @@ class _DiagnosticChecklistState extends State<_DiagnosticChecklist> {
               ],
             ),
           ),
-          ..._items.asMap().entries.map(
+          ..._items().asMap().entries.map(
             (entry) => CheckboxListTile(
               dense: true,
               value: _checked[entry.key],

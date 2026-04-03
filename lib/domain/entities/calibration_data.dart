@@ -183,7 +183,7 @@ class CalibrationData {
       try {
         gains = (jsonDecode(gainsRaw) as Map)
             .map((k, v) => MapEntry(k as String, (v as num).toDouble()));
-      } catch (_) {}
+      } catch (e) { assert(() { print('[CalibrationData] gains parse: $e'); return true; }()); }
     }
 
     // cell_polarities_json: new in v3; old rows default to all +1 (empty map).
@@ -193,7 +193,7 @@ class CalibrationData {
       try {
         polarities = (jsonDecode(polRaw) as Map)
             .map((k, v) => MapEntry(k as String, (v as num).toInt()));
-      } catch (_) {}
+      } catch (e) { assert(() { print('[CalibrationData] polarities parse: $e'); return true; }()); }
     }
 
     return CalibrationData(
