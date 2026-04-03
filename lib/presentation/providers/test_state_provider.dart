@@ -41,7 +41,7 @@ class TestState {
     this.phase    = JumpPhase.idle,
     this.bodyWeightN,
     this.elapsedSeconds = 0,
-    this.statusMessage  = 'Listo',
+    this.statusMessage  = '',
     this.result,
     this.error,
   });
@@ -161,21 +161,25 @@ class TestStateNotifier extends StateNotifier<TestState> {
         testType:      type,
         status:        TestStatus.settling,
         phase:         JumpPhase.settling,
-        statusMessage: 'Mídete quieto sobre la plataforma...',
+        statusMessage: AppStrings.get('test_settling'),
       );
     }
 
     _rawSub?.close();
     _rawSub = _ref.listen<AsyncValue<RawSample>>(rawSampleStreamProvider,
         (_, next) {
-          next.whenData(_onRawSample);
+          next.whenData((s) {
+            try { _onRawSample(s); } catch (e) {
+              debugPrint('[TestState] _onRawSample error: $e');
+            }
+          });
           // Si se pierde la conexión durante el test, marcarlo como fallido
           // en lugar de dejarlo congelado en estado 'running'.
           // A9 fix: also detect connection loss during settling (was: only running).
           if (next is AsyncError && (state.status == TestStatus.running || state.status == TestStatus.settling)) {
             state = state.copyWith(
               status: TestStatus.failed,
-              statusMessage: 'Conexión perdida. Reconecta el dispositivo.',
+              statusMessage: AppStrings.get('test_connection_lost'),
             );
             _rawSub?.close();
             _rawSub = null;
@@ -217,14 +221,14 @@ class TestStateNotifier extends StateNotifier<TestState> {
           phase:         JumpPhase.waiting,
           bodyWeightN:   event.bodyWeightN,
           statusMessage: state.testType == TestType.imtp
-              ? 'Listo — tira con fuerza máxima'
-              : 'Listo — realiza el salto',
+              ? AppStrings.get('test_ready_pull')
+              : AppStrings.get('test_ready_jump'),
         );
 
       case JumpPhase.descent:
         state = state.copyWith(
           phase:         JumpPhase.descent,
-          statusMessage: 'Descendiendo...',
+          statusMessage: AppStrings.get('test_descending'),
         );
 
       case JumpPhase.flight:
@@ -232,7 +236,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
         HapticFeedback.mediumImpact();
         state = state.copyWith(
           phase:         JumpPhase.flight,
-          statusMessage: '¡En vuelo!',
+          statusMessage: AppStrings.get('test_in_flight'),
         );
 
       case JumpPhase.landed:
@@ -246,7 +250,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
           final platformCount = processed.platformCount;
           state = state.copyWith(
             phase:         JumpPhase.landed,
-            statusMessage: 'Aterrizando...',
+            statusMessage: AppStrings.get('test_landing'),
           );
           _postLandingTimer?.cancel();
           _postLandingTimer = Timer(const Duration(seconds: 3), () {

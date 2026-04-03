@@ -155,8 +155,10 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
           if (isCompleted)
             PostTestPanel(
               result: test.result!,
-              onViewResult: () =>
-                  context.push('/results/new', extra: test.result),
+              onViewResult: () {
+                if (!context.mounted) return;
+                context.push('/results/new', extra: test.result);
+              },
               onRepeat: () {
                 ref.read(testStateProvider.notifier).stopTest();
                 setState(() {

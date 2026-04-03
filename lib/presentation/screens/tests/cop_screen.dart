@@ -110,6 +110,16 @@ class _CopScreenState extends ConsumerState<CopScreen> {
     final sepMm    = appSettings.platformSeparationCm * 10.0;
     final widthMm  = appSettings.platformWidthCm  * 10.0;
     final lengthMm = appSettings.platformLengthCm * 10.0;
+    // Guard: need at least 10 samples to compute meaningful metrics
+    if (_samples.length < 10) {
+      setState(() => _phase = _CopPhase.idle);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.get('cop_insufficient_data'))),
+        );
+      }
+      return;
+    }
     // Compute real CoP metrics from collected samples
     final result = CopMetrics.compute(
       samples:              _samples,
@@ -128,17 +138,18 @@ class _CopScreenState extends ConsumerState<CopScreen> {
 
     // Auto-save CoP result
     final athlete = ref.read(selectedAthleteProvider);
-    if (athlete?.id != null) {
+    final savedResult = _lastResult;
+    if (athlete?.id != null && savedResult != null) {
       final calId = ref.read(calibrationProvider).activeCalibration?.id;
       try {
         await DatabaseHelper.instance.insertTestSession({
           'athlete_id': athlete!.id,
           'test_type': TestType.cop.name,
-          'performed_at': _lastResult!.computedAt.toIso8601String(),
+          'performed_at': savedResult.computedAt.toIso8601String(),
           'body_weight_kg': athlete.bodyWeightKg ?? 0,
           'calibration_id': calId,
-          'platform_count': _lastResult!.platformCount,
-          'result_json': _lastResult!.toJson(),
+          'platform_count': savedResult.platformCount,
+          'result_json': savedResult.toJson(),
           'sync_status': 'pending',
         });
         ref.invalidate(sessionHistoryProvider);

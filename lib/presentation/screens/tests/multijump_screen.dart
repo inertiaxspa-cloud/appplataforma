@@ -164,10 +164,13 @@ class _MultiJumpScreenState extends ConsumerState<MultiJumpScreen> {
           if (isCompleted)
             PostTestPanel(
               result: test.result!,
-              onViewResult: () =>
-                  context.push('/results/new', extra: test.result),
+              onViewResult: () {
+                if (!context.mounted) return;
+                context.push('/results/new', extra: test.result);
+              },
               onRepeat: () {
                 ref.read(testStateProvider.notifier).stopTest();
+                setState(() => _countdownN = 3);
               },
             )
           else if (test.status == TestStatus.failed)

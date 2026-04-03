@@ -297,10 +297,11 @@ class SyncNotifier extends StateNotifier<SyncState> {
             sessionUuid = await SupabaseService.instance
                 .upsertSession(sessionMap, athUuid);
           } catch (_) {
-            // Retry once after a brief pause.
-            await Future.delayed(const Duration(milliseconds: 500));
+            // Retry once after a brief pause (with timeout to prevent hang).
+            await Future.delayed(const Duration(seconds: 1));
             sessionUuid = await SupabaseService.instance
-                .upsertSession(sessionMap, athUuid);
+                .upsertSession(sessionMap, athUuid)
+                .timeout(const Duration(seconds: 15));
           }
 
           await db.update(

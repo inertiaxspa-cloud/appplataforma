@@ -595,6 +595,16 @@ class AppStrings {
       // Serial baud rate
       'serial_baud_rate': 'Velocidad serial (baud rate)',
       'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Firmware legacy: 115200',
+      // Test state messages
+      'test_settling': 'Mídete quieto sobre la plataforma...',
+      'test_connection_lost': 'Conexión perdida. Reconecta el dispositivo.',
+      'test_ready_pull': 'Listo — tira con fuerza máxima',
+      'test_ready_jump': 'Listo — realiza el salto',
+      'test_descending': 'Descendiendo...',
+      'test_in_flight': '¡En vuelo!',
+      'test_landing': 'Aterrizando...',
+      // CoP
+      'cop_insufficient_data': 'Datos insuficientes. Asegúrate de pisar la plataforma durante el test.',
       // Calibration connection guard
       'device_not_connected': 'Dispositivo no conectado',
       'connect_before_calibration': 'Conecta la plataforma de fuerza antes de calibrar.',
@@ -1187,6 +1197,16 @@ class AppStrings {
       // Serial baud rate
       'serial_baud_rate': 'Serial baud rate',
       'serial_baud_rate_subtitle': 'Firmware v2.3: 921600 · Legacy firmware: 115200',
+      // Test state messages
+      'test_settling': 'Stand still on the platform...',
+      'test_connection_lost': 'Connection lost. Reconnect the device.',
+      'test_ready_pull': 'Ready — pull with maximum force',
+      'test_ready_jump': 'Ready — perform the jump',
+      'test_descending': 'Descending...',
+      'test_in_flight': 'In flight!',
+      'test_landing': 'Landing...',
+      // CoP
+      'cop_insufficient_data': 'Insufficient data. Make sure to stand on the platform during the test.',
       // Calibration connection guard
       'device_not_connected': 'Device not connected',
       'connect_before_calibration': 'Connect the force platform before calibrating.',

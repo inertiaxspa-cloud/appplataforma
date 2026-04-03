@@ -49,10 +49,10 @@ class SymmetryResult {
   };
 
   factory SymmetryResult.fromMap(Map<String, dynamic> m) => SymmetryResult(
-    leftPercent: (m['left_pct'] as num).toDouble(),
-    rightPercent: (m['right_pct'] as num).toDouble(),
-    asymmetryIndexPct: (m['asymmetry_index_pct'] as num).toDouble(),
-    isTwoPlatform: m['two_platform'] as bool,
+    leftPercent: (m['left_pct'] as num?)?.toDouble() ?? 50.0,
+    rightPercent: (m['right_pct'] as num?)?.toDouble() ?? 50.0,
+    asymmetryIndexPct: (m['asymmetry_index_pct'] as num?)?.toDouble() ?? 0.0,
+    isTwoPlatform: m['two_platform'] as bool? ?? false,
   );
 }
 
@@ -184,26 +184,28 @@ class JumpResult extends TestResult {
   };
 
   factory JumpResult.fromMap(Map<String, dynamic> m) => JumpResult(
-    testType: TestType.values[m['test_type'] as int],
-    computedAt: DateTime.parse(m['computed_at'] as String),
-    platformCount: m['platform_count'] as int,
-    jumpHeightCm: (m['jump_height_cm'] as num).toDouble(),
-    flightTimeMs: (m['flight_time_ms'] as num).toDouble(),
-    peakForceN: (m['peak_force_n'] as num).toDouble(),
-    meanForceN: (m['mean_force_n'] as num).toDouble(),
-    bodyWeightN: (m['body_weight_n'] as num).toDouble(),
-    propulsiveImpulseNs: (m['propulsive_impulse_ns'] as num).toDouble(),
-    brakingImpulseNs: (m['braking_impulse_ns'] as num).toDouble(),
-    takeoffForceN: (m['takeoff_force_n'] as num).toDouble(),
-    rfdAt50ms: (m['rfd_50ms'] as num).toDouble(),
-    rfdAt100ms: (m['rfd_100ms'] as num).toDouble(),
-    rfdAt200ms: (m['rfd_200ms'] as num).toDouble(),
-    timeToPeakForceMs: (m['time_to_peak_force_ms'] as num).toDouble(),
-    eccentricDurationMs: (m['eccentric_duration_ms'] as num).toDouble(),
-    concentricDurationMs: (m['concentric_duration_ms'] as num).toDouble(),
-    peakPowerSayersW: (m['peak_power_sayers_w'] as num).toDouble(),
-    peakPowerImpulseW: (m['peak_power_impulse_w'] as num).toDouble(),
-    symmetry: SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>),
+    testType: TestType.values[m['test_type'] as int? ?? 0],
+    computedAt: DateTime.parse(m['computed_at'] as String? ?? DateTime.now().toIso8601String()),
+    platformCount: m['platform_count'] as int? ?? 1,
+    jumpHeightCm: (m['jump_height_cm'] as num?)?.toDouble() ?? 0.0,
+    flightTimeMs: (m['flight_time_ms'] as num?)?.toDouble() ?? 0.0,
+    peakForceN: (m['peak_force_n'] as num?)?.toDouble() ?? 0.0,
+    meanForceN: (m['mean_force_n'] as num?)?.toDouble() ?? 0.0,
+    bodyWeightN: (m['body_weight_n'] as num?)?.toDouble() ?? 0.0,
+    propulsiveImpulseNs: (m['propulsive_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    brakingImpulseNs: (m['braking_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    takeoffForceN: (m['takeoff_force_n'] as num?)?.toDouble() ?? 0.0,
+    rfdAt50ms: (m['rfd_50ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt100ms: (m['rfd_100ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt200ms: (m['rfd_200ms'] as num?)?.toDouble() ?? 0.0,
+    timeToPeakForceMs: (m['time_to_peak_force_ms'] as num?)?.toDouble() ?? 0.0,
+    eccentricDurationMs: (m['eccentric_duration_ms'] as num?)?.toDouble() ?? 0.0,
+    concentricDurationMs: (m['concentric_duration_ms'] as num?)?.toDouble() ?? 0.0,
+    peakPowerSayersW: (m['peak_power_sayers_w'] as num?)?.toDouble() ?? 0.0,
+    peakPowerImpulseW: (m['peak_power_impulse_w'] as num?)?.toDouble() ?? 0.0,
+    symmetry: m['symmetry'] is Map<String, dynamic>
+        ? SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>)
+        : const SymmetryResult(leftPercent: 50, rightPercent: 50, asymmetryIndexPct: 0, isTwoPlatform: false),
     jumpHeightFlightTimeCm: (m['jump_height_ft_cm'] as num? ?? 0.0).toDouble(),
     landingPeakForceN: (m['landing_peak_force_n'] as num? ?? 0.0).toDouble(),
   );
@@ -253,30 +255,32 @@ class DropJumpResult extends JumpResult {
   };
 
   factory DropJumpResult.fromMap(Map<String, dynamic> m) => DropJumpResult(
-    testType: TestType.values[m['test_type'] as int],
-    computedAt: DateTime.parse(m['computed_at'] as String),
-    platformCount: m['platform_count'] as int,
-    jumpHeightCm: (m['jump_height_cm'] as num).toDouble(),
-    flightTimeMs: (m['flight_time_ms'] as num).toDouble(),
-    peakForceN: (m['peak_force_n'] as num).toDouble(),
-    meanForceN: (m['mean_force_n'] as num).toDouble(),
-    bodyWeightN: (m['body_weight_n'] as num).toDouble(),
-    propulsiveImpulseNs: (m['propulsive_impulse_ns'] as num).toDouble(),
-    brakingImpulseNs: (m['braking_impulse_ns'] as num).toDouble(),
-    takeoffForceN: (m['takeoff_force_n'] as num).toDouble(),
-    rfdAt50ms: (m['rfd_50ms'] as num).toDouble(),
-    rfdAt100ms: (m['rfd_100ms'] as num).toDouble(),
-    rfdAt200ms: (m['rfd_200ms'] as num).toDouble(),
-    timeToPeakForceMs: (m['time_to_peak_force_ms'] as num).toDouble(),
-    eccentricDurationMs: (m['eccentric_duration_ms'] as num).toDouble(),
-    concentricDurationMs: (m['concentric_duration_ms'] as num).toDouble(),
-    peakPowerSayersW: (m['peak_power_sayers_w'] as num).toDouble(),
-    peakPowerImpulseW: (m['peak_power_impulse_w'] as num).toDouble(),
-    symmetry: SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>),
+    testType: TestType.values[m['test_type'] as int? ?? 0],
+    computedAt: DateTime.parse(m['computed_at'] as String? ?? DateTime.now().toIso8601String()),
+    platformCount: m['platform_count'] as int? ?? 1,
+    jumpHeightCm: (m['jump_height_cm'] as num?)?.toDouble() ?? 0.0,
+    flightTimeMs: (m['flight_time_ms'] as num?)?.toDouble() ?? 0.0,
+    peakForceN: (m['peak_force_n'] as num?)?.toDouble() ?? 0.0,
+    meanForceN: (m['mean_force_n'] as num?)?.toDouble() ?? 0.0,
+    bodyWeightN: (m['body_weight_n'] as num?)?.toDouble() ?? 0.0,
+    propulsiveImpulseNs: (m['propulsive_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    brakingImpulseNs: (m['braking_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    takeoffForceN: (m['takeoff_force_n'] as num?)?.toDouble() ?? 0.0,
+    rfdAt50ms: (m['rfd_50ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt100ms: (m['rfd_100ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt200ms: (m['rfd_200ms'] as num?)?.toDouble() ?? 0.0,
+    timeToPeakForceMs: (m['time_to_peak_force_ms'] as num?)?.toDouble() ?? 0.0,
+    eccentricDurationMs: (m['eccentric_duration_ms'] as num?)?.toDouble() ?? 0.0,
+    concentricDurationMs: (m['concentric_duration_ms'] as num?)?.toDouble() ?? 0.0,
+    peakPowerSayersW: (m['peak_power_sayers_w'] as num?)?.toDouble() ?? 0.0,
+    peakPowerImpulseW: (m['peak_power_impulse_w'] as num?)?.toDouble() ?? 0.0,
+    symmetry: m['symmetry'] is Map<String, dynamic>
+        ? SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>)
+        : const SymmetryResult(leftPercent: 50, rightPercent: 50, asymmetryIndexPct: 0, isTwoPlatform: false),
     jumpHeightFlightTimeCm: (m['jump_height_ft_cm'] as num? ?? 0.0).toDouble(),
     landingPeakForceN: (m['landing_peak_force_n'] as num? ?? 0.0).toDouble(),
-    contactTimeMs: (m['contact_time_ms'] as num).toDouble(),
-    rsiMod: (m['rsi_mod'] as num).toDouble(),
+    contactTimeMs: (m['contact_time_ms'] as num?)?.toDouble() ?? 0.0,
+    rsiMod: (m['rsi_mod'] as num?)?.toDouble() ?? 0.0,
   );
 }
 
@@ -487,15 +491,17 @@ class ImtpResult extends TestResult {
   };
 
   factory ImtpResult.fromMap(Map<String, dynamic> m) => ImtpResult(
-    computedAt: DateTime.parse(m['computed_at'] as String),
-    platformCount: m['platform_count'] as int,
-    peakForceN: (m['peak_force_n'] as num).toDouble(),
-    peakForceBW: (m['peak_force_bw'] as num).toDouble(),
-    netImpulseNs: (m['net_impulse_ns'] as num).toDouble(),
-    rfdAt50ms: (m['rfd_50ms'] as num).toDouble(),
-    rfdAt100ms: (m['rfd_100ms'] as num).toDouble(),
-    rfdAt200ms: (m['rfd_200ms'] as num).toDouble(),
-    timeToPeakForceMs: (m['time_to_peak_ms'] as num).toDouble(),
-    symmetry: SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>),
+    computedAt: DateTime.parse(m['computed_at'] as String? ?? DateTime.now().toIso8601String()),
+    platformCount: m['platform_count'] as int? ?? 1,
+    peakForceN: (m['peak_force_n'] as num?)?.toDouble() ?? 0.0,
+    peakForceBW: (m['peak_force_bw'] as num?)?.toDouble() ?? 0.0,
+    netImpulseNs: (m['net_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    rfdAt50ms: (m['rfd_50ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt100ms: (m['rfd_100ms'] as num?)?.toDouble() ?? 0.0,
+    rfdAt200ms: (m['rfd_200ms'] as num?)?.toDouble() ?? 0.0,
+    timeToPeakForceMs: (m['time_to_peak_ms'] as num?)?.toDouble() ?? 0.0,
+    symmetry: m['symmetry'] is Map<String, dynamic>
+        ? SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>)
+        : const SymmetryResult(leftPercent: 50, rightPercent: 50, asymmetryIndexPct: 0, isTwoPlatform: false),
   );
 }
