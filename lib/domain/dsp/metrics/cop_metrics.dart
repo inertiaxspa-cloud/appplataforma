@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import '../../../data/models/processed_sample.dart';
+import '../../entities/cell_mapping.dart';
 import '../../entities/test_result.dart';
 
 /// Centre of Pressure metrics for balance/postural stability tests.
@@ -272,6 +273,7 @@ class CopMetrics {
     double platformWidthMm      = 350.0,
     double platformLengthMm     = 550.0,
     bool useFftFrequency = false,
+    PlatformOrientation orientation = PlatformOrientation.dualVertical,
   }) {
     final platformCount = samples.isNotEmpty ? samples.first.platformCount : 1;
 
@@ -294,10 +296,20 @@ class CopMetrics {
     }
 
     // ── Derive cell spans from platform dimensions ──────────────────────────
-    // Cell offset from ML edge = 55 mm → ML half-span = width/2 − 55
-    // Cell offset from AP edge = 35 mm → AP half-span = length/2 − 35
-    final mlHalfSpan = (platformWidthMm  / 2.0) - 55.0;   // mm
-    final apHalfSpan = (platformLengthMm / 2.0) - 35.0;   // mm
+    // Cell offsets are physical: 55 mm from the short (35 cm) edges,
+    //                            35 mm from the long  (55 cm) edges.
+    // When the platform is horizontal (single), the long axis IS ML,
+    // so ML half-span should use length, and AP half-span should use width.
+    final double mlHalfSpan, apHalfSpan;
+    if (orientation == PlatformOrientation.singleHorizontal) {
+      // Long axis (length) = ML (shoulders), short axis (width) = AP
+      mlHalfSpan = (platformLengthMm / 2.0) - 35.0;   // long edges, 35 mm offset
+      apHalfSpan = (platformWidthMm  / 2.0) - 55.0;   // short edges, 55 mm offset
+    } else {
+      // Default: short axis (width) = ML, long axis (length) = AP
+      mlHalfSpan = (platformWidthMm  / 2.0) - 55.0;   // mm
+      apHalfSpan = (platformLengthMm / 2.0) - 35.0;   // mm
+    }
     // Dual-platform ML uses centre-to-centre separation
     final dualMlHalfSpan = platformSeparationMm / 2.0;
 

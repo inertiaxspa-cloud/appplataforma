@@ -8,6 +8,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/algorithm_settings.dart';
 import '../../../core/constants/physics_constants.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../domain/entities/cell_mapping.dart';
 import '../../../data/services/supabase_service.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/sync_provider.dart';
@@ -30,6 +31,9 @@ class AppSettings {
   final String language;     // 'es' or 'en'
   final String themeMode;    // 'system', 'dark', 'light'
   final int    serialBaudRate; // 9600 | 19200 | 38400 | 57600 | 115200 | 230400 | 460800 | 921600
+  final PlatformOrientation platformOrientation;
+  final CellMapping? cellMappingA;
+  final CellMapping? cellMappingB;
   final AlgorithmSettings algo;
 
   const AppSettings({
@@ -45,6 +49,9 @@ class AppSettings {
     this.language             = 'es',
     this.themeMode            = 'dark',
     this.serialBaudRate       = 921600,
+    this.platformOrientation  = PlatformOrientation.dualVertical,
+    this.cellMappingA,
+    this.cellMappingB,
     this.algo                 = const AlgorithmSettings(),
   });
 
@@ -85,6 +92,9 @@ class AppSettings {
     String? language,
     String? themeMode,
     int?    serialBaudRate,
+    PlatformOrientation? platformOrientation,
+    CellMapping? cellMappingA,
+    CellMapping? cellMappingB,
     AlgorithmSettings? algo,
   }) => AppSettings(
     platformSeparationCm: platformSeparationCm ?? this.platformSeparationCm,
@@ -99,6 +109,9 @@ class AppSettings {
     language:             language             ?? this.language,
     themeMode:            themeMode            ?? this.themeMode,
     serialBaudRate:       serialBaudRate       ?? this.serialBaudRate,
+    platformOrientation:  platformOrientation  ?? this.platformOrientation,
+    cellMappingA:         cellMappingA         ?? this.cellMappingA,
+    cellMappingB:         cellMappingB         ?? this.cellMappingB,
     algo:                 algo                 ?? this.algo,
   );
 }
@@ -129,6 +142,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language:       p.getString('language')      ?? 'es',
       themeMode:      p.getString('theme_mode')    ?? 'dark',
       serialBaudRate: p.getInt('serial_baud_rate') ?? 921600,
+      platformOrientation: _e(PlatformOrientation.values, 'platform_orientation',
+                              PlatformOrientation.dualVertical),
+      cellMappingA: _tryLoadMapping(p, 'cell_mapping_a'),
+      cellMappingB: _tryLoadMapping(p, 'cell_mapping_b'),
       algo: AlgorithmSettings(
         jumpHeight:   _e(JumpHeightMethod.values,   'algo_jump_height',
                         JumpHeightMethod.impulseMomentum),
@@ -146,6 +163,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     );
   }
 
+  static CellMapping? _tryLoadMapping(SharedPreferences p, String key) {
+    final json = p.getString(key);
+    if (json == null || json.isEmpty) return null;
+    try { return CellMapping.fromJson(json); } catch (_) { return null; }
+  }
+
   Future<void> _persist() async {
     final p = await SharedPreferences.getInstance();
     await p.setDouble('platform_sep_cm',    state.platformSeparationCm);
@@ -158,6 +181,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await p.setString('language',        state.language);
     await p.setString('theme_mode',      state.themeMode);
     await p.setInt('serial_baud_rate',   state.serialBaudRate);
+    await p.setString('platform_orientation', state.platformOrientation.name);
+    if (state.cellMappingA != null) {
+      await p.setString('cell_mapping_a', state.cellMappingA!.toJson());
+    }
+    if (state.cellMappingB != null) {
+      await p.setString('cell_mapping_b', state.cellMappingB!.toJson());
+    }
     // Algorithm settings
     await p.setString('algo_jump_height', state.algo.jumpHeight.name);
     await p.setString('algo_peak_power',  state.algo.peakPower.name);

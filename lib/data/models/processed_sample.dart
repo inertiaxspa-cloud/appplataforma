@@ -30,6 +30,12 @@ class ProcessedSample {
   final double rawASL;   // -adcSlaveL    Platform A  (0 if slave timeout)
   final double rawASR;   // -adcSlaveR    Platform A  (0 if slave timeout)
 
+  // ── Per-cell raw ADC for Platform B ─────────────────────────────────────
+  final double rawBML;   // -adcMasterL   Platform B  (0 if no B)
+  final double rawBMR;   // -adcMasterR   Platform B  (0 if no B)
+  final double rawBSL;   // -adcSlaveL    Platform B  (0 if no B or slave timeout)
+  final double rawBSR;   // -adcSlaveR    Platform B  (0 if no B or slave timeout)
+
   // Metadata
   final int platformCount;      // 1 or 2 platforms detected
   final bool hasSlaveBTimeout;  // platform B slave timeout
@@ -52,6 +58,10 @@ class ProcessedSample {
     required this.rawAMR,
     required this.rawASL,
     required this.rawASR,
+    this.rawBML = 0,
+    this.rawBMR = 0,
+    this.rawBSL = 0,
+    this.rawBSR = 0,
     required this.platformCount,
     this.hasSlaveBTimeout = false,
     this.hasSlaveATimeout = false,

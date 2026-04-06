@@ -2,6 +2,7 @@ import '../../core/constants/physics_constants.dart';
 import '../../data/models/processed_sample.dart';
 import '../../data/models/raw_sample.dart';
 import '../entities/calibration_data.dart';
+import '../entities/cell_mapping.dart';
 import 'butterworth_filter.dart';
 
 /// Fuses raw samples from platform A and B, applies calibration,
@@ -16,6 +17,8 @@ class SignalProcessor {
   static const int _platformBTimeoutMs = PhysicsConstants.platformBTimeoutMs;
 
   CalibrationData _calibration;
+  CellMapping _mappingA;
+  CellMapping _mappingB;
   int _platformCount = 0; // 0 = unknown, 1 or 2
 
   // Held B values until platform A arrives
@@ -26,9 +29,16 @@ class SignalProcessor {
 
   final ButterworthOnline _bw = ButterworthOnline();
 
-  SignalProcessor(this._calibration);
+  SignalProcessor(this._calibration)
+      : _mappingA = CellMapping.defaultForA(),
+        _mappingB = CellMapping.defaultForB();
 
   void updateCalibration(CalibrationData cal) => _calibration = cal;
+
+  void updateCellMapping(CellMapping a, [CellMapping? b]) {
+    _mappingA = a;
+    if (b != null) _mappingB = b;
+  }
 
   ProcessedSample? process(RawSample sample) {
     if (sample.platformId == 2) {
@@ -72,14 +82,16 @@ class SignalProcessor {
       final forceASL = cal.cellRawToNewton('A_SL', rawASL);
       final forceASR = cal.cellRawToNewton('A_SR', rawASR);
 
-      // L column = masterL + slaveL,  R column = masterR + slaveR
-      forceAL = forceAML + forceASL;
-      forceAR = forceAMR + forceASR;
+      // Route calibrated cell forces through the corner mapping.
+      // This handles platform rotation: the mapping tells us which ADC
+      // channel is physically at each corner (FL, FR, RL, RR).
+      final cellForces = {'A_ML': forceAML, 'A_MR': forceAMR, 'A_SL': forceASL, 'A_SR': forceASR};
+      forceAL = _mappingA.forceLeft(cellForces);   // ML-left column
+      forceAR = _mappingA.forceRight(cellForces);  // ML-right column
       forcePlatformA = forceAL + forceAR;
 
-      // Master side (front) vs Slave side (back)
-      forceMasterSide = forceAML + forceAMR;
-      forceSlaveSide  = forceASL + forceASR;
+      forceMasterSide = _mappingA.forceFront(cellForces);  // AP-front row
+      forceSlaveSide  = _mappingA.forceRear(cellForces);   // AP-rear row
     } else {
       // ── Legacy polynomial calibration ────────────────────────────────────
       final offsets = cal.cellOffsets;
@@ -117,8 +129,9 @@ class SignalProcessor {
         final forceBMR = cal.cellRawToNewton('B_MR', rawBMR);
         final forceBSL = cal.cellRawToNewton('B_SL', rawBSL);
         final forceBSR = cal.cellRawToNewton('B_SR', rawBSR);
-        forceBL = forceBML + forceBSL;
-        forceBR = forceBMR + forceBSR;
+        final bCellForces = {'B_ML': forceBML, 'B_MR': forceBMR, 'B_SL': forceBSL, 'B_SR': forceBSR};
+        forceBL = _mappingB.forceLeft(bCellForces);
+        forceBR = _mappingB.forceRight(bCellForces);
         forcePlatformB = forceBL + forceBR;
       } else {
         // Legacy for platform B
@@ -166,6 +179,10 @@ class SignalProcessor {
       rawAMR: rawAMR,
       rawASL: rawASL,
       rawASR: rawASR,
+      rawBML: _platformCount == 2 ? (-_lastRawBML).toDouble() : 0,
+      rawBMR: _platformCount == 2 ? (-_lastRawBMR).toDouble() : 0,
+      rawBSL: _platformCount == 2 && !_lastBSlaveTimeout ? (-_lastRawBSL).toDouble() : 0,
+      rawBSR: _platformCount == 2 && !_lastBSlaveTimeout ? (-_lastRawBSR).toDouble() : 0,
       platformCount: _platformCount == 0 ? 1 : _platformCount,
       hasSlaveBTimeout: _lastBSlaveTimeout,
       hasSlaveATimeout: sample.hasSlaveTimeout,

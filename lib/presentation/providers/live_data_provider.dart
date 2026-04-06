@@ -40,6 +40,12 @@ class LiveDataState {
   final double currentRawASL;   // -adcSlaveL   Platform A  (0 if timeout)
   final double currentRawASR;   // -adcSlaveR   Platform A  (0 if timeout)
 
+  // ── Per-cell raw ADC for Platform B ─────────────────────────────────────
+  final double currentRawBML;   // -adcMasterL  Platform B  (0 if no B)
+  final double currentRawBMR;   // -adcMasterR  Platform B  (0 if no B)
+  final double currentRawBSL;   // -adcSlaveL   Platform B  (0 if no B or timeout)
+  final double currentRawBSR;   // -adcSlaveR   Platform B  (0 if no B or timeout)
+
   const LiveDataState({
     this.timeS            = const [],
     this.forceTotalN      = const [],
@@ -60,6 +66,10 @@ class LiveDataState {
     this.currentRawAMR    = 0,
     this.currentRawASL    = 0,
     this.currentRawASR    = 0,
+    this.currentRawBML    = 0,
+    this.currentRawBMR    = 0,
+    this.currentRawBSL    = 0,
+    this.currentRawBSR    = 0,
   });
 }
 
@@ -149,6 +159,10 @@ class LiveDataNotifier extends StateNotifier<LiveDataState> {
       currentRawAMR: processed.rawAMR,
       currentRawASL: processed.rawASL,
       currentRawASR: processed.rawASR,
+      currentRawBML: processed.rawBML,
+      currentRawBMR: processed.rawBMR,
+      currentRawBSL: processed.rawBSL,
+      currentRawBSR: processed.rawBSR,
     );
     state = nextState;
   }

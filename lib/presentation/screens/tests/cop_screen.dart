@@ -123,6 +123,7 @@ class _CopScreenState extends ConsumerState<CopScreen> {
     // Compute real CoP metrics from collected samples
     final result = CopMetrics.compute(
       samples:              _samples,
+      orientation:          appSettings.platformOrientation,
       durationS:            _testDurationS.toDouble(),
       condition:            _eyes == _EyeCondition.open ? 'OA' : 'OC',
       stance:               _stance.name,
