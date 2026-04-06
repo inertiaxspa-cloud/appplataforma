@@ -94,10 +94,15 @@ class TestStateNotifier extends StateNotifier<TestState> {
   ProviderSubscription<AsyncValue<RawSample>>? _rawSub;
   SignalProcessor? _processor;
   Timer? _postLandingTimer;
+  Timer? _boxReturnTimer;
+
+  // Box-return DJ mode state
+  bool _isBoxReturn = false;
+  double _dropHeightCm = 0;
 
   TestStateNotifier(this._ref) : super(const TestState());
 
-  Future<void> startTest(TestType type) async {
+  Future<void> startTest(TestType type, {bool boxReturn = false, double dropHeightCm = 0}) async {
     final athlete = _ref.read(selectedAthleteProvider);
     if (athlete?.id == null) {
       state = TestState(
@@ -128,6 +133,9 @@ class TestStateNotifier extends StateNotifier<TestState> {
     _forceLeftData.clear(); _forceRightData.clear();
     _jumps.clear();
     _mjContactStart = 0;
+    _boxReturnTimer?.cancel();
+    _isBoxReturn = boxReturn;
+    _dropHeightCm = dropHeightCm;
     _phaseDetector.reset();
 
     // DJ uses a completely different protocol: platform starts EMPTY.
@@ -238,10 +246,19 @@ class TestStateNotifier extends StateNotifier<TestState> {
           phase:         JumpPhase.flight,
           statusMessage: AppStrings.get('test_in_flight'),
         );
+        // Box-return DJ: if athlete doesn't land within 1.5 s, they went
+        // back to the box → finish with contact-time only metrics.
+        if (_isBoxReturn && state.testType == TestType.dropJump) {
+          _boxReturnTimer?.cancel();
+          _boxReturnTimer = Timer(const Duration(milliseconds: 1500), () {
+            _computeBoxReturn(_platformCount);
+          });
+        }
 
       case JumpPhase.landed:
         // C10 fix: ignore duplicate landing events if already processing.
         if (state.phase == JumpPhase.landed) return;
+        _boxReturnTimer?.cancel(); // Cancel box-return timeout (athlete landed normally)
         HapticFeedback.heavyImpact();
         if (state.testType == TestType.multiJump) {
           _recordMultiJump(processed);
@@ -627,6 +644,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
           jumpHeightFlightTimeCm: heightFlightM * 100,
           landingPeakForceN: peakLandingForceN,
           contactTimeMs: contactMs, rsiMod: rsi,
+          isBoxReturn: _isBoxReturn, dropHeightCm: _dropHeightCm,
         ),
         statusMessage: AppStrings.get('dj_completed'),
       );
@@ -826,9 +844,76 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
   // ── stopTest: cancel ──────────────────────────────────────────────────────
 
+  /// Box-return DJ finish: athlete went back to box, compute contact-only metrics.
+  void _computeBoxReturn(int platformCount) {
+    _rawSub?.close();
+    _rawSub = null;
+
+    final djContactS = _phaseDetector.djContactTimeS;
+    if (djContactS == null || djContactS <= 0) {
+      state = state.copyWith(
+        status: TestStatus.failed,
+        error: AppStrings.get('dj_no_contact'),
+      );
+      return;
+    }
+    final contactMs = (djContactS * 1000).clamp(20.0, 5000.0);
+    final rsiReactive = _dropHeightCm > 0 && contactMs > 0
+        ? (_dropHeightCm / 100.0) / (contactMs / 1000.0) // m / s
+        : 0.0;
+
+    final bwN = state.bodyWeightN ?? 0;
+    final settings = _ref.read(settingsProvider);
+
+    // Compute peak force during contact phase
+    final forceFiltered = _forceData;
+    double peakForceN = 0;
+    for (final f in forceFiltered) {
+      if (f > peakForceN) peakForceN = f;
+    }
+
+    // Symmetry from collected data
+    final sym = JumpMetrics.symmetry1Platform(
+      masterSideN: _forceLeftData.isEmpty ? 0 : _forceLeftData.reduce((a, b) => a + b),
+      slaveSideN:  _forceRightData.isEmpty ? 0 : _forceRightData.reduce((a, b) => a + b),
+    );
+
+    state = state.copyWith(
+      status: TestStatus.completed,
+      phase: JumpPhase.landed,
+      result: DropJumpResult(
+        testType: TestType.dropJump,
+        computedAt: DateTime.now(),
+        platformCount: platformCount,
+        jumpHeightCm: 0, // no jump height in box-return mode
+        flightTimeMs: 0,
+        peakForceN: peakForceN,
+        meanForceN: peakForceN * 0.6, // rough estimate
+        bodyWeightN: bwN,
+        propulsiveImpulseNs: 0, brakingImpulseNs: 0, takeoffForceN: 0,
+        rfdAt50ms: 0, rfdAt100ms: 0, rfdAt200ms: 0,
+        timeToPeakForceMs: 0,
+        eccentricDurationMs: 0, concentricDurationMs: contactMs,
+        peakPowerSayersW: 0, peakPowerImpulseW: 0,
+        symmetry: sym,
+        jumpHeightFlightTimeCm: 0,
+        landingPeakForceN: peakForceN,
+        contactTimeMs: contactMs,
+        rsiMod: rsiReactive,
+        isBoxReturn: true,
+        dropHeightCm: _dropHeightCm,
+      ),
+      statusMessage: AppStrings.get('dj_completed'),
+    );
+    if (settings.soundFeedback) SoundService.success();
+    _autoSaveResult(state.result);
+  }
+
   void stopTest() {
     _postLandingTimer?.cancel();
     _postLandingTimer = null;
+    _boxReturnTimer?.cancel();
+    _boxReturnTimer = null;
     _rawSub?.close();
     _phaseDetector.reset();
     _jumps.clear();
@@ -838,6 +923,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
   @override
   void dispose() {
     _postLandingTimer?.cancel();
+    _boxReturnTimer?.cancel();
     _rawSub?.close();
     super.dispose();
   }

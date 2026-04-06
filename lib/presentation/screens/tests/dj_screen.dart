@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/dsp/phase_detector.dart';
 import '../../../domain/entities/test_result.dart';
@@ -28,6 +30,72 @@ class _DjScreenState extends ConsumerState<DjScreen> {
   int _countdownN = 3;
   Timer? _countdownTimer;
   double _selectedDropHeight = 0.30; // metres
+  bool _boxReturn = false;
+  double _selectedBoxHeightCm = 30;
+  List<double> _boxHeights = [20, 30, 40, 50, 60];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBoxHeights();
+  }
+
+  Future<void> _loadBoxHeights() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString('dj_box_heights');
+    if (json != null) {
+      try {
+        final list = (jsonDecode(json) as List).cast<num>().map((e) => e.toDouble()).toList();
+        if (list.isNotEmpty && mounted) {
+          setState(() {
+            _boxHeights = list;
+            if (!_boxHeights.contains(_selectedBoxHeightCm)) {
+              _selectedBoxHeightCm = _boxHeights.first;
+            }
+          });
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveBoxHeights() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dj_box_heights', jsonEncode(_boxHeights));
+  }
+
+  void _addBoxHeight() {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(AppStrings.get('add_height')),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(suffixText: 'cm'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(AppStrings.get('cancel'))),
+          ElevatedButton(
+            onPressed: () {
+              final v = double.tryParse(ctrl.text.trim());
+              if (v != null && v > 0 && v <= 200 && !_boxHeights.contains(v)) {
+                setState(() {
+                  _boxHeights.add(v);
+                  _boxHeights.sort();
+                  _selectedBoxHeightCm = v;
+                });
+                _saveBoxHeights();
+              }
+              Navigator.pop(context);
+            },
+            child: Text(AppStrings.get('save')),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -46,7 +114,11 @@ class _DjScreenState extends ConsumerState<DjScreen> {
       } else {
         t.cancel();
         setState(() => _counting = false);
-        ref.read(testStateProvider.notifier).startTest(TestType.dropJump);
+        ref.read(testStateProvider.notifier).startTest(
+          TestType.dropJump,
+          boxReturn: _boxReturn,
+          dropHeightCm: _boxReturn ? _selectedBoxHeightCm : _selectedDropHeight * 100,
+        );
       }
     });
   }
@@ -103,12 +175,45 @@ class _DjScreenState extends ConsumerState<DjScreen> {
       ),
       body: Column(
         children: [
-          // Height selector
-          _HeightSelector(
-            enabled: !test.isActive && !_counting,
-            selected: _selectedDropHeight,
-            onChanged: (h) => setState(() => _selectedDropHeight = h),
-          ),
+          // Box return switch + height selector
+          if (!test.isActive && !_counting)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: SwitchListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(AppStrings.get('box_return'),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                        color: context.col.textPrimary)),
+                subtitle: Text(AppStrings.get('box_return_subtitle'),
+                    style: TextStyle(fontSize: 11, color: context.col.textSecondary)),
+                value: _boxReturn,
+                activeColor: AppColors.primary,
+                onChanged: (v) => setState(() => _boxReturn = v),
+              ),
+            ),
+          if (_boxReturn)
+            _BoxHeightSelector(
+              enabled: !test.isActive && !_counting,
+              heights: _boxHeights,
+              selected: _selectedBoxHeightCm,
+              onChanged: (h) => setState(() => _selectedBoxHeightCm = h),
+              onAdd: _addBoxHeight,
+              onRemove: (h) {
+                if (_boxHeights.length <= 1) return;
+                setState(() {
+                  _boxHeights.remove(h);
+                  if (_selectedBoxHeightCm == h) _selectedBoxHeightCm = _boxHeights.first;
+                });
+                _saveBoxHeights();
+              },
+            )
+          else
+            _HeightSelector(
+              enabled: !test.isActive && !_counting,
+              selected: _selectedDropHeight,
+              onChanged: (h) => setState(() => _selectedDropHeight = h),
+            ),
 
           // Phase indicator row
           Padding(
@@ -180,13 +285,22 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: CompactMetricTile(
-                        label: AppStrings.get('height_label_short'),
-                        value: djResult.jumpHeightCm.toStringAsFixed(1),
-                        unit: 'cm',
+                    if (!djResult.isBoxReturn)
+                      Expanded(
+                        child: CompactMetricTile(
+                          label: AppStrings.get('height_label_short'),
+                          value: djResult.jumpHeightCm.toStringAsFixed(1),
+                          unit: 'cm',
+                        ),
                       ),
-                    ),
+                    if (djResult.isBoxReturn)
+                      Expanded(
+                        child: CompactMetricTile(
+                          label: AppStrings.get('drop_height'),
+                          value: djResult.dropHeightCm.toStringAsFixed(0),
+                          unit: 'cm',
+                        ),
+                      ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: CompactMetricTile(
@@ -198,7 +312,9 @@ class _DjScreenState extends ConsumerState<DjScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: CompactMetricTile(
-                        label: AppStrings.get('reactivity_rsi_label'),
+                        label: djResult.isBoxReturn
+                            ? AppStrings.get('rsi_reactive')
+                            : AppStrings.get('reactivity_rsi_label'),
                         value: djResult.rsiMod.toStringAsFixed(2),
                         unit: '',
                         subtitle: AppStrings.get('higher_value_better'),
@@ -310,6 +426,72 @@ class _HeightSelector extends StatelessWidget {
                 ),
               );
             }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Box Height Selector (editable chip list) ────────────────────────────────
+
+class _BoxHeightSelector extends StatelessWidget {
+  final bool enabled;
+  final List<double> heights;
+  final double selected;
+  final ValueChanged<double>? onChanged;
+  final VoidCallback? onAdd;
+  final ValueChanged<double>? onRemove;
+  const _BoxHeightSelector({
+    required this.enabled, required this.heights, required this.selected,
+    this.onChanged, this.onAdd, this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(AppStrings.get('box_height_label'), style: IXTextStyles.metricLabel),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...heights.map((h) {
+                final isSelected = (h - selected).abs() < 0.1;
+                return GestureDetector(
+                  onTap: enabled ? () => onChanged?.call(h) : null,
+                  onLongPress: enabled ? () => onRemove?.call(h) : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary.withOpacity(0.2) : context.col.surface,
+                      border: Border.all(color: isSelected ? AppColors.primary : context.col.border),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('${h.toInt()} cm',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                            color: isSelected ? AppColors.primary : context.col.textSecondary)),
+                  ),
+                );
+              }),
+              if (enabled)
+                GestureDetector(
+                  onTap: onAdd,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.col.border, style: BorderStyle.solid),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.add, size: 16, color: context.col.textSecondary),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

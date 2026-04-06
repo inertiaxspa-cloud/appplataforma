@@ -218,6 +218,10 @@ class JumpResult extends TestResult {
 class DropJumpResult extends JumpResult {
   final double contactTimeMs;
   final double rsiMod;
+  /// True when the athlete returned to the box (no flight/landing on platform).
+  final bool isBoxReturn;
+  /// Height of the drop box in cm (used for RSI reactive analysis).
+  final double dropHeightCm;
 
   const DropJumpResult({
     super.sessionId,
@@ -245,6 +249,8 @@ class DropJumpResult extends JumpResult {
     required super.landingPeakForceN,
     required this.contactTimeMs,
     required this.rsiMod,
+    this.isBoxReturn = false,
+    this.dropHeightCm = 0,
   });
 
   @override
@@ -252,6 +258,8 @@ class DropJumpResult extends JumpResult {
     ...super.toMap(),
     'contact_time_ms': contactTimeMs,
     'rsi_mod': rsiMod,
+    'is_box_return': isBoxReturn,
+    'drop_height_cm': dropHeightCm,
   };
 
   factory DropJumpResult.fromMap(Map<String, dynamic> m) => DropJumpResult(
@@ -281,6 +289,8 @@ class DropJumpResult extends JumpResult {
     landingPeakForceN: (m['landing_peak_force_n'] as num? ?? 0.0).toDouble(),
     contactTimeMs: (m['contact_time_ms'] as num?)?.toDouble() ?? 0.0,
     rsiMod: (m['rsi_mod'] as num?)?.toDouble() ?? 0.0,
+    isBoxReturn: m['is_box_return'] as bool? ?? false,
+    dropHeightCm: (m['drop_height_cm'] as num?)?.toDouble() ?? 0.0,
   );
 }
 

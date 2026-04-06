@@ -605,6 +605,15 @@ class AppStrings {
       'test_landing': 'Aterrizando...',
       // CoP
       'cop_insufficient_data': 'Datos insuficientes. Asegúrate de pisar la plataforma durante el test.',
+      // Box return DJ
+      'box_return': 'Retorno al cajón',
+      'box_return_subtitle': 'El atleta vuelve al cajón tras el contacto (sin vuelo)',
+      'box_height_label': 'Altura del cajón',
+      'add_height': 'Agregar altura',
+      'rsi_reactive': 'RSI Reactivo',
+      'height_vs_contact': 'Altura vs Tiempo de Contacto',
+      'box_return_analysis_desc': 'Mayor RSI reactivo = mejor relación altura/contacto. La barra verde es la altura óptima.',
+      'optimal_height': 'Altura óptima',
       // Calibration connection guard
       'device_not_connected': 'Dispositivo no conectado',
       'connect_before_calibration': 'Conecta la plataforma de fuerza antes de calibrar.',
@@ -1207,6 +1216,15 @@ class AppStrings {
       'test_landing': 'Landing...',
       // CoP
       'cop_insufficient_data': 'Insufficient data. Make sure to stand on the platform during the test.',
+      // Box return DJ
+      'box_return': 'Box return',
+      'box_return_subtitle': 'Athlete returns to box after contact (no flight)',
+      'box_height_label': 'Box height',
+      'add_height': 'Add height',
+      'rsi_reactive': 'Reactive RSI',
+      'height_vs_contact': 'Height vs Contact Time',
+      'box_return_analysis_desc': 'Higher reactive RSI = better height/contact ratio. Green bar is optimal height.',
+      'optimal_height': 'Optimal height',
       // Calibration connection guard
       'device_not_connected': 'Device not connected',
       'connect_before_calibration': 'Connect the force platform before calibrating.',

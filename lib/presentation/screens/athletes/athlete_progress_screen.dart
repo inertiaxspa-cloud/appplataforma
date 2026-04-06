@@ -449,6 +449,10 @@ class _ProgressContent extends StatelessWidget {
           const SizedBox(height: 20),
         ],
 
+        // ── Box return analysis (DJ only) ──
+        if (testType == TestType.dropJump)
+          _BoxReturnAnalysis(entries: entries),
+
         // ── History table ──
         const _SectionLabel(label: 'HISTORIAL RECIENTE'),
         const SizedBox(height: 8),
@@ -1233,4 +1237,193 @@ class _EmptyProgress extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Box Return Analysis (DJ only) ────────────────────────────────────────────
+
+class _BoxReturnAnalysis extends StatelessWidget {
+  final List<_ProgressEntry> entries;
+  const _BoxReturnAnalysis({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter to box-return DJ results only
+    final boxEntries = <({double heightCm, double contactMs, double rsi, DateTime date})>[];
+    for (final e in entries) {
+      if (e.result is DropJumpResult) {
+        final dr = e.result as DropJumpResult;
+        if (dr.isBoxReturn && dr.dropHeightCm > 0 && dr.contactTimeMs > 0) {
+          boxEntries.add((
+            heightCm: dr.dropHeightCm,
+            contactMs: dr.contactTimeMs,
+            rsi: dr.rsiMod,
+            date: dr.computedAt,
+          ));
+        }
+      }
+    }
+    if (boxEntries.isEmpty) return const SizedBox.shrink();
+
+    // Group by height → best RSI per height
+    final Map<double, ({double bestRsi, double bestContact})> byHeight = {};
+    for (final e in boxEntries) {
+      final existing = byHeight[e.heightCm];
+      if (existing == null || e.rsi > existing.bestRsi) {
+        byHeight[e.heightCm] = (bestRsi: e.rsi, bestContact: e.contactMs);
+      }
+    }
+    final sortedHeights = byHeight.keys.toList()..sort();
+
+    // Find optimal height (highest RSI reactive)
+    double optimalHeight = sortedHeights.first;
+    double optimalRsi = 0;
+    for (final h in sortedHeights) {
+      if (byHeight[h]!.bestRsi > optimalRsi) {
+        optimalRsi = byHeight[h]!.bestRsi;
+        optimalHeight = h;
+      }
+    }
+
+    final col = context.col;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        _SectionLabel(label: AppStrings.get('height_vs_contact').toUpperCase()),
+        const SizedBox(height: 4),
+        Text(
+          AppStrings.get('box_return_analysis_desc'),
+          style: TextStyle(fontSize: 11, color: col.textDisabled),
+        ),
+        const SizedBox(height: 12),
+
+        // Bar chart: height → contact time
+        SizedBox(
+          height: 180,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: boxEntries.map((e) => e.contactMs).reduce(math.max) * 1.2,
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, reservedSize: 40,
+                    getTitlesWidget: (v, _) => Text('${v.toInt()}',
+                        style: TextStyle(fontSize: 9, color: col.textDisabled))),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, reservedSize: 28,
+                    getTitlesWidget: (v, _) {
+                      final idx = v.toInt();
+                      if (idx < 0 || idx >= sortedHeights.length) return const SizedBox.shrink();
+                      return Text('${sortedHeights[idx].toInt()} cm',
+                          style: TextStyle(fontSize: 10, color: col.textSecondary));
+                    }),
+                ),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: const FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              barGroups: sortedHeights.asMap().entries.map((e) {
+                final h = e.value;
+                final isOptimal = (h - optimalHeight).abs() < 0.1;
+                return BarChartGroupData(x: e.key, barRods: [
+                  BarChartRodData(
+                    toY: byHeight[h]!.bestContact,
+                    color: isOptimal ? AppColors.success : AppColors.primary,
+                    width: 20,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                  ),
+                ]);
+              }).toList(),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Optimal badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.successDim,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.success.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.star, color: AppColors.success, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${AppStrings.get('optimal_height')}: ${optimalHeight.toInt()} cm  ·  '
+                  'RSI ${optimalRsi.toStringAsFixed(2)}  ·  '
+                  '${byHeight[optimalHeight]!.bestContact.toStringAsFixed(0)} ms',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                      color: AppColors.success),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Data table
+        Table(
+          columnWidths: const {
+            0: FlexColumnWidth(1),
+            1: FlexColumnWidth(1),
+            2: FlexColumnWidth(1),
+          },
+          children: [
+            TableRow(
+              children: [
+                _TableHeader(AppStrings.get('drop_height')),
+                _TableHeader(AppStrings.get('contact_label_short')),
+                _TableHeader(AppStrings.get('rsi_reactive')),
+              ],
+            ),
+            ...sortedHeights.map((h) {
+              final d = byHeight[h]!;
+              final isOpt = (h - optimalHeight).abs() < 0.1;
+              return TableRow(
+                decoration: isOpt
+                    ? BoxDecoration(color: AppColors.successDim)
+                    : null,
+                children: [
+                  _TableCell('${h.toInt()} cm'),
+                  _TableCell('${d.bestContact.toStringAsFixed(0)} ms'),
+                  _TableCell(d.bestRsi.toStringAsFixed(2)),
+                ],
+              );
+            }),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+class _TableHeader extends StatelessWidget {
+  final String text;
+  const _TableHeader(this.text);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+    child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+        color: context.col.textSecondary)),
+  );
+}
+
+class _TableCell extends StatelessWidget {
+  final String text;
+  const _TableCell(this.text);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+    child: Text(text, style: TextStyle(fontSize: 12, color: context.col.textPrimary)),
+  );
 }
