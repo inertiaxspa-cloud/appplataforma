@@ -315,6 +315,18 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Icon(Icons.chevron_right, color: context.col.textDisabled),
               onTap: () => context.push('/tap-test', extra: 'A'),
             ),
+            if (settings.platformOrientation == PlatformOrientation.dualVertical) ...[
+              Divider(color: context.col.border, height: 1),
+              ListTile(
+                leading: Icon(Icons.touch_app, color: AppColors.secondary, size: 20),
+                title: Text(AppStrings.get('identify_cells_b'),
+                    style: TextStyle(fontSize: 13, color: context.col.textPrimary)),
+                subtitle: Text(AppStrings.get('identify_cells_b_desc'),
+                    style: TextStyle(fontSize: 11, color: context.col.textSecondary)),
+                trailing: Icon(Icons.chevron_right, color: context.col.textDisabled),
+                onTap: () => context.push('/tap-test', extra: 'B'),
+              ),
+            ],
           ]),
 
           const SizedBox(height: 16),

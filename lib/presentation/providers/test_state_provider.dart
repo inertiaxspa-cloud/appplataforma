@@ -100,6 +100,10 @@ class TestStateNotifier extends StateNotifier<TestState> {
   bool _isBoxReturn = false;
   double _dropHeightCm = 0;
 
+  // Free test mode state
+  String _freeTestLabel = '';
+  Timer? _freeTestTimer;
+
   TestStateNotifier(this._ref) : super(const TestState());
 
   Future<void> startTest(TestType type, {bool boxReturn = false, double dropHeightCm = 0}) async {
@@ -909,11 +913,100 @@ class TestStateNotifier extends StateNotifier<TestState> {
     _autoSaveResult(state.result);
   }
 
+  /// Start a free-form test. No phase detection — collects data until
+  /// the user presses Stop or the timer expires.
+  Future<void> startFreeTest({String label = '', int? durationS}) async {
+    _freeTestLabel = label;
+    _freeTestTimer?.cancel();
+    // Reuse startTest for settling (body weight measurement)
+    await startTest(TestType.freeTest);
+    // If timer mode, schedule auto-finish after settling completes + duration
+    if (durationS != null && durationS > 0) {
+      // Wait for settling (~2s) + user duration
+      _freeTestTimer = Timer(Duration(seconds: durationS + 3), () {
+        if (state.status == TestStatus.running) finishFreeTest();
+      });
+    }
+  }
+
+  /// Finish a free test manually (user pressed Stop).
+  void finishFreeTest() {
+    _freeTestTimer?.cancel();
+    _rawSub?.close();
+    _rawSub = null;
+
+    if (_forceData.length < 10) {
+      state = state.copyWith(
+        status: TestStatus.failed,
+        error: AppStrings.get('cop_insufficient_data'),
+      );
+      return;
+    }
+
+    final bwN = state.bodyWeightN ?? 0;
+    final settings = _ref.read(settingsProvider);
+    final dt = 1.0 / 1000.0; // 1000 Hz
+
+    // Peak force
+    double peakF = 0;
+    for (final f in _forceData) { if (f > peakF) peakF = f; }
+
+    // Mean force
+    final meanF = _forceData.fold(0.0, (s, f) => s + f) / _forceData.length;
+
+    // Duration
+    final duration = _timeData.isNotEmpty && _timeData.length > 1
+        ? _timeData.last - _timeData.first : 0.0;
+
+    // Total impulse (trapezoidal integration, subtract BW)
+    double impulse = 0;
+    for (int i = 1; i < _forceData.length; i++) {
+      impulse += ((_forceData[i] + _forceData[i - 1]) / 2 - bwN) * dt;
+    }
+
+    // Peak RFD (max delta-force over 20ms window = 20 samples)
+    double peakRfd = 0;
+    const rfdWindow = 20;
+    for (int i = rfdWindow; i < _forceData.length; i++) {
+      final rfd = (_forceData[i] - _forceData[i - rfdWindow]) / (rfdWindow * dt);
+      if (rfd > peakRfd) peakRfd = rfd;
+    }
+
+    // Symmetry
+    final sym = JumpMetrics.symmetry1Platform(
+      masterSideN: _forceLeftData.isEmpty ? 0 : _forceLeftData.reduce((a, b) => a + b),
+      slaveSideN:  _forceRightData.isEmpty ? 0 : _forceRightData.reduce((a, b) => a + b),
+    );
+
+    final result = FreeTestResult(
+      computedAt: DateTime.now(),
+      platformCount: _platformCount,
+      peakForceN: peakF,
+      meanForceN: meanF,
+      durationS: duration,
+      totalImpulseNs: impulse.abs(),
+      peakRfdNs: peakRfd,
+      symmetry: sym,
+      label: _freeTestLabel,
+    );
+
+    if (settings.soundFeedback) SoundService.success();
+    state = state.copyWith(
+      status: TestStatus.completed,
+      phase: JumpPhase.landed,
+      result: result,
+      statusMessage: AppStrings.get('test_completed'),
+    );
+    _autoSaveResult(result);
+  }
+
   void stopTest() {
     _postLandingTimer?.cancel();
     _postLandingTimer = null;
     _boxReturnTimer?.cancel();
     _boxReturnTimer = null;
+    _freeTestTimer?.cancel();
+    _freeTestTimer = null;
     _rawSub?.close();
     _phaseDetector.reset();
     _jumps.clear();

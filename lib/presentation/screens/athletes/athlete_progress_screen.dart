@@ -95,6 +95,7 @@ double? _extractMainMetric(TestResult r) {
     MultiJumpResult m => m.meanRsiMod,
     ImtpResult i      => i.peakForceN / 1000.0,   // kN
     CoPResult c       => c.pathLengthMm,
+    FreeTestResult f  => f.peakForceN,
   };
 }
 
@@ -114,6 +115,7 @@ String _metricLabel(TestType type) {
     TestType.multiJump                              => AppStrings.get('metric_mean_rsi'),
     TestType.imtp                                   => AppStrings.get('metric_peak_force_kn'),
     TestType.cop                                    => AppStrings.get('metric_path_mm'),
+    TestType.freeTest                               => AppStrings.get('peak_force'),
   };
 }
 
@@ -123,6 +125,7 @@ String _metricUnit(TestType type) {
     TestType.dropJump || TestType.multiJump         => '',
     TestType.imtp                                   => 'kN',
     TestType.cop                                    => 'mm',
+    TestType.freeTest                               => 'N',
   };
 }
 
@@ -328,6 +331,7 @@ class _TestTypeChips extends StatelessWidget {
         TestType.multiJump  => 'Multi',
         TestType.imtp       => 'IMTP',
         TestType.cop        => 'CoP',
+        TestType.freeTest   => 'Free',
       };
 
   @override

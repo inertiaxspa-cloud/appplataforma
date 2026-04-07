@@ -37,6 +37,8 @@ class SupabaseService {
   }
 
   SupabaseClient get _client => Supabase.instance.client;
+  /// Public access for providers that need direct Supabase queries.
+  SupabaseClient get client => _client;
 
   User? get currentUser =>
       isConfigured ? _client.auth.currentUser : null;

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:inertiax/core/l10n/app_strings.dart';
 
-enum TestType { cmj, cmjArms, sj, dropJump, multiJump, cop, imtp }
+enum TestType { cmj, cmjArms, sj, dropJump, multiJump, cop, imtp, freeTest }
 
 extension TestTypeExt on TestType {
   String get displayName {
@@ -14,6 +14,7 @@ extension TestTypeExt on TestType {
       case TestType.multiJump: return AppStrings.get('test_multijump');
       case TestType.cop:       return AppStrings.get('test_cop');
       case TestType.imtp:      return AppStrings.get('test_imtp');
+      case TestType.freeTest:  return AppStrings.get('test_free');
     }
   }
 
@@ -97,6 +98,8 @@ sealed class TestResult {
           return CoPResult.fromMap(map);
         case TestType.imtp:
           return ImtpResult.fromMap(map);
+        case TestType.freeTest:
+          return FreeTestResult.fromMap(map);
       }
     } catch (e) {
       throw FormatException('TestResult.fromJson failed: $e\nJSON: ${json.length > 200 ? json.substring(0, 200) : json}');
@@ -514,4 +517,64 @@ class ImtpResult extends TestResult {
         ? SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>)
         : const SymmetryResult(leftPercent: 50, rightPercent: 50, asymmetryIndexPct: 0, isTwoPlatform: false),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Free Test — open-ended test with generic metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+class FreeTestResult extends TestResult {
+  final double peakForceN;
+  final double meanForceN;
+  final double durationS;
+  final double totalImpulseNs;
+  final double peakRfdNs;   // peak rate of force development (N/s)
+  final SymmetryResult symmetry;
+  final String label;       // user label (e.g. "squat", "press")
+
+  const FreeTestResult({
+    super.sessionId,
+    super.testType = TestType.freeTest,
+    required super.computedAt,
+    required super.platformCount,
+    required this.peakForceN,
+    required this.meanForceN,
+    required this.durationS,
+    required this.totalImpulseNs,
+    required this.peakRfdNs,
+    required this.symmetry,
+    this.label = '',
+  });
+
+  @override
+  Map<String, dynamic> toMap() => {
+    'type': 'freeTest',
+    'test_type': TestType.freeTest.index,
+    'computed_at': computedAt.toIso8601String(),
+    'platform_count': platformCount,
+    'peak_force_n': peakForceN,
+    'mean_force_n': meanForceN,
+    'duration_s': durationS,
+    'total_impulse_ns': totalImpulseNs,
+    'peak_rfd_ns': peakRfdNs,
+    'symmetry': symmetry.toMap(),
+    'label': label,
+  };
+
+  factory FreeTestResult.fromMap(Map<String, dynamic> m) => FreeTestResult(
+    computedAt: DateTime.parse(m['computed_at'] as String? ?? DateTime.now().toIso8601String()),
+    platformCount: m['platform_count'] as int? ?? 1,
+    peakForceN: (m['peak_force_n'] as num?)?.toDouble() ?? 0.0,
+    meanForceN: (m['mean_force_n'] as num?)?.toDouble() ?? 0.0,
+    durationS: (m['duration_s'] as num?)?.toDouble() ?? 0.0,
+    totalImpulseNs: (m['total_impulse_ns'] as num?)?.toDouble() ?? 0.0,
+    peakRfdNs: (m['peak_rfd_ns'] as num?)?.toDouble() ?? 0.0,
+    symmetry: m['symmetry'] is Map<String, dynamic>
+        ? SymmetryResult.fromMap(m['symmetry'] as Map<String, dynamic>)
+        : const SymmetryResult(leftPercent: 50, rightPercent: 50, asymmetryIndexPct: 0, isTwoPlatform: false),
+    label: m['label'] as String? ?? '',
+  );
+
+  @override
+  String toJson() => jsonEncode(toMap());
 }

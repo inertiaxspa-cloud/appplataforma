@@ -332,6 +332,11 @@ class _TrendChart extends StatelessWidget {
           sessions.map((s) => (s.result as CoPResult).areaEllipseMm2).toList(),
           'mm²', true,
         ),
+      FreeTestResult _ => (
+          AppStrings.get('peak_force_short'),
+          sessions.map((s) => (s.result as FreeTestResult).peakForceN).toList(),
+          'N', false,
+        ),
     };
   }
 
@@ -526,6 +531,7 @@ class _MetricsTable extends StatelessWidget {
       MultiJumpResult _ => _multiJumpSpecs(),
       ImtpResult _     => _imtpSpecs(),
       CoPResult _      => _copSpecs(),
+      FreeTestResult _ => _freeTestSpecs(),
     };
   }
 
@@ -572,6 +578,14 @@ class _MetricsTable extends StatelessWidget {
     _MetricSpec(AppStrings.get('range_ml_short'),       'mm',   true,  (r) => (r as CoPResult).rangeMLMm),
     _MetricSpec(AppStrings.get('range_ap_short'),       'mm',   true,  (r) => (r as CoPResult).rangeAPMm),
     _MetricSpec(AppStrings.get('symmetry_short'),       '%',    false, (r) => (r as CoPResult).symmetryPercent),
+  ];
+
+  List<_MetricSpec> _freeTestSpecs() => [
+    _MetricSpec(AppStrings.get('peak_force_short'),       'N',   false, (r) => (r as FreeTestResult).peakForceN),
+    _MetricSpec(AppStrings.get('mean_force'),             'N',   false, (r) => (r as FreeTestResult).meanForceN),
+    _MetricSpec(AppStrings.get('duration_label'),         's',   true,  (r) => (r as FreeTestResult).durationS),
+    _MetricSpec(AppStrings.get('net_impulse_short'),      'N·s', false, (r) => (r as FreeTestResult).totalImpulseNs),
+    _MetricSpec(AppStrings.get('peak_rfd'),               'N/s', false, (r) => (r as FreeTestResult).peakRfdNs),
   ];
 
   @override

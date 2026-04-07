@@ -18,10 +18,12 @@ import 'presentation/screens/tests/multijump_screen.dart';
 import 'presentation/screens/tests/cop_screen.dart';
 import 'presentation/screens/tests/imtp_screen.dart';
 import 'presentation/screens/tests/tests_hub_screen.dart';
+import 'presentation/screens/tests/free_test_screen.dart';
 import 'presentation/screens/history/history_screen.dart';
 import 'presentation/screens/settings/settings_screen.dart';
 import 'presentation/screens/results/result_detail_screen.dart';
 import 'presentation/screens/comparison/comparison_screen.dart';
+import 'presentation/screens/subscription/subscription_screen.dart';
 import 'presentation/screens/onboarding/welcome_screen.dart';
 import 'presentation/screens/onboarding/test_info_screen.dart';
 import 'presentation/screens/calibration/tap_test_screen.dart';
@@ -154,6 +156,8 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
     GoRoute(path: '/tests/multijump', builder: (_, __) => const MultiJumpScreen()),
     GoRoute(path: '/tests/cop',       builder: (_, __) => const CopScreen()),
     GoRoute(path: '/tests/imtp',      builder: (_, __) => const ImtpScreen()),
+    GoRoute(path: '/tests/free',      builder: (_, __) => const FreeTestScreen()),
+    GoRoute(path: '/subscription',    builder: (_, __) => const SubscriptionScreen()),
     // Resultados desde historial — solo lectura, NO auto-save
     GoRoute(
       path: '/results/:id',

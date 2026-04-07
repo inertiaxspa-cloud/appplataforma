@@ -26,6 +26,8 @@ class TestsHubScreen extends ConsumerWidget {
         const CopPainter(), '/tests/cop', AppColors.success, 'cop'),
     _TestItem('IMTP', AppStrings.get('test_imtp'),
         const ImtpPainter(), '/tests/imtp', AppColors.danger, 'imtp'),
+    _TestItem(AppStrings.get('test_free'), AppStrings.get('test_free_subtitle'),
+        const ImtpPainter(), '/tests/free', AppColors.secondary, 'free'),
   ];
 
   @override

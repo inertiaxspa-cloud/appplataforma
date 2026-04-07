@@ -360,6 +360,13 @@ class PdfReportService {
           _execCard('Fatiga', r.fatiguePercent.toStringAsFixed(1), '%'),
           _execCard('Variabilidad', r.variabilityPercent.toStringAsFixed(1), '%'),
         ];
+      case FreeTestResult r:
+        return [
+          _execCard('F. Pico', r.peakForceN.toStringAsFixed(0), 'N'),
+          _execCard('F. Media', r.meanForceN.toStringAsFixed(0), 'N'),
+          _execCard('Duración', r.durationS.toStringAsFixed(1), 's'),
+          _execCard('Impulso', r.totalImpulseNs.toStringAsFixed(0), 'N·s'),
+        ];
     }
   }
 
@@ -817,6 +824,7 @@ class PdfReportService {
             prev: previousResult is ImtpResult ? previousResult : null,
             compact: compact),
         MultiJumpResult res => _multiBody(res, compact: compact),
+        FreeTestResult _    => [],
       };
 
   // ── Jump (CMJ / SJ) ───────────────────────────────────────────────────────
@@ -1651,6 +1659,7 @@ class PdfReportService {
         TestType.multiJump => 'MULTI-SALTO',
         TestType.cop       => 'EQUILIBRIO (CoP)',
         TestType.imtp      => 'IMTP',
+        TestType.freeTest  => 'TEST LIBRE',
       };
 
   static String _fmtDate(DateTime dt) {

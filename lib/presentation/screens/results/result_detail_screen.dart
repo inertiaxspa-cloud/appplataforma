@@ -126,6 +126,7 @@ class _ResultDetailScreenState extends ConsumerState<ResultDetailScreen> {
           CoPResult r       => _CoPResultView(result: r, engineerMode: settings.engineerMode),
           ImtpResult r      => _ImtpResultView(result: r, engineerMode: settings.engineerMode),
           MultiJumpResult r => _MultiJumpResultView(result: r, engineerMode: settings.engineerMode),
+          FreeTestResult r  => _FreeTestResultView(result: r, engineerMode: settings.engineerMode),
         },
       ),
     );
@@ -901,6 +902,67 @@ class _PdfExportButtonState extends ConsumerState<_PdfExportButton> {
       icon:    const Icon(Icons.picture_as_pdf_outlined),
       tooltip: AppStrings.get('export_pdf'),
       onPressed: _export,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Free test result
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FreeTestResultView extends StatelessWidget {
+  final FreeTestResult result;
+  final bool engineerMode;
+  const _FreeTestResultView({required this.result, this.engineerMode = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _HeroMetric(
+          value: result.peakForceN.toStringAsFixed(0),
+          unit:  'N',
+          label: AppStrings.get('peak_force'),
+        ),
+        const SizedBox(height: 24),
+        _MetricGrid(children: [
+          MetricCard(label: AppStrings.get('mean_force'),
+              value: result.meanForceN.toStringAsFixed(0), unit: 'N'),
+          MetricCard(label: AppStrings.get('duration_label'),
+              value: result.durationS.toStringAsFixed(1), unit: 's'),
+          MetricCard(label: AppStrings.get('net_impulse_short'),
+              value: result.totalImpulseNs.toStringAsFixed(0), unit: 'N·s'),
+          MetricCard(label: AppStrings.get('peak_rfd'),
+              value: (result.peakRfdNs / 1000).toStringAsFixed(1), unit: 'kN/s'),
+        ]),
+        if (result.label.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(result.label,
+              style: TextStyle(fontSize: 14, color: context.col.textSecondary)),
+        ],
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              color:        context.col.surface,
+              borderRadius: BorderRadius.circular(12),
+              border:       Border.all(color: context.col.border)),
+          child: SymmetryGauge(
+            leftPercent:  result.symmetry.leftPercent,
+            leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ' : 'IZQ',
+            rightLabel:  result.symmetry.isTwoPlatform ? 'DER' : 'DER',
+            isEstimated: !result.symmetry.isTwoPlatform,
+          ),
+        ),
+        const SizedBox(height: 20),
+        _Metadata(
+          computedAt:    result.computedAt,
+          platformCount: result.platformCount,
+          bodyWeightN:   null,
+          engineerMode:  engineerMode,
+        ),
+      ],
     );
   }
 }

@@ -206,6 +206,8 @@ class _SessionTile extends ConsumerWidget {
             heroValue = r.peakForceN.toStringAsFixed(0); heroUnit = 'N';
           case CoPResult r:
             heroValue = r.areaEllipseMm2.toStringAsFixed(0); heroUnit = 'mm²';
+          case FreeTestResult r:
+            heroValue = r.peakForceN.toStringAsFixed(0); heroUnit = 'N';
         }
       } catch (e) { debugPrint('[History] Result parse error: $e'); }
     }
@@ -364,6 +366,7 @@ class _TestTypeIcon extends StatelessWidget {
       case TestType.multiJump:return AppColors.forceTotal;
       case TestType.cop:      return AppColors.secondary;
       case TestType.imtp:     return AppColors.danger;
+      case TestType.freeTest: return AppColors.forceTotal;
     }
   }
 
@@ -376,6 +379,7 @@ class _TestTypeIcon extends StatelessWidget {
       case TestType.multiJump:return Icons.repeat;
       case TestType.cop:      return Icons.balance;
       case TestType.imtp:     return Icons.fitness_center;
+      case TestType.freeTest: return Icons.science;
     }
   }
 
