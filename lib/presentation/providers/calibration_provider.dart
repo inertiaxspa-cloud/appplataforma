@@ -70,24 +70,27 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
     required double rawAMR,
     required double rawASL,
     required double rawASR,
+    double rawBML = 0,
+    double rawBMR = 0,
+    double rawBSL = 0,
+    double rawBSR = 0,
   }) {
     _pendingOffsets = {
       'A_ML': rawAML,
       'A_MR': rawAMR,
       'A_SL': rawASL,
       'A_SR': rawASR,
+      if (rawBML != 0 || rawBMR != 0) 'B_ML': rawBML,
+      if (rawBML != 0 || rawBMR != 0) 'B_MR': rawBMR,
+      if (rawBML != 0 || rawBMR != 0) 'B_SL': rawBSL,
+      if (rawBML != 0 || rawBMR != 0) 'B_SR': rawBSR,
     };
-    // Also add the zero-weight calibration point (for backward compat).
-    // REPLACE any existing tare (weightKg == 0) rather than appending,
-    // so that re-taring never duplicates the point.
     final rawSum = rawAML + rawAMR + rawASL + rawASR;
     final tarePt = CalibrationPoint(
       weightKg: 0,
       rawSum: rawSum,
-      rawAML: rawAML,
-      rawAMR: rawAMR,
-      rawASL: rawASL,
-      rawASR: rawASR,
+      rawAML: rawAML, rawAMR: rawAMR, rawASL: rawASL, rawASR: rawASR,
+      rawBML: rawBML, rawBMR: rawBMR, rawBSL: rawBSL, rawBSR: rawBSR,
     );
     final points = [
       ...state.pendingPoints.where((p) => p.weightKg != 0),
@@ -106,14 +109,16 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
     double rawAMR = 0,
     double rawASL = 0,
     double rawASR = 0,
+    double rawBML = 0,
+    double rawBMR = 0,
+    double rawBSL = 0,
+    double rawBSR = 0,
   }) {
     final newPt = CalibrationPoint(
       weightKg: weightKg,
       rawSum: rawSum,
-      rawAML: rawAML,
-      rawAMR: rawAMR,
-      rawASL: rawASL,
-      rawASR: rawASR,
+      rawAML: rawAML, rawAMR: rawAMR, rawASL: rawASL, rawASR: rawASR,
+      rawBML: rawBML, rawBMR: rawBMR, rawBSL: rawBSL, rawBSR: rawBSR,
     );
     // Remove any existing point at the same weight before appending.
     final points = [
@@ -177,6 +182,11 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
           ));
         }
         cellGains = CalibrationEngine.computeCellGains(readings, 1);
+        // Platform B gains (if B offsets were recorded in dual-platform mode)
+        if (offsets.containsKey('B_ML')) {
+          final bGains = CalibrationEngine.computeCellGainsB(points);
+          cellGains.addAll(bGains);
+        }
       } else {
         // Legacy polynomial
         final x = points.map((p) => p.rawSum).toList();
@@ -216,6 +226,10 @@ class CalibrationNotifier extends StateNotifier<CalibrationState> {
           'raw_amr':   p.rawAMR,
           'raw_asl':   p.rawASL,
           'raw_asr':   p.rawASR,
+          'raw_bml':   p.rawBML,
+          'raw_bmr':   p.rawBMR,
+          'raw_bsl':   p.rawBSL,
+          'raw_bsr':   p.rawBSR,
         });
       }
 

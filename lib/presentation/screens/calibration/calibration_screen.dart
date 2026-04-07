@@ -36,6 +36,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   // Persisted in SharedPreferences so it survives app restarts.
   Map<String, int> _polarities = {
     'A_ML': 1, 'A_MR': 1, 'A_SL': 1, 'A_SR': 1,
+    'B_ML': 1, 'B_MR': 1, 'B_SL': 1, 'B_SR': 1,
   };
 
   // ── Live display buffer — 3 s at 30 Hz ────────────────────────────────────
@@ -47,12 +48,16 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   final List<double> _liveAML = [], _liveAMR = [], _liveASL = [], _liveASR = [];
   static const int _bufferSize = 90; // 3 s
 
+  // ── Live display buffer — Platform B ─────────────────────────────────────
+  final List<double> _liveBML = [], _liveBMR = [], _liveBSL = [], _liveBSR = [];
+
   // ── Batch-collection buffers ───────────────────────────────────────────────
   // Collecting at full hardware rate (up to 1000 Hz).
   // 2000 samples ≈ 2 s → SEM ≈ raw_std / √2000 ≈ 0.05 % → mayor precisión.
   static const int _collectSamples = 2000;
   _CalPhase _phase = _CalPhase.idle;
   final List<double> _cAML = [], _cAMR = [], _cASL = [], _cASR = [];
+  final List<double> _cBML = [], _cBMR = [], _cBSL = [], _cBSR = [];
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   static double _mean(List<double> l) =>
@@ -73,6 +78,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   double get _liveMeanAMR   => _mean(_liveAMR);
   double get _liveMeanASL   => _mean(_liveASL);
   double get _liveMeanASR   => _mean(_liveASR);
+  double get _liveMeanBML   => _mean(_liveBML);
+  double get _liveMeanBMR   => _mean(_liveBMR);
+  double get _liveMeanBSL   => _mean(_liveBSL);
+  double get _liveMeanBSR   => _mean(_liveBSR);
 
   double get _liveCvPct {
     if (_rawSums.length < 2) return 100;
@@ -100,15 +109,23 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     _rawSums.add(aml + amr + asl + asr);
     _liveAML.add(aml); _liveAMR.add(amr);
     _liveASL.add(asl); _liveASR.add(asr);
+    // Platform B live (if present)
+    _liveBML.add(s.currentRawBML.abs());
+    _liveBMR.add(s.currentRawBMR.abs());
+    _liveBSL.add(s.currentRawBSL.abs());
+    _liveBSR.add(s.currentRawBSR.abs());
     if (_readings.length > _bufferSize) {
       _readings.removeAt(0); _rawSums.removeAt(0);
       _liveAML.removeAt(0);  _liveAMR.removeAt(0);
       _liveASL.removeAt(0);  _liveASR.removeAt(0);
+      _liveBML.removeAt(0);  _liveBMR.removeAt(0);
+      _liveBSL.removeAt(0);  _liveBSR.removeAt(0);
     }
   }
 
   void _clearCollectBuf() {
     _cAML.clear(); _cAMR.clear(); _cASL.clear(); _cASR.clear();
+    _cBML.clear(); _cBMR.clear(); _cBSL.clear(); _cBSR.clear();
   }
 
   void _addToCollectBuf(LiveDataState s) {
@@ -116,6 +133,10 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     _cAMR.add(_p('A_MR', s.currentRawAMR));
     _cASL.add(_p('A_SL', s.currentRawASL));
     _cASR.add(_p('A_SR', s.currentRawASR));
+    _cBML.add(s.currentRawBML.abs());
+    _cBMR.add(s.currentRawBMR.abs());
+    _cBSL.add(s.currentRawBSL.abs());
+    _cBSR.add(s.currentRawBSR.abs());
   }
 
   // ── Polarity persistence ───────────────────────────────────────────────────
@@ -204,12 +225,15 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   void _finishCollection() {
     final aml = _mean(_cAML), amr = _mean(_cAMR);
     final asl = _mean(_cASL), asr = _mean(_cASR);
+    final bml = _mean(_cBML), bmr = _mean(_cBMR);
+    final bsl = _mean(_cBSL), bsr = _mean(_cBSR);
     final n   = _cAML.length;
     _clearCollectBuf();
 
     if (_phase == _CalPhase.collectingTare) {
       ref.read(calibrationProvider.notifier).recordTare(
         rawAML: aml, rawAMR: amr, rawASL: asl, rawASR: asr,
+        rawBML: bml, rawBMR: bmr, rawBSL: bsl, rawBSR: bsr,
       );
       _phase = _CalPhase.idle;
       _step  = 1;
@@ -219,6 +243,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
       ref.read(calibrationProvider.notifier).addPoint(
         kg, rawSum,
         rawAML: aml, rawAMR: amr, rawASL: asl, rawASR: asr,
+        rawBML: bml, rawBMR: bmr, rawBSL: bsl, rawBSR: bsr,
       );
       _weightCtrl.clear();
       _phase = _CalPhase.idle;
@@ -328,6 +353,11 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
               rawAMR:       _liveMeanAMR,
               rawASL:       _liveMeanASL,
               rawASR:       _liveMeanASR,
+              rawBML:       _liveMeanBML,
+              rawBMR:       _liveMeanBMR,
+              rawBSL:       _liveMeanBSL,
+              rawBSR:       _liveMeanBSR,
+              hasPlatformB: ref.watch(liveDataProvider).platformCount >= 2,
               engineerMode: isEngineer,
             ),
             const SizedBox(height: 12),
@@ -597,6 +627,8 @@ class _LiveReadingCard extends StatelessWidget {
   final double cvPct;
   final int sampleCount;
   final double rawAML, rawAMR, rawASL, rawASR;
+  final double rawBML, rawBMR, rawBSL, rawBSR;
+  final bool hasPlatformB;
   final bool engineerMode;
 
   const _LiveReadingCard({
@@ -607,6 +639,11 @@ class _LiveReadingCard extends StatelessWidget {
     required this.rawAMR,
     required this.rawASL,
     required this.rawASR,
+    this.rawBML = 0,
+    this.rawBMR = 0,
+    this.rawBSL = 0,
+    this.rawBSR = 0,
+    this.hasPlatformB = false,
     this.engineerMode = false,
   });
 
@@ -687,6 +724,25 @@ class _LiveReadingCard extends StatelessWidget {
               _CellBadge(label: AppStrings.get('cal_cell_b_right'), techLabel: 'A_SR', value: rawASR, warn: asrBad, engineerMode: engineerMode),
             ],
           ),
+
+          // Platform B cells (when 2 platforms detected)
+          if (hasPlatformB) ...[
+            const SizedBox(height: 8),
+            Text(AppStrings.get('platform_b'),
+                style: IXTextStyles.metricLabel.copyWith(fontSize: 10)),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                _CellBadge(label: 'B—Izq', techLabel: 'B_ML', value: rawBML, warn: rawBML < 0, engineerMode: engineerMode),
+                const SizedBox(width: 8),
+                _CellBadge(label: 'B—Der', techLabel: 'B_MR', value: rawBMR, warn: rawBMR < 0, engineerMode: engineerMode),
+                const SizedBox(width: 8),
+                _CellBadge(label: 'B—Izq', techLabel: 'B_SL', value: rawBSL, warn: rawBSL < 0, engineerMode: engineerMode),
+                const SizedBox(width: 8),
+                _CellBadge(label: 'B—Der', techLabel: 'B_SR', value: rawBSR, warn: rawBSR < 0, engineerMode: engineerMode),
+              ],
+            ),
+          ],
 
           if (anyBad) ...[
             const SizedBox(height: 8),
