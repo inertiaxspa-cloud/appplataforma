@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/l10n/app_strings.dart';
 
 // ── Data model ─────────────────────────────────────────────────────────────
 
@@ -530,7 +531,7 @@ class _TutorialDialogState extends State<_TutorialDialog>
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.arrow_back_rounded, size: 15),
-                      label: const Text('Anterior'),
+                      label: Text(AppStrings.get('tutorial_previous')),
                       onPressed: () => _goTo(_current - 1),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
@@ -551,7 +552,7 @@ class _TutorialDialogState extends State<_TutorialDialog>
                             ? Icons.check_circle_outline_rounded
                             : Icons.arrow_forward_rounded,
                         size: 16),
-                    label: Text(isLast ? '¡Listo para el test!' : 'Siguiente'),
+                    label: Text(isLast ? AppStrings.get('tutorial_ready') : AppStrings.get('tutorial_next')),
                     onPressed: isLast
                         ? () => Navigator.of(context).pop()
                         : () => _goTo(_current + 1),

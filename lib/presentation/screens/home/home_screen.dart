@@ -137,10 +137,10 @@ class _StatusPanel extends StatelessWidget {
   static String _shortPortName(String name) {
     // Extract COM port number from Windows path
     final comMatch = RegExp(r'(COM\d+)').firstMatch(name);
-    if (comMatch != null) return comMatch.group(1)!;
+    if (comMatch != null) return comMatch.group(1) ?? name;
     // Extract device name from Unix path
     final devMatch = RegExp(r'/dev/(.+)$').firstMatch(name);
-    if (devMatch != null) return devMatch.group(1)!;
+    if (devMatch != null) return devMatch.group(1) ?? name;
     // Truncate anything longer than 14 characters
     if (name.length > 14) return '${name.substring(0, 12)}…';
     return name;

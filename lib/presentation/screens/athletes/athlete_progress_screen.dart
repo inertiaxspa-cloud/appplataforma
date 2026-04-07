@@ -109,11 +109,11 @@ double? _extractSymmetry(TestResult r) {
 
 String _metricLabel(TestType type) {
   return switch (type) {
-    TestType.cmj || TestType.cmjArms || TestType.sj => 'Altura (cm)',
-    TestType.dropJump                               => 'RSI Mod',
-    TestType.multiJump                              => 'RSI Medio',
-    TestType.imtp                                   => 'F. Pico (kN)',
-    TestType.cop                                    => 'Tray. (mm)',
+    TestType.cmj || TestType.cmjArms || TestType.sj => AppStrings.get('metric_height_cm'),
+    TestType.dropJump                               => AppStrings.get('metric_rsi_mod'),
+    TestType.multiJump                              => AppStrings.get('metric_mean_rsi'),
+    TestType.imtp                                   => AppStrings.get('metric_peak_force_kn'),
+    TestType.cop                                    => AppStrings.get('metric_path_mm'),
   };
 }
 
@@ -172,7 +172,7 @@ class _AthleteProgressScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Recargar',
+            tooltip: AppStrings.get('reload'),
             onPressed: () =>
                 ref.invalidate(_athleteProgressProvider(params)),
           ),
@@ -430,17 +430,17 @@ class _ProgressContent extends StatelessWidget {
         const SizedBox(height: 20),
 
         // ── Evolution chart ──
-        _SectionLabel(label: 'EVOLUCIÓN — ${_metricLabel(testType).toUpperCase()}'),
+        _SectionLabel(label: '${AppStrings.get('progress_evolution')} — ${_metricLabel(testType).toUpperCase()}'),
         const SizedBox(height: 8),
         _EvolutionChart(entries: entries, testType: testType),
         const SizedBox(height: 20),
 
         // ── Symmetry chart ──
         if (symmetryEntries.length >= 2) ...[
-          const _SectionLabel(label: 'ÍNDICE DE ASIMETRÍA (%)'),
+          _SectionLabel(label: AppStrings.get('progress_asymmetry_index')),
           const SizedBox(height: 4),
           Text(
-            'Menor es mejor. Límite aceptable ≤ 10%.',
+            AppStrings.get('progress_symmetry_hint'),
             style: TextStyle(
                 fontSize: 11, color: context.col.textDisabled),
           ),
@@ -454,7 +454,7 @@ class _ProgressContent extends StatelessWidget {
           _BoxReturnAnalysis(entries: entries),
 
         // ── History table ──
-        const _SectionLabel(label: 'HISTORIAL RECIENTE'),
+        _SectionLabel(label: AppStrings.get('progress_recent_history')),
         const SizedBox(height: 8),
         _HistoryTable(entries: entries, testType: testType),
         const SizedBox(height: 32),
@@ -485,28 +485,28 @@ class _KpiRow extends StatelessWidget {
       children: [
         Expanded(
             child: _KpiCard(
-                label: 'Mejor (PR)',
+                label: AppStrings.get('progress_best_pr'),
                 value: _fmt(pr),
                 unit: unit,
                 color: const Color(0xFFFFD700))),
         const SizedBox(width: 8),
         Expanded(
             child: _KpiCard(
-                label: 'Último',
+                label: AppStrings.get('progress_last'),
                 value: _fmt(last),
                 unit: unit,
                 color: AppColors.primary)),
         const SizedBox(width: 8),
         Expanded(
             child: _KpiCard(
-                label: 'Prom. 5',
+                label: AppStrings.get('progress_avg5'),
                 value: _fmt(avg5),
                 unit: unit,
                 color: AppColors.secondary)),
         const SizedBox(width: 8),
         Expanded(
             child: _KpiCard(
-                label: 'Tendencia',
+                label: AppStrings.get('progress_trend'),
                 value: '${trend >= 0 ? '+' : ''}${_fmt(trend)}',
                 unit: unit,
                 color: trend >= 0 ? AppColors.success : AppColors.danger,
@@ -870,7 +870,7 @@ class _SymmetryChart extends StatelessWidget {
                       const EdgeInsets.only(right: 4, bottom: 2),
                   style: const TextStyle(
                       fontSize: 9, color: AppColors.danger),
-                  labelResolver: (_) => 'Lím. 10%',
+                  labelResolver: (_) => AppStrings.get('progress_limit_10'),
                 ),
               ),
             ],
@@ -925,7 +925,7 @@ class _SymmetryChart extends StatelessWidget {
                 final e = entries[idx];
                 return LineTooltipItem(
                   '${DateFormat('d MMM', 'es').format(e.date)}\n'
-                  '${s.y.toStringAsFixed(1)}% asimetría',
+                  '${s.y.toStringAsFixed(1)}% ${AppStrings.get('asymmetry_word')}',
                   TextStyle(
                       color: col.textPrimary,
                       fontSize: 11,
@@ -1229,7 +1229,7 @@ class _EmptyProgress extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Completa al menos un test para ver el progreso aquí.',
+            AppStrings.get('progress_empty_hint'),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: col.textDisabled),
           ),

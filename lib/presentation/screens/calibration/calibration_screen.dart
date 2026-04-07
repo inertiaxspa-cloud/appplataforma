@@ -733,13 +733,13 @@ class _LiveReadingCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                _CellBadge(label: 'B—Izq', techLabel: 'B_ML', value: rawBML, warn: rawBML < 0, engineerMode: engineerMode),
+                _CellBadge(label: AppStrings.get('cal_cell_b_left'), techLabel: 'B_ML', value: rawBML, warn: rawBML < 0, engineerMode: engineerMode),
                 const SizedBox(width: 8),
-                _CellBadge(label: 'B—Der', techLabel: 'B_MR', value: rawBMR, warn: rawBMR < 0, engineerMode: engineerMode),
+                _CellBadge(label: AppStrings.get('cal_cell_b_right'), techLabel: 'B_MR', value: rawBMR, warn: rawBMR < 0, engineerMode: engineerMode),
                 const SizedBox(width: 8),
-                _CellBadge(label: 'B—Izq', techLabel: 'B_SL', value: rawBSL, warn: rawBSL < 0, engineerMode: engineerMode),
+                _CellBadge(label: AppStrings.get('cal_cell_b_left'), techLabel: 'B_SL', value: rawBSL, warn: rawBSL < 0, engineerMode: engineerMode),
                 const SizedBox(width: 8),
-                _CellBadge(label: 'B—Der', techLabel: 'B_SR', value: rawBSR, warn: rawBSR < 0, engineerMode: engineerMode),
+                _CellBadge(label: AppStrings.get('cal_cell_b_right'), techLabel: 'B_SR', value: rawBSR, warn: rawBSR < 0, engineerMode: engineerMode),
               ],
             ),
           ],

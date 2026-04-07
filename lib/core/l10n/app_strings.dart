@@ -659,10 +659,34 @@ class AppStrings {
       'diag_baud': '¿Está configurado el baud rate correcto?',
       // Athlete validation
       'name_required_error': 'El nombre del atleta es obligatorio',
-      // Progress screen table headers
+      // Progress screen
       'col_date': 'Fecha',
       'col_result': 'Resultado',
       'col_asymmetry': 'Asimetría',
+      'reload': 'Recargar',
+      'progress_evolution': 'EVOLUCIÓN',
+      'progress_asymmetry_index': 'ÍNDICE DE ASIMETRÍA (%)',
+      'progress_symmetry_hint': 'Menor es mejor. Límite aceptable ≤ 10%.',
+      'progress_recent_history': 'HISTORIAL RECIENTE',
+      'progress_best_pr': 'Mejor (PR)',
+      'progress_last': 'Último',
+      'progress_avg5': 'Prom. 5',
+      'progress_trend': 'Tendencia',
+      'progress_limit_10': 'Lím. 10%',
+      'asymmetry_word': 'asimetría',
+      'progress_empty_hint': 'Completa al menos un test para ver el progreso aquí.',
+      'metric_height_cm': 'Altura (cm)',
+      'metric_rsi_mod': 'RSI Mod',
+      'metric_mean_rsi': 'RSI Medio',
+      'metric_peak_force_kn': 'F. Pico (kN)',
+      'metric_path_mm': 'Tray. (mm)',
+      // Tutorial
+      'tutorial_previous': 'Anterior',
+      'tutorial_next': 'Siguiente',
+      'tutorial_ready': '¡Listo para el test!',
+      // Gauge labels
+      'gauge_left': 'IZQ',
+      'gauge_right': 'DER',
       // Live monitor
       'signal_raw': 'SEÑAL RAW',
       'signal_smoothed': 'SUAVIZADO',
@@ -1312,10 +1336,34 @@ class AppStrings {
       'diag_baud': 'Is the baud rate configured correctly?',
       // Athlete validation
       'name_required_error': 'Athlete name is required',
-      // Progress screen table headers
+      // Progress screen
       'col_date': 'Date',
       'col_result': 'Result',
       'col_asymmetry': 'Asymmetry',
+      'reload': 'Reload',
+      'progress_evolution': 'EVOLUTION',
+      'progress_asymmetry_index': 'ASYMMETRY INDEX (%)',
+      'progress_symmetry_hint': 'Lower is better. Acceptable limit ≤ 10%.',
+      'progress_recent_history': 'RECENT HISTORY',
+      'progress_best_pr': 'Best (PR)',
+      'progress_last': 'Last',
+      'progress_avg5': 'Avg. 5',
+      'progress_trend': 'Trend',
+      'progress_limit_10': 'Lim. 10%',
+      'asymmetry_word': 'asymmetry',
+      'progress_empty_hint': 'Complete at least one test to see progress here.',
+      'metric_height_cm': 'Height (cm)',
+      'metric_rsi_mod': 'RSI Mod',
+      'metric_mean_rsi': 'Mean RSI',
+      'metric_peak_force_kn': 'Peak F. (kN)',
+      'metric_path_mm': 'Path (mm)',
+      // Tutorial
+      'tutorial_previous': 'Previous',
+      'tutorial_next': 'Next',
+      'tutorial_ready': 'Ready for the test!',
+      // Gauge labels
+      'gauge_left': 'LEFT',
+      'gauge_right': 'RIGHT',
       // Live monitor
       'signal_raw': 'RAW SIGNAL',
       'signal_smoothed': 'SMOOTHED',

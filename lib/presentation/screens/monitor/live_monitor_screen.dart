@@ -222,8 +222,8 @@ class _LandscapeLayout extends StatelessWidget {
                           // Symmetry gauge
                           SymmetryGauge(
                             leftPercent: live.leftPct,
-                            leftLabel: live.platformCount >= 2 ? 'IZQ' : 'IZQ',
-                            rightLabel: live.platformCount >= 2 ? 'DER' : 'DER',
+                            leftLabel: AppStrings.get('gauge_left'),
+                            rightLabel: AppStrings.get('gauge_right'),
                             isEstimated: live.platformCount == 1,
                           ),
                           // RAW chip
@@ -348,8 +348,8 @@ class _MonitorBody extends StatelessWidget {
               // Symmetry gauge
               SymmetryGauge(
                 leftPercent: live.leftPct,
-                leftLabel: live.platformCount >= 2 ? 'IZQ' : 'IZQ',
-                rightLabel: live.platformCount >= 2 ? 'DER' : 'DER',
+                leftLabel: AppStrings.get('gauge_left'),
+                rightLabel: AppStrings.get('gauge_right'),
                 isEstimated: live.platformCount == 1,
               ),
             ],
