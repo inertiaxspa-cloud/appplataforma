@@ -78,6 +78,28 @@ class CalibrationEngine {
     return {'A_ML': gain, 'A_MR': gain, 'A_SL': gain, 'A_SR': gain};
   }
 
+  /// Compute per-cell gains for Platform B from calibration readings.
+  /// Same algorithm as [computeCellGains] but uses B-cell raw values.
+  static Map<String, double> computeCellGainsB(
+      List<CalibrationPoint> points) {
+    if (points.isEmpty) return {};
+
+    double gainSum = 0;
+    int count = 0;
+
+    for (final r in points) {
+      if (r.weightKg <= 0) continue;
+      final totalCorrected = r.rawBML + r.rawBMR + r.rawBSL + r.rawBSR;
+      if (totalCorrected < 1.0) continue;
+      gainSum += (r.weightKg * 9.81) / totalCorrected;
+      count++;
+    }
+
+    final gain = count > 0 ? gainSum / count : 1.0;
+    if (gain <= 0 || gain.isInfinite || gain.isNaN) return {};
+    return {'B_ML': gain, 'B_MR': gain, 'B_SL': gain, 'B_SR': gain};
+  }
+
   /// Build segmented linear calibration from sorted calibration points.
   static List<LinearSegment> buildSegments(List<CalibrationPoint> points) {
     if (points.length < 2) return [];

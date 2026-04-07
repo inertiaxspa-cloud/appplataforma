@@ -33,6 +33,11 @@ class CalibrationPoint {
   final double rawAMR;  // -adcMasterR  Platform A
   final double rawASL;  // -adcSlaveL   Platform A
   final double rawASR;  // -adcSlaveR   Platform A
+  // Per-cell raw ADC for Platform B (0 if not captured / single-platform)
+  final double rawBML;  // -adcMasterL  Platform B
+  final double rawBMR;  // -adcMasterR  Platform B
+  final double rawBSL;  // -adcSlaveL   Platform B
+  final double rawBSR;  // -adcSlaveR   Platform B
 
   const CalibrationPoint({
     required this.weightKg,
@@ -41,6 +46,10 @@ class CalibrationPoint {
     this.rawAMR = 0,
     this.rawASL = 0,
     this.rawASR = 0,
+    this.rawBML = 0,
+    this.rawBMR = 0,
+    this.rawBSL = 0,
+    this.rawBSR = 0,
   });
   Map<String, dynamic> toMap() => {
     'weight_kg': weightKg,
@@ -49,6 +58,10 @@ class CalibrationPoint {
     'raw_amr': rawAMR,
     'raw_asl': rawASL,
     'raw_asr': rawASR,
+    'raw_bml': rawBML,
+    'raw_bmr': rawBMR,
+    'raw_bsl': rawBSL,
+    'raw_bsr': rawBSR,
   };
   factory CalibrationPoint.fromMap(Map<String, dynamic> m) => CalibrationPoint(
     weightKg: (m['weight_kg'] as num).toDouble(),
@@ -57,6 +70,10 @@ class CalibrationPoint {
     rawAMR: (m['raw_amr'] as num? ?? 0).toDouble(),
     rawASL: (m['raw_asl'] as num? ?? 0).toDouble(),
     rawASR: (m['raw_asr'] as num? ?? 0).toDouble(),
+    rawBML: (m['raw_bml'] as num? ?? 0).toDouble(),
+    rawBMR: (m['raw_bmr'] as num? ?? 0).toDouble(),
+    rawBSL: (m['raw_bsl'] as num? ?? 0).toDouble(),
+    rawBSR: (m['raw_bsr'] as num? ?? 0).toDouble(),
   );
 }
 

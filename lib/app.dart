@@ -24,6 +24,7 @@ import 'presentation/screens/results/result_detail_screen.dart';
 import 'presentation/screens/comparison/comparison_screen.dart';
 import 'presentation/screens/onboarding/welcome_screen.dart';
 import 'presentation/screens/onboarding/test_info_screen.dart';
+import 'presentation/screens/calibration/tap_test_screen.dart';
 import 'presentation/screens/error/error_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'domain/entities/test_result.dart';
@@ -140,6 +141,13 @@ GoRouter _buildRouter(String initialLocation) => GoRouter(
     ),
     GoRoute(path: '/connection',      builder: (_, __) => const ConnectionScreen()),
     GoRoute(path: '/calibration',     builder: (_, __) => const CalibrationScreen()),
+    GoRoute(
+      path: '/tap-test',
+      builder: (_, state) {
+        final platform = state.extra as String? ?? 'A';
+        return TapTestScreen(platform: platform);
+      },
+    ),
     GoRoute(path: '/tests/cmj',       builder: (_, __) => const CmjScreen()),
     GoRoute(path: '/tests/sj',        builder: (_, __) => const SjScreen()),
     GoRoute(path: '/tests/dj',        builder: (_, __) => const DjScreen()),

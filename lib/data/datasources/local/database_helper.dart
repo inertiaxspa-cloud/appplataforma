@@ -11,7 +11,7 @@ import 'database_ffi_init.dart'
 /// SQLite database helper — works on desktop (ffi) and mobile (sqflite).
 class DatabaseHelper {
   static const _dbName    = 'inertiax.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
 
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
@@ -209,6 +209,23 @@ class DatabaseHelper {
           if (!msg.contains('duplicate column') && !msg.contains('already exists')) {
             debugPrint('[DB] Migration v3 failed: $e');
             rethrow;
+          }
+        }
+      }
+      if (v == 4) {
+        // Add Platform B raw ADC columns to calibration_points (idempotent)
+        for (final sql in [
+          'ALTER TABLE calibration_points ADD COLUMN raw_bml REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_bmr REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_bsl REAL NOT NULL DEFAULT 0',
+          'ALTER TABLE calibration_points ADD COLUMN raw_bsr REAL NOT NULL DEFAULT 0',
+        ]) {
+          try { await db.execute(sql); } catch (e) {
+            final msg = e.toString().toLowerCase();
+            if (!msg.contains('duplicate column') && !msg.contains('already exists')) {
+              debugPrint('[DB] Migration v4 failed: $e');
+              rethrow;
+            }
           }
         }
       }

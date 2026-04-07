@@ -290,6 +290,35 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
+          // ── Orientación de plataforma ──────────────────────────────────
+          _SectionHeader(AppStrings.get('platform_orientation')),
+          _SettingCard(children: [
+            _PickerTile(
+              label:    AppStrings.get('platform_orientation'),
+              options:  const ['singleHorizontal', 'dualVertical'],
+              labels:   [AppStrings.get('single_horizontal'), AppStrings.get('dual_vertical')],
+              selected: settings.platformOrientation.name,
+              subtitle: settings.platformOrientation == PlatformOrientation.singleHorizontal
+                  ? AppStrings.get('orientation_desc_h')
+                  : AppStrings.get('orientation_desc_v'),
+              onChanged: (v) => upd((s) => s.copyWith(
+                  platformOrientation: PlatformOrientation.values.byName(v))),
+            ),
+            Divider(color: context.col.border, height: 1),
+            ListTile(
+              dense: true,
+              leading: Icon(Icons.touch_app, size: 20, color: context.col.textSecondary),
+              title: Text(AppStrings.get('identify_cells'),
+                  style: TextStyle(fontSize: 13, color: context.col.textPrimary)),
+              subtitle: Text(AppStrings.get('identify_cells_desc'),
+                  style: TextStyle(fontSize: 11, color: context.col.textSecondary)),
+              trailing: Icon(Icons.chevron_right, color: context.col.textDisabled),
+              onTap: () => context.push('/tap-test', extra: 'A'),
+            ),
+          ]),
+
+          const SizedBox(height: 16),
+
           // ── Unidades ────────────────────────────────────────────────────
           _SectionHeader(AppStrings.get('weight_unit')),
           _SettingCard(children: [
