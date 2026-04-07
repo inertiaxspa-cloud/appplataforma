@@ -659,6 +659,15 @@ class AppStrings {
       'diag_baud': '¿Está configurado el baud rate correcto?',
       // Athlete validation
       'name_required_error': 'El nombre del atleta es obligatorio',
+      // Progress screen table headers
+      'col_date': 'Fecha',
+      'col_result': 'Resultado',
+      'col_asymmetry': 'Asimetría',
+      // Live monitor
+      'signal_raw': 'SEÑAL RAW',
+      'signal_smoothed': 'SUAVIZADO',
+      'platform_not_connected': 'Plataforma no conectada',
+      'connect_receiver_usb': 'Conecta el RECEPTOR por USB y presiona Buscar',
     },
     'en': {
       // Navigation
@@ -1303,6 +1312,15 @@ class AppStrings {
       'diag_baud': 'Is the baud rate configured correctly?',
       // Athlete validation
       'name_required_error': 'Athlete name is required',
+      // Progress screen table headers
+      'col_date': 'Date',
+      'col_result': 'Result',
+      'col_asymmetry': 'Asymmetry',
+      // Live monitor
+      'signal_raw': 'RAW SIGNAL',
+      'signal_smoothed': 'SMOOTHED',
+      'platform_not_connected': 'Platform not connected',
+      'connect_receiver_usb': 'Connect the RECEIVER via USB and press Search',
     },
   };
 

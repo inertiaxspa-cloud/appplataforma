@@ -245,7 +245,7 @@ class _TapTestScreenState extends ConsumerState<TapTestScreen> {
     // Validate uniqueness
     if (map.keys.toSet().length != 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Each channel must be assigned to a unique corner')),
+        SnackBar(content: Text(AppStrings.get('select_channel'))),
       );
       return;
     }
@@ -511,7 +511,7 @@ class _PlatformDiagram extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: Text('PLATFORM ${currentCorner != null ? "" : ""}',
+                child: Text(AppStrings.get('platform_a'),
                     style: TextStyle(fontSize: 10, color: col.textDisabled)),
               ),
             ),
@@ -526,7 +526,7 @@ class _PlatformDiagram extends StatelessWidget {
             top: 4,
             left: 0, right: 0,
             child: Center(
-              child: Text('FRENTE ↑',
+              child: Text('${AppStrings.get('front_left').split('-').first} ↑',
                   style: TextStyle(fontSize: 9, color: col.textDisabled,
                       fontWeight: FontWeight.w600)),
             ),

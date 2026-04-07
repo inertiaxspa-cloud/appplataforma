@@ -383,7 +383,7 @@ class _RawDataPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SEÑAL RAW',
+          Text(AppStrings.get('signal_raw'),
               style: GoogleFonts.robotoMono(
                   fontSize: 10,
                   color: AppColors.warning,
@@ -394,7 +394,7 @@ class _RawDataPanel extends StatelessWidget {
             children: [
               _RawCell('RAW', '${raw.toStringAsFixed(1)} N', AppColors.forceTotal),
               const SizedBox(width: 16),
-              _RawCell('SUAVIZADO', '${smoothed.toStringAsFixed(1)} N',
+              _RawCell(AppStrings.get('signal_smoothed'), '${smoothed.toStringAsFixed(1)} N',
                   AppColors.primary),
               const SizedBox(width: 16),
               _RawCell(
@@ -453,14 +453,14 @@ class _NotConnected extends StatelessWidget {
         children: [
           Icon(Icons.usb_off, size: 64, color: context.col.textDisabled),
           const SizedBox(height: 16),
-          Text('Plataforma no conectada',
+          Text(AppStrings.get('platform_not_connected'),
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
                   ?.copyWith(color: context.col.textSecondary)),
           const SizedBox(height: 8),
           Text(
-              'Conecta el RECEPTOR por USB para ver la señal en tiempo real.',
+              AppStrings.get('connect_receiver_usb'),
               style:
                   TextStyle(color: context.col.textDisabled, fontSize: 13),
               textAlign: TextAlign.center),

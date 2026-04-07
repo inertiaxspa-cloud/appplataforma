@@ -715,7 +715,7 @@ class _EvolutionChartState extends State<_EvolutionChart> {
                   event is FlTapUpEvent) {
                 setState(() {
                   _touchedIndex =
-                      response!.lineBarSpots!.first.spotIndex;
+                      response?.lineBarSpots?.firstOrNull?.spotIndex ?? -1;
                 });
               }
             },
@@ -1015,7 +1015,7 @@ class _HistoryTable extends StatelessWidget {
               children: [
                 Expanded(
                     flex: 3,
-                    child: Text('Fecha',
+                    child: Text(AppStrings.get('col_date'),
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -1023,7 +1023,7 @@ class _HistoryTable extends StatelessWidget {
                             letterSpacing: 1))),
                 Expanded(
                     flex: 2,
-                    child: Text('Resultado',
+                    child: Text(AppStrings.get('col_result'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 11,
@@ -1032,7 +1032,7 @@ class _HistoryTable extends StatelessWidget {
                             letterSpacing: 1))),
                 Expanded(
                     flex: 2,
-                    child: Text('Asimetría',
+                    child: Text(AppStrings.get('col_asymmetry'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 11,

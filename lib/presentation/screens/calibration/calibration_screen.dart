@@ -268,7 +268,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
     );
     if (mounted) {
       setState(() { _saving = false; _step = 0; });
-      if (ref.read(calibrationProvider).isCalibrated) context.pop();
+      if (ref.read(calibrationProvider).isCalibrated && context.mounted) context.pop();
     }
   }
 
