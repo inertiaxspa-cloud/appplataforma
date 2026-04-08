@@ -100,7 +100,8 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
       // Send start-streaming command. The v2.3 firmware streams continuously
       // and ignores this; the legacy firmware (A;0;L;R format) requires it
       // to begin sending data.
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Wait for ESP32 firmware to boot after DTR reset + reader to be active.
+      await Future.delayed(const Duration(milliseconds: 500));
       await _ds.sendCommand('1');
       state = state.copyWith(
         isConnected: true,

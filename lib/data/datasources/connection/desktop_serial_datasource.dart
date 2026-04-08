@@ -41,16 +41,37 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   Future<void> open(ConnectionTarget target, {int baudRate = 921600}) async {
     _port = SerialPort(target.id);
 
+    if (!_port!.openReadWrite()) {
+      final err = SerialPort.lastError?.toString() ?? 'Unknown error';
+      throw Exception(
+        'Cannot open ${target.id}: $err\n'
+        'Make sure Arduino IDE, serial monitors, or other apps are closed.',
+      );
+    }
+
     final config = SerialPortConfig()
       ..baudRate = baudRate
       ..bits     = 8
       ..stopBits = 1
-      ..parity   = SerialPortParity.none;
-
-    if (!_port!.openReadWrite()) {
-      throw Exception('Cannot open ${target.id}: ${SerialPort.lastError}');
-    }
+      ..parity   = SerialPortParity.none
+      ..dtr      = SerialPortDtr.on
+      ..rts      = SerialPortRts.on;
     _port!.config = config;
+
+    // Pulse DTR to reset ESP32 — same behavior as Arduino IDE Serial Monitor.
+    // DTR is connected to EN (reset) pin via RC circuit on most ESP32 boards.
+    _port!.config = SerialPortConfig()
+      ..baudRate = baudRate
+      ..bits     = 8
+      ..stopBits = 1
+      ..parity   = SerialPortParity.none
+      ..dtr      = SerialPortDtr.off
+      ..rts      = SerialPortRts.on;
+    await Future.delayed(const Duration(milliseconds: 50));
+    _port!.config = config; // DTR back ON → ESP32 resets and starts firmware
+
+    // Wait for ESP32 bootloader to finish and firmware to start
+    await Future.delayed(const Duration(milliseconds: 300));
 
     _reader = SerialPortReader(_port!);
     _reader!.stream.listen(_onData, onError: _onError, cancelOnError: false);
@@ -96,6 +117,8 @@ class DesktopSerialDataSource implements ConnectionDataSource {
     _port = null;
     _reader = null;
     _buffer = Uint8List(0);
-    if (!_lineController.isClosed) await _lineController.close();
+    // NOTE: Do NOT close _lineController here — it needs to survive
+    // reconnection cycles. Listeners (rawSampleStreamProvider) hold
+    // references to this stream and would lose data on reconnect.
   }
 }

@@ -52,7 +52,12 @@ class AndroidUsbDataSource implements ConnectionDataSource {
       UsbPort.PARITY_NONE,
     );
 
-    _sub = _port!.inputStream?.listen(_onData, onError: _onError);
+    final input = _port!.inputStream;
+    if (input == null) {
+      throw Exception('Device ${target.id} input stream unavailable. '
+          'Check USB permissions and reconnect.');
+    }
+    _sub = input.listen(_onData, onError: _onError);
     _connected     = true;
     _connectedName  = target.displayName;
   }
@@ -88,6 +93,6 @@ class AndroidUsbDataSource implements ConnectionDataSource {
     await _port?.close();
     _port = null;
     _lineBuffer = '';
-    if (!_lineController.isClosed) await _lineController.close();
+    // Do NOT close _lineController — survives reconnection cycles.
   }
 }

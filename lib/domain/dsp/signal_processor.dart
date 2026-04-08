@@ -155,8 +155,9 @@ class SignalProcessor {
     // human on a force platform (two 100-kg athletes jumping simultaneously
     // = ~20 kN; set guard at 30 kN to leave ample headroom).
     // The filter is NOT updated, so its state stays clean.
-    const double _kMaxForceN = 30000.0;
-    if (forceTotal.isNaN || forceTotal.isInfinite || forceTotal > _kMaxForceN || forceTotal < -1000.0) {
+    // Dynamic threshold: 20 kN for single platform, 40 kN for dual
+    final maxForceN = _platformCount >= 2 ? 40000.0 : 20000.0;
+    if (forceTotal.isNaN || forceTotal.isInfinite || forceTotal > maxForceN || forceTotal < -1000.0) {
       return null;
     }
 

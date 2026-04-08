@@ -1017,6 +1017,7 @@ class TestStateNotifier extends StateNotifier<TestState> {
   void dispose() {
     _postLandingTimer?.cancel();
     _boxReturnTimer?.cancel();
+    _freeTestTimer?.cancel();
     _rawSub?.close();
     super.dispose();
   }

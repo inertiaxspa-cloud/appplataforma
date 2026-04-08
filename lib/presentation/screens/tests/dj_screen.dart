@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,7 +55,7 @@ class _DjScreenState extends ConsumerState<DjScreen> {
             }
           });
         }
-      } catch (_) {}
+      } catch (e) { debugPrint('[DJ] Box heights parse error: $e'); }
     }
   }
 
