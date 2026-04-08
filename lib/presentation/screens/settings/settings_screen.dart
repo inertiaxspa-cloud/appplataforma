@@ -318,6 +318,7 @@ class SettingsScreen extends ConsumerWidget {
             if (settings.platformOrientation == PlatformOrientation.dualVertical) ...[
               Divider(color: context.col.border, height: 1),
               ListTile(
+                dense: true,
                 leading: Icon(Icons.touch_app, color: AppColors.secondary, size: 20),
                 title: Text(AppStrings.get('identify_cells_b'),
                     style: TextStyle(fontSize: 13, color: context.col.textPrimary)),

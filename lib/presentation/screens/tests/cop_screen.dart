@@ -270,8 +270,8 @@ class _CopScreenState extends ConsumerState<CopScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: SymmetryGauge(
                 leftPercent: live.leftPct,
-                leftLabel:   live.platformCount >= 2 ? 'IZQ' : 'IZQ',
-                rightLabel:  live.platformCount >= 2 ? 'DER' : 'DER',
+                leftLabel:   AppStrings.get('gauge_left'),
+                rightLabel:  AppStrings.get('gauge_right'),
                 isEstimated: live.platformCount == 1,
               ),
             ),

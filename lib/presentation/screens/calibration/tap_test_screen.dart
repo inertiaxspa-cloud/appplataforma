@@ -303,6 +303,7 @@ class _TapTestScreenState extends ConsumerState<TapTestScreen> {
                 ? null : _corners[_currentCornerIdx],
             results: _results,
             cornerName: _cornerName,
+            platform: widget.platform,
           )),
 
           const SizedBox(height: 16),
@@ -423,19 +424,21 @@ class _TapTestScreenState extends ConsumerState<TapTestScreen> {
 
 // ── Platform Diagram ─────────────────────────────────────────────────────────
 
-class _PlatformDiagram extends StatelessWidget {
+class _PlatformDiagram extends ConsumerWidget {
   final CornerPosition? currentCorner;
   final Map<String, CornerPosition> results;
   final String Function(CornerPosition) cornerName;
+  final String platform; // 'A' or 'B'
 
   const _PlatformDiagram({
     this.currentCorner,
     required this.results,
     required this.cornerName,
+    this.platform = 'A',
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final col = context.col;
     final assignedCorners = results.values.toSet();
 
@@ -492,6 +495,35 @@ class _PlatformDiagram extends StatelessWidget {
       );
     }
 
+    final orientation = ref.watch(settingsProvider).platformOrientation;
+    final isVertical = orientation == PlatformOrientation.dualVertical;
+    final isDual = isVertical;
+
+    // Platform dimensions adapt to orientation
+    final platW = isVertical ? 120.0 : 200.0;
+    final platH = isVertical ? 180.0 : 140.0;
+    final platLabel = platform == 'A' ? AppStrings.get('platform_a') : 'Platform B';
+
+    Widget platformBox({required bool active, required String label}) {
+      return Container(
+        width: platW,
+        height: platH,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: active ? col.textDisabled : col.border,
+            width: active ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          color: active ? null : col.surface.withOpacity(0.3),
+        ),
+        child: Center(
+          child: Text(label,
+              style: TextStyle(fontSize: 10,
+                  color: active ? col.textDisabled : col.border)),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -499,38 +531,71 @@ class _PlatformDiagram extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: col.border),
       ),
-      child: Stack(
+      child: Column(
         children: [
-          // Platform outline
-          Center(
-            child: Container(
-              width: 200,
-              height: 140,
-              decoration: BoxDecoration(
-                border: Border.all(color: col.textDisabled, width: 2),
-                borderRadius: BorderRadius.circular(8),
+          // Dual mode: show both platforms side by side
+          if (isDual)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Platform A
+                  if (platform == 'B')
+                    platformBox(active: false, label: AppStrings.get('platform_a')),
+                  if (platform == 'B') const SizedBox(width: 16),
+                  // Active platform with corners
+                  SizedBox(
+                    width: platW + 40,
+                    height: platH + 40,
+                    child: Stack(
+                      children: [
+                        Center(child: platformBox(active: true, label: platLabel)),
+                        Positioned(top: 0, left: 0, child: cornerWidget(CornerPosition.frontLeft, Alignment.topLeft)),
+                        Positioned(top: 0, right: 0, child: cornerWidget(CornerPosition.frontRight, Alignment.topRight)),
+                        Positioned(bottom: 0, left: 0, child: cornerWidget(CornerPosition.rearLeft, Alignment.bottomLeft)),
+                        Positioned(bottom: 0, right: 0, child: cornerWidget(CornerPosition.rearRight, Alignment.bottomRight)),
+                        Positioned(
+                          top: 4, left: 0, right: 0,
+                          child: Center(
+                            child: Text('${AppStrings.get('front_left').split('-').first} ↑',
+                                style: TextStyle(fontSize: 9, color: col.textDisabled,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (platform == 'A') const SizedBox(width: 16),
+                  // Platform B
+                  if (platform == 'A')
+                    platformBox(active: false, label: 'Platform B'),
+                ],
               ),
-              child: Center(
-                child: Text(AppStrings.get('platform_a'),
-                    style: TextStyle(fontSize: 10, color: col.textDisabled)),
+            )
+          else
+            // Single platform: horizontal layout
+            SizedBox(
+              width: platW + 40,
+              height: platH + 40,
+              child: Stack(
+                children: [
+                  Center(child: platformBox(active: true, label: platLabel)),
+                  Positioned(top: 0, left: 0, child: cornerWidget(CornerPosition.frontLeft, Alignment.topLeft)),
+                  Positioned(top: 0, right: 0, child: cornerWidget(CornerPosition.frontRight, Alignment.topRight)),
+                  Positioned(bottom: 0, left: 0, child: cornerWidget(CornerPosition.rearLeft, Alignment.bottomLeft)),
+                  Positioned(bottom: 0, right: 0, child: cornerWidget(CornerPosition.rearRight, Alignment.bottomRight)),
+                  Positioned(
+                    top: 4, left: 0, right: 0,
+                    child: Center(
+                      child: Text('${AppStrings.get('front_left').split('-').first} ↑',
+                          style: TextStyle(fontSize: 9, color: col.textDisabled,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          // 4 corners
-          Positioned(top: 0, left: 0, child: cornerWidget(CornerPosition.frontLeft, Alignment.topLeft)),
-          Positioned(top: 0, right: 0, child: cornerWidget(CornerPosition.frontRight, Alignment.topRight)),
-          Positioned(bottom: 0, left: 0, child: cornerWidget(CornerPosition.rearLeft, Alignment.bottomLeft)),
-          Positioned(bottom: 0, right: 0, child: cornerWidget(CornerPosition.rearRight, Alignment.bottomRight)),
-          // Subject direction arrow
-          Positioned(
-            top: 4,
-            left: 0, right: 0,
-            child: Center(
-              child: Text('${AppStrings.get('front_left').split('-').first} ↑',
-                  style: TextStyle(fontSize: 9, color: col.textDisabled,
-                      fontWeight: FontWeight.w600)),
-            ),
-          ),
         ],
       ),
     );

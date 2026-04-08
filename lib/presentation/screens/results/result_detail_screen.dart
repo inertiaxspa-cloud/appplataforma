@@ -579,8 +579,8 @@ class _ImtpResultView extends StatelessWidget {
               border:       Border.all(color: context.col.border)),
           child: SymmetryGauge(
             leftPercent:  result.symmetry.leftPercent,
-            leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ'    : 'IZQ',
-            rightLabel:  result.symmetry.isTwoPlatform ? 'DER'    : 'DER',
+            leftLabel:   AppStrings.get('gauge_left'),
+            rightLabel:  AppStrings.get('gauge_right'),
             isEstimated: !result.symmetry.isTwoPlatform,
           ),
         ),
@@ -950,8 +950,8 @@ class _FreeTestResultView extends StatelessWidget {
               border:       Border.all(color: context.col.border)),
           child: SymmetryGauge(
             leftPercent:  result.symmetry.leftPercent,
-            leftLabel:   result.symmetry.isTwoPlatform ? 'IZQ' : 'IZQ',
-            rightLabel:  result.symmetry.isTwoPlatform ? 'DER' : 'DER',
+            leftLabel:   AppStrings.get('gauge_left'),
+            rightLabel:  AppStrings.get('gauge_right'),
             isEstimated: !result.symmetry.isTwoPlatform,
           ),
         ),
