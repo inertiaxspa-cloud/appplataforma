@@ -71,7 +71,22 @@ class _FreeTestScreenState extends ConsumerState<FreeTestScreen> {
         title: Text(AppStrings.get('test_free'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
+          onPressed: () async {
+            final isActive = ref.read(testStateProvider).isActive;
+            if (isActive) {
+              final confirm = await showDialog<bool>(context: context,
+                builder: (_) => AlertDialog(
+                  title: Text(AppStrings.get('cancel_test')),
+                  content: Text(AppStrings.get('cancel_test_confirm')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppStrings.get('back'))),
+                    TextButton(onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                        child: Text(AppStrings.get('cancel_test'))),
+                  ],
+                ));
+              if (confirm != true) return;
+            }
             _cancel();
             if (context.mounted) context.pop();
           },

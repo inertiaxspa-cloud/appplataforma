@@ -105,7 +105,21 @@ class _ImtpScreenState extends ConsumerState<ImtpScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
+          onPressed: () async {
+            if (test.isActive) {
+              final confirm = await showDialog<bool>(context: context,
+                builder: (_) => AlertDialog(
+                  title: Text(AppStrings.get('cancel_test')),
+                  content: Text(AppStrings.get('cancel_test_confirm')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppStrings.get('back'))),
+                    TextButton(onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                        child: Text(AppStrings.get('cancel_test'))),
+                  ],
+                ));
+              if (confirm != true) return;
+            }
             _cancel();
             if (context.mounted) context.pop();
           },

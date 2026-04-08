@@ -119,6 +119,7 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
   /// Refresh subscription status from Supabase.
   Future<void> refreshStatus() async {
     try {
+      if (!SupabaseService.isConfigured) return;
       final client = SupabaseService.instance.client;
       final user = client.auth.currentUser;
       if (user == null) return;

@@ -32,7 +32,10 @@ class DatabaseHelper {
       dbPath,
       version: _dbVersion,
       // C4 fix: enable FK enforcement so ON DELETE CASCADE actually works.
-      onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
+      onConfigure: (db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+        await db.execute('PRAGMA journal_mode = WAL');
+      },
       onCreate: _createTables,
       onUpgrade: _migrate,
     );
@@ -177,6 +180,7 @@ class DatabaseHelper {
 
     await db.execute('CREATE INDEX idx_sessions_athlete ON test_sessions(athlete_id)');
     await db.execute('CREATE INDEX idx_sessions_type ON test_sessions(test_type)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_sessions_sync ON test_sessions(sync_status)');
   }
 
   Future<void> _migrate(Database db, int oldVersion, int newVersion) async {

@@ -119,7 +119,7 @@ class BleConnectionDataSource implements ConnectionDataSource {
     _notifySub = null;
     try {
       await _device?.disconnect();
-    } catch (_) {}
+    } catch (e) { assert(() { print('[BLE] disconnect error: $e'); return true; }()); }
     _device  = null;
     _buffer.clear();
     if (!_lineController.isClosed) await _lineController.close();

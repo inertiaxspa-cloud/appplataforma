@@ -211,6 +211,11 @@ class TestStateNotifier extends StateNotifier<TestState> {
 
     if (state.status == TestStatus.settling ||
         state.status == TestStatus.running) {
+      // Safety cap: 5 min @ 1000 Hz = 300,000 samples → auto-finish free test
+      if (state.testType == TestType.freeTest && _forceData.length >= 300000) {
+        finishFreeTest();
+        return;
+      }
       _forceData.add(processed.smoothedTotal);
       _timeData.add(processed.timestampS);
       _forceAData.add(processed.forcePlatformA);

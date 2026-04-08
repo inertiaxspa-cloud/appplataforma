@@ -28,6 +28,8 @@ import 'presentation/screens/onboarding/welcome_screen.dart';
 import 'presentation/screens/onboarding/test_info_screen.dart';
 import 'presentation/screens/calibration/tap_test_screen.dart';
 import 'presentation/screens/error/error_screen.dart';
+import 'presentation/providers/test_state_provider.dart';
+import 'presentation/providers/subscription_provider.dart';
 import 'presentation/theme/app_theme.dart';
 import 'domain/entities/test_result.dart';
 
@@ -212,7 +214,8 @@ class InertiaXApp extends ConsumerStatefulWidget {
   ConsumerState<InertiaXApp> createState() => _InertiaXAppState();
 }
 
-class _InertiaXAppState extends ConsumerState<InertiaXApp> {
+class _InertiaXAppState extends ConsumerState<InertiaXApp>
+    with WidgetsBindingObserver {
   // Router created ONCE in initState — never recreated on theme/language rebuild.
   late final GoRouter _router;
 
@@ -220,13 +223,35 @@ class _InertiaXAppState extends ConsumerState<InertiaXApp> {
   void initState() {
     super.initState();
     _router = _buildRouter(widget.initialRoute);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Cancel any active test to prevent data corruption while backgrounded
+      ref.read(testStateProvider.notifier).stopTest();
+    }
+    if (state == AppLifecycleState.resumed) {
+      // Refresh subscription status when user returns to app (e.g. after payment)
+      ref.read(subscriptionProvider.notifier).refreshStatus();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final language = ref.watch(languageProvider);
-    return MaterialApp.router(
+    // Global keyboard dismiss on tap outside text fields
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: MaterialApp.router(
       title: 'InertiaX Force',
       debugShowCheckedModeBanner: false,
       theme: settings.themeMode == 'outdoor' ? AppTheme.outdoor : AppTheme.light,
@@ -243,6 +268,6 @@ class _InertiaXAppState extends ConsumerState<InertiaXApp> {
         Locale('en'),
       ],
       locale: Locale(language),
-    );
+    ));  // closes GestureDetector
   }
 }

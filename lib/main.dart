@@ -62,13 +62,16 @@ void main() async {
     );
   };
 
-  await initializeDateFormatting('es', null);
-  await initializeDateFormatting('en', null);
-  try {
-    await SupabaseService.initialize();
-  } catch (e) {
-    debugPrint('[Init] Supabase init failed (offline?): $e');
-  }
+  // Parallelise startup: locale formatting + Supabase init run concurrently
+  await Future.wait([
+    Future.wait([
+      initializeDateFormatting('es', null),
+      initializeDateFormatting('en', null),
+    ]),
+    SupabaseService.initialize().catchError((e) {
+      debugPrint('[Init] Supabase init failed (offline?): $e');
+    }),
+  ]);
 
   // ── Restore saved language and prime AppStrings ───────────────────────────
   final savedLang = await initLanguage();

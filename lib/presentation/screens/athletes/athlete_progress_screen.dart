@@ -101,10 +101,11 @@ double? _extractMainMetric(TestResult r) {
 
 double? _extractSymmetry(TestResult r) {
   return switch (r) {
-    DropJumpResult dr => dr.symmetry.asymmetryIndexPct,
-    JumpResult jr     => jr.symmetry.asymmetryIndexPct,
-    ImtpResult i      => i.symmetry.asymmetryIndexPct,
-    _                 => null,
+    DropJumpResult dr  => dr.symmetry.asymmetryIndexPct,
+    JumpResult jr      => jr.symmetry.asymmetryIndexPct,
+    ImtpResult i       => i.symmetry.asymmetryIndexPct,
+    FreeTestResult f   => f.symmetry.asymmetryIndexPct,
+    _                  => null,
   };
 }
 

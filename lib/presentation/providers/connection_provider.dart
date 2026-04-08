@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart'
-    show kIsWeb, defaultTargetPlatform, TargetPlatform;
+    show kIsWeb, defaultTargetPlatform, TargetPlatform, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/csv_parser.dart';
 import '../../data/datasources/connection/connection_datasource.dart';
@@ -118,8 +118,8 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   // C7 fix: reset _connecting, wrap close in try-catch, clear error.
   Future<void> disconnect() async {
     _connecting = false;
-    try { await _ds.sendCommand('0'); } catch (_) {}
-    try { await _ds.close(); } catch (_) {}
+    try { await _ds.sendCommand('0'); } catch (e) { debugPrint('[Connection] sendCommand(0) error: $e'); }
+    try { await _ds.close(); } catch (e) { debugPrint('[Connection] close error: $e'); }
     state = state.copyWith(isConnected: false, connectedName: null, error: null);
   }
 }
