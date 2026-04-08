@@ -440,163 +440,209 @@ class _PlatformDiagram extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final col = context.col;
-    final assignedCorners = results.values.toSet();
-
-    Widget cornerWidget(CornerPosition pos, Alignment align) {
-      final isCurrent = pos == currentCorner;
-      final isDone = assignedCorners.contains(pos);
-      final channel = results.entries
-          .where((e) => e.value == pos)
-          .map((e) => e.key)
-          .firstOrNull;
-
-      return Align(
-        alignment: align,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 90,
-          height: 60,
-          decoration: BoxDecoration(
-            color: isDone
-                ? AppColors.successDim
-                : isCurrent
-                    ? AppColors.primary.withOpacity(0.15)
-                    : col.surface,
-            border: Border.all(
-              color: isDone
-                  ? AppColors.success
-                  : isCurrent
-                      ? AppColors.primary
-                      : col.border,
-              width: isCurrent ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                cornerName(pos).split('-').last.trim(),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: isDone ? AppColors.success : col.textSecondary,
-                ),
-              ),
-              if (isDone && channel != null)
-                Text(channel,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                        color: AppColors.success)),
-              if (isCurrent && !isDone)
-                const Icon(Icons.touch_app, size: 18, color: AppColors.primary),
-            ],
-          ),
-        ),
-      );
-    }
-
     final orientation = ref.watch(settingsProvider).platformOrientation;
-    final isVertical = orientation == PlatformOrientation.dualVertical;
-    final isDual = isVertical;
+    final isDual = orientation == PlatformOrientation.dualVertical;
 
-    // Platform dimensions adapt to orientation
-    final platW = isVertical ? 120.0 : 200.0;
-    final platH = isVertical ? 180.0 : 140.0;
-    final platLabel = platform == 'A' ? AppStrings.get('platform_a') : 'Platform B';
-
-    Widget platformBox({required bool active, required String label}) {
-      return Container(
-        width: platW,
-        height: platH,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: active ? col.textDisabled : col.border,
-            width: active ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          color: active ? null : col.surface.withOpacity(0.3),
-        ),
-        child: Center(
-          child: Text(label,
-              style: TextStyle(fontSize: 10,
-                  color: active ? col.textDisabled : col.border)),
-        ),
-      );
+    if (isDual) {
+      return _buildDualLayout(context, col);
     }
+    return _buildSingleLayout(context, col);
+  }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+  // ── Corner cell widget ────────────────────────────────────────────────────
+
+  Widget _cornerCell(CornerPosition pos, dynamic col, {double w = 80, double h = 50}) {
+    final assignedCorners = results.values.toSet();
+    final isCurrent = pos == currentCorner;
+    final isDone = assignedCorners.contains(pos);
+    final channel = results.entries
+        .where((e) => e.value == pos)
+        .map((e) => e.key)
+        .firstOrNull;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: w,
+      height: h,
       decoration: BoxDecoration(
-        color: col.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: col.border),
+        color: isDone
+            ? AppColors.successDim
+            : isCurrent
+                ? AppColors.primary.withOpacity(0.15)
+                : col.surface,
+        border: Border.all(
+          color: isDone
+              ? AppColors.success
+              : isCurrent ? AppColors.primary : col.border,
+          width: isCurrent ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Dual mode: show both platforms side by side
-          if (isDual)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Platform A
-                  if (platform == 'B')
-                    platformBox(active: false, label: AppStrings.get('platform_a')),
-                  if (platform == 'B') const SizedBox(width: 16),
-                  // Active platform with corners
-                  SizedBox(
-                    width: platW + 40,
-                    height: platH + 40,
-                    child: Stack(
-                      children: [
-                        Center(child: platformBox(active: true, label: platLabel)),
-                        Positioned(top: 0, left: 0, child: cornerWidget(CornerPosition.frontLeft, Alignment.topLeft)),
-                        Positioned(top: 0, right: 0, child: cornerWidget(CornerPosition.frontRight, Alignment.topRight)),
-                        Positioned(bottom: 0, left: 0, child: cornerWidget(CornerPosition.rearLeft, Alignment.bottomLeft)),
-                        Positioned(bottom: 0, right: 0, child: cornerWidget(CornerPosition.rearRight, Alignment.bottomRight)),
-                        Positioned(
-                          top: 4, left: 0, right: 0,
-                          child: Center(
-                            child: Text('${AppStrings.get('front_left').split('-').first} ↑',
-                                style: TextStyle(fontSize: 9, color: col.textDisabled,
-                                    fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (platform == 'A') const SizedBox(width: 16),
-                  // Platform B
-                  if (platform == 'A')
-                    platformBox(active: false, label: 'Platform B'),
-                ],
+          Text(cornerName(pos).split('-').last.trim(),
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                  color: isDone ? AppColors.success : col.textSecondary)),
+          if (isDone && channel != null)
+            Text(channel, style: const TextStyle(fontSize: 10,
+                fontWeight: FontWeight.w700, color: AppColors.success)),
+          if (isCurrent && !isDone)
+            const Icon(Icons.touch_app, size: 16, color: AppColors.primary),
+        ],
+      ),
+    );
+  }
+
+  // ── Single platform with corners overlaid ──────────────────────────────
+
+  Widget _platWithCorners({
+    required dynamic col,
+    required double platW,
+    required double platH,
+    required String label,
+    required bool showCorners,
+    double cornerW = 80,
+    double cornerH = 50,
+  }) {
+    return SizedBox(
+      width: platW + cornerW,
+      height: platH + cornerH,
+      child: Stack(
+        children: [
+          // Platform outline centered
+          Center(
+            child: Container(
+              width: platW,
+              height: platH,
+              decoration: BoxDecoration(
+                border: Border.all(color: col.textDisabled, width: 2),
+                borderRadius: BorderRadius.circular(8),
               ),
-            )
-          else
-            // Single platform: horizontal layout
-            SizedBox(
-              width: platW + 40,
-              height: platH + 40,
-              child: Stack(
-                children: [
-                  Center(child: platformBox(active: true, label: platLabel)),
-                  Positioned(top: 0, left: 0, child: cornerWidget(CornerPosition.frontLeft, Alignment.topLeft)),
-                  Positioned(top: 0, right: 0, child: cornerWidget(CornerPosition.frontRight, Alignment.topRight)),
-                  Positioned(bottom: 0, left: 0, child: cornerWidget(CornerPosition.rearLeft, Alignment.bottomLeft)),
-                  Positioned(bottom: 0, right: 0, child: cornerWidget(CornerPosition.rearRight, Alignment.bottomRight)),
-                  Positioned(
-                    top: 4, left: 0, right: 0,
-                    child: Center(
-                      child: Text('${AppStrings.get('front_left').split('-').first} ↑',
-                          style: TextStyle(fontSize: 9, color: col.textDisabled,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: Text(label, style: TextStyle(fontSize: 11,
+                    color: col.textDisabled, fontWeight: FontWeight.w500)),
               ),
             ),
+          ),
+          // Corner cells at the 4 corners
+          if (showCorners) ...[
+            Positioned(top: 0, left: 0,
+                child: _cornerCell(CornerPosition.frontLeft, col, w: cornerW, h: cornerH)),
+            Positioned(top: 0, right: 0,
+                child: _cornerCell(CornerPosition.frontRight, col, w: cornerW, h: cornerH)),
+            Positioned(bottom: 0, left: 0,
+                child: _cornerCell(CornerPosition.rearLeft, col, w: cornerW, h: cornerH)),
+            Positioned(bottom: 0, right: 0,
+                child: _cornerCell(CornerPosition.rearRight, col, w: cornerW, h: cornerH)),
+          ],
+          // Frontal arrow
+          Positioned(
+            top: 2, left: 0, right: 0,
+            child: Center(
+              child: Text(AppStrings.get('front_left').split('-').first.trim() + ' ↑',
+                  style: TextStyle(fontSize: 8, color: col.textDisabled,
+                      fontWeight: FontWeight.w700, letterSpacing: 1)),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  // ── Single platform layout (horizontal, wide) ─────────────────────────
+
+  Widget _buildSingleLayout(BuildContext context, dynamic col) {
+    return Center(
+      child: _platWithCorners(
+        col: col,
+        platW: 200,
+        platH: 120,
+        label: platform == 'A' ? 'Platform A' : 'Platform B',
+        showCorners: true,
+      ),
+    );
+  }
+
+  // ── Dual platform layout (vertical, side by side) ─────────────────────
+
+  Widget _buildDualLayout(BuildContext context, dynamic col) {
+    const platW = 100.0;
+    const platH = 160.0;
+    const cornerW = 70.0;
+    const cornerH = 42.0;
+
+    Widget inactivePlat(String label) {
+      return SizedBox(
+        width: platW + cornerW,
+        height: platH + cornerH,
+        child: Stack(
+          children: [
+            Center(
+              child: Container(
+                width: platW,
+                height: platH,
+                decoration: BoxDecoration(
+                  border: Border.all(color: col.border, width: 1),
+                  borderRadius: BorderRadius.circular(8),
+                  color: col.surface.withOpacity(0.3),
+                ),
+                child: Center(
+                  child: Text(label, style: TextStyle(fontSize: 10,
+                      color: col.border, fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ),
+            // Dimmed corner placeholders
+            Positioned(top: 0, left: 0, child: _dimCorner(col, cornerW, cornerH)),
+            Positioned(top: 0, right: 0, child: _dimCorner(col, cornerW, cornerH)),
+            Positioned(bottom: 0, left: 0, child: _dimCorner(col, cornerW, cornerH)),
+            Positioned(bottom: 0, right: 0, child: _dimCorner(col, cornerW, cornerH)),
+          ],
+        ),
+      );
+    }
+
+    final isA = platform == 'A';
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left foot platform
+          isA
+              ? _platWithCorners(col: col, platW: platW, platH: platH,
+                  label: 'Platform A', showCorners: true,
+                  cornerW: cornerW, cornerH: cornerH)
+              : inactivePlat('Platform A'),
+          const SizedBox(width: 12),
+          // Person silhouette divider
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.person, size: 28, color: col.textDisabled),
+              Text(AppStrings.get('front_left').split('-').first.trim() + ' ↑',
+                  style: TextStyle(fontSize: 8, color: col.textDisabled)),
+            ],
+          ),
+          const SizedBox(width: 12),
+          // Right foot platform
+          !isA
+              ? _platWithCorners(col: col, platW: platW, platH: platH,
+                  label: 'Platform B', showCorners: true,
+                  cornerW: cornerW, cornerH: cornerH)
+              : inactivePlat('Platform B'),
+        ],
+      ),
+    );
+  }
+
+  Widget _dimCorner(dynamic col, double w, double h) {
+    return Container(
+      width: w, height: h,
+      decoration: BoxDecoration(
+        border: Border.all(color: col.border.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(6),
       ),
     );
   }
