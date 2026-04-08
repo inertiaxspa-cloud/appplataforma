@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../domain/entities/cell_mapping.dart';
+import '../../providers/connection_provider.dart';
 import '../../providers/live_data_provider.dart';
 import '../../theme/app_theme.dart';
 import '../settings/settings_screen.dart';
@@ -269,26 +270,81 @@ class _TapTestScreenState extends ConsumerState<TapTestScreen> {
   Widget build(BuildContext context) {
     final col = context.col;
 
+    final isConnected = ref.watch(connectionProvider).isConnected;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppStrings.get('tap_test_title')),
-        actions: [
-          TextButton.icon(
-            icon: Icon(_manualMode ? Icons.touch_app : Icons.edit, size: 16),
-            label: Text(_manualMode
-                ? AppStrings.get('tap_corner')
-                : AppStrings.get('manual_assignment'),
-                style: const TextStyle(fontSize: 12)),
-            onPressed: () => setState(() {
-              _manualMode = !_manualMode;
-              _phase = _TapPhase.idle;
-              _phaseTimer?.cancel();
-              _liveSub?.close();
-            }),
+      appBar: AppBar(title: Text(AppStrings.get('tap_test_title'))),
+      body: Column(
+        children: [
+          // ── Mode selector (always visible) ─────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  icon: const Icon(Icons.touch_app, size: 16),
+                  label: Text(AppStrings.get('tap_corner'), style: const TextStyle(fontSize: 12)),
+                ),
+                ButtonSegment(
+                  value: true,
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: Text(AppStrings.get('manual_assignment'), style: const TextStyle(fontSize: 12)),
+                ),
+              ],
+              selected: {_manualMode},
+              onSelectionChanged: (v) => setState(() {
+                _manualMode = v.first;
+                _phase = _TapPhase.idle;
+                _phaseTimer?.cancel();
+                _liveSub?.close();
+              }),
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: AppColors.primary.withOpacity(0.15),
+                selectedForegroundColor: AppColors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // ── Content ────────────────────────────────────────────────────
+          Expanded(
+            child: _manualMode
+                ? _buildManualMode(col)
+                : isConnected
+                    ? _buildTapMode(col)
+                    : _buildNoConnection(col),
           ),
         ],
       ),
-      body: _manualMode ? _buildManualMode(col) : _buildTapMode(col),
+    );
+  }
+
+  Widget _buildNoConnection(dynamic col) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.usb_off, size: 48, color: col.textDisabled),
+            const SizedBox(height: 16),
+            Text(AppStrings.get('device_not_connected'),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                    color: col.textPrimary)),
+            const SizedBox(height: 8),
+            Text(AppStrings.get('tap_test_needs_connection'),
+                style: TextStyle(fontSize: 12, color: col.textSecondary),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.usb, size: 18),
+              label: Text(AppStrings.get('go_to_connection')),
+              onPressed: () => context.push('/connection'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
