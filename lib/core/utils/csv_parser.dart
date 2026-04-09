@@ -14,11 +14,36 @@ import '../../data/models/raw_sample.dart';
 class CsvParser {
   static const int _minColumns = 8;
 
+  /// ESP32 ROM bootloader output prefixes that should be silently discarded.
+  /// These lines appear on every DTR reset and pollute the parser.
+  static const List<String> _bootloaderPrefixes = [
+    'rst:',       // reset reason
+    'ets ',       // ROM boot banner
+    'load:',      // partition load
+    'entry ',     // firmware entry point
+    'SPIWP:',     // flash config
+    'clk_drv:',   // clock driver
+    'mode:',      // boot mode
+    'ho ',        // hardware options
+    'tail ',      // tail chunk
+    'chksum',     // checksum
+  ];
+
   RawSample? parse(String line) {
+    // Too short to be a real sample (smallest legacy: "A;0;1;1" = 7 chars)
+    if (line.length < 5) return null;
+    // Reject lines containing Unicode replacement char (binary garbage decoded)
+    if (line.contains('\uFFFD')) return null;
     // Skip debug lines from firmware ([RX], [P1], etc.)
     if (line.startsWith('[')) return null;
     // Skip CSV header line
     if (line.startsWith('timestamp')) return null;
+    // Skip ESP32 bootloader noise
+    for (final prefix in _bootloaderPrefixes) {
+      if (line.startsWith(prefix)) return null;
+    }
+    // Cheap substring check for common bootloader pattern
+    if (line.contains('boot:0x')) return null;
 
     // ── Legacy format: semicolon-separated, first field is 'A' or 'B' ────────
     if (line.contains(';')) {

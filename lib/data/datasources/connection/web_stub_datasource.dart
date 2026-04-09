@@ -23,7 +23,10 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   Future<void> close() async {}
 
   @override
-  Future<void> sendCommand(String command) async {}
+  Future<bool> sendCommand(String command) async => false;
+
+  @override
+  Future<void> purgeInput() async {}
 
   @override
   bool get isConnected => false;
@@ -49,7 +52,10 @@ class AndroidUsbDataSource implements ConnectionDataSource {
   Future<void> close() async {}
 
   @override
-  Future<void> sendCommand(String command) async {}
+  Future<bool> sendCommand(String command) async => false;
+
+  @override
+  Future<void> purgeInput() async {}
 
   @override
   bool get isConnected => false;

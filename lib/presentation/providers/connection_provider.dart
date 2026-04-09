@@ -91,28 +91,148 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
 
   bool _connecting = false;
 
+  /// Main connection flow: open → passive probe → retry with '1' → verify → finalize.
+  /// Works for both firmware v2.3 (auto-stream) and legacy (A;0;L;R needs '1').
+  ///
+  /// Best cases:
+  /// - v2.3: passive probe succeeds in ~200ms, zero '1' commands sent
+  /// - legacy: first '1' retry succeeds in ~900ms
+  ///
+  /// Worst case: 4 retries over ~5.7s, then clean failure with diagnostic.
   Future<void> connect(ConnectionTarget target) async {
-    if (_connecting || state.isConnected) return; // prevenir doble conexión
+    if (_connecting || state.isConnected) return;
     _connecting = true;
+    state = state.copyWith(error: null);
     final baudRate = _ref.read(settingsProvider).serialBaudRate;
+
     try {
       await _ds.open(target, baudRate: baudRate);
-      // Send start-streaming command. The v2.3 firmware streams continuously
-      // and ignores this; the legacy firmware (A;0;L;R format) requires it
-      // to begin sending data.
-      // Wait for ESP32 firmware to boot after DTR reset + reader to be active.
-      await Future.delayed(const Duration(milliseconds: 500));
-      await _ds.sendCommand('1');
+
+      // Phase 1: Passive probe — captures v2.3 firmware that auto-streams.
+      debugPrint('[Connection] Phase 1: passive probe (700ms)');
+      final passive = await _probeForSamples(timeoutMs: 700, requiredSamples: 5);
+      if (passive.success) {
+        debugPrint('[Connection] ✓ auto-stream detected (${passive.validSamples} samples)');
+        _finalizeConnected(target);
+        return;
+      }
+
+      // Phase 2: Legacy handshake — send '1', probe, retry up to 4 times.
+      debugPrint('[Connection] Phase 2: legacy handshake (no passive samples)');
+      _ProbeResult? lastResult = passive;
+      for (int attempt = 1; attempt <= 4; attempt++) {
+        await _ds.purgeInput();
+        final sent = await _ds.sendCommand('1');
+        if (!sent) {
+          debugPrint('[Connection] sendCommand attempt $attempt failed, retrying...');
+          await Future.delayed(const Duration(milliseconds: 200));
+          continue;
+        }
+
+        final timeoutMs = 600 + attempt * 200; // 800, 1000, 1200, 1400
+        final result = await _probeForSamples(
+            timeoutMs: timeoutMs, requiredSamples: 5);
+        debugPrint('[Connection] attempt $attempt: ${result.validSamples} valid, ${result.rawLines} raw');
+        if (result.success) {
+          debugPrint('[Connection] ✓ legacy firmware ready after $attempt attempts');
+          _finalizeConnected(target);
+          return;
+        }
+        lastResult = result;
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+
+      // Phase 3: Give up with diagnostic message
+      debugPrint('[Connection] ✗ All retries exhausted');
+      await _tryCleanClose();
       state = state.copyWith(
-        isConnected: true,
-        connectedName: target.displayName,
-        error: null,
+        isConnected: false,
+        connectedName: null,
+        error: _buildDiagnosticMessage(lastResult),
       );
     } catch (e) {
+      debugPrint('[Connection] Exception: $e');
+      await _tryCleanClose();
       state = state.copyWith(error: e.toString());
     } finally {
       _connecting = false;
     }
+  }
+
+  void _finalizeConnected(ConnectionTarget target) {
+    state = state.copyWith(
+      isConnected: true,
+      connectedName: target.displayName,
+      error: null,
+    );
+    // Warm up the stream subscription so liveDataProvider receives data
+    // without lazy-subscription gap. This must happen AFTER isConnected = true
+    // so downstream observers are ready.
+    try { _ref.read(rawSampleStreamProvider); } catch (_) {}
+  }
+
+  Future<void> _tryCleanClose() async {
+    try { await _ds.close(); } catch (e) { debugPrint('[Connection] close error: $e'); }
+  }
+
+  /// Probes the lineStream for valid parseable samples within a time window.
+  /// Returns success=true as soon as [requiredSamples] valid samples arrive,
+  /// or on timeout with whatever count was achieved.
+  Future<_ProbeResult> _probeForSamples({
+    required int timeoutMs,
+    required int requiredSamples,
+  }) async {
+    int validCount = 0;
+    int rawLineCount = 0;
+    final parser = CsvParser();
+    final completer = Completer<_ProbeResult>();
+    StreamSubscription<String>? sub;
+
+    final timer = Timer(Duration(milliseconds: timeoutMs), () {
+      if (!completer.isCompleted) {
+        completer.complete(_ProbeResult(
+          success: validCount >= requiredSamples,
+          validSamples: validCount,
+          rawLines: rawLineCount,
+        ));
+      }
+    });
+
+    sub = _ds.lineStream.listen(
+      (line) {
+        rawLineCount++;
+        if (parser.parse(line) != null) validCount++;
+        if (validCount >= requiredSamples && !completer.isCompleted) {
+          completer.complete(_ProbeResult(
+            success: true,
+            validSamples: validCount,
+            rawLines: rawLineCount,
+          ));
+        }
+      },
+      onError: (e) => debugPrint('[Connection] probe stream error: $e'),
+    );
+
+    try {
+      return await completer.future;
+    } finally {
+      timer.cancel();
+      await sub.cancel();
+    }
+  }
+
+  String _buildDiagnosticMessage(_ProbeResult? last) {
+    if (last == null || last.rawLines == 0) {
+      return 'Sin datos recibidos. Verifica el cable USB y que la plataforma '
+             'esté encendida. Si usas firmware legacy, revisa que responda al comando \'1\'.';
+    }
+    if (last.validSamples == 0) {
+      return 'La plataforma envía datos pero no coinciden con el protocolo esperado. '
+             'Verifica la versión del firmware (v2.3 o legacy A;0;L;R).';
+    }
+    return 'Conexión inestable: solo ${last.validSamples} muestras válidas de '
+           '${last.rawLines} líneas. Prueba otro cable USB (más corto, blindado) '
+           'o verifica la alimentación de la plataforma.';
   }
 
   // C7 fix: reset _connecting, wrap close in try-catch, clear error.
@@ -122,6 +242,18 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     try { await _ds.close(); } catch (e) { debugPrint('[Connection] close error: $e'); }
     state = state.copyWith(isConnected: false, connectedName: null, error: null);
   }
+}
+
+/// Result of a single probe pass.
+class _ProbeResult {
+  final bool success;
+  final int validSamples;
+  final int rawLines;
+  const _ProbeResult({
+    required this.success,
+    required this.validSamples,
+    required this.rawLines,
+  });
 }
 
 final connectionProvider =

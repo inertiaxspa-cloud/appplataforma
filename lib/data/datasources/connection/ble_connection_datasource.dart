@@ -128,19 +128,29 @@ class BleConnectionDataSource implements ConnectionDataSource {
   // ── Send command ──────────────────────────────────────────────────────────
 
   @override
-  Future<void> sendCommand(String cmd) async {
-    if (_device == null) return;
-    final services = await _device!.discoverServices();
-    for (final s in services) {
-      if (s.uuid.toString().toLowerCase() == _nusServiceUuid) {
-        for (final c in s.characteristics) {
-          if (c.uuid.toString().toLowerCase() == _nusRxCharUuid) {
-            await c.write(utf8.encode('$cmd\n'), withoutResponse: false);
-            return;
+  Future<bool> sendCommand(String cmd) async {
+    if (_device == null) return false;
+    try {
+      final services = await _device!.discoverServices();
+      for (final s in services) {
+        if (s.uuid.toString().toLowerCase() == _nusServiceUuid) {
+          for (final c in s.characteristics) {
+            if (c.uuid.toString().toLowerCase() == _nusRxCharUuid) {
+              await c.write(utf8.encode('$cmd\n'), withoutResponse: false);
+              return true;
+            }
           }
         }
       }
+      return false;
+    } catch (e) {
+      return false;
     }
+  }
+
+  @override
+  Future<void> purgeInput() async {
+    _buffer.clear();
   }
 
   // ── Internal ──────────────────────────────────────────────────────────────

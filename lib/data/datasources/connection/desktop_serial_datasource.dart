@@ -49,35 +49,38 @@ class DesktopSerialDataSource implements ConnectionDataSource {
       );
     }
 
-    final config = SerialPortConfig()
+    final configOn = SerialPortConfig()
       ..baudRate = baudRate
       ..bits     = 8
       ..stopBits = 1
       ..parity   = SerialPortParity.none
       ..dtr      = SerialPortDtr.on
       ..rts      = SerialPortRts.on;
-    _port!.config = config;
+    _port!.config = configOn;
 
-    // Pulse DTR to reset ESP32 — same behavior as Arduino IDE Serial Monitor.
-    // DTR is connected to EN (reset) pin via RC circuit on most ESP32 boards.
-    _port!.config = SerialPortConfig()
+    // CRITICAL: attach reader listener BEFORE the DTR reset pulse.
+    // This way bootloader bytes flow through _onData → parser → filtered.
+    // There is no window during which bytes can be lost.
+    _reader = SerialPortReader(_port!);
+    _reader!.stream.listen(_onData, onError: _onError, cancelOnError: false);
+
+    // Pulse DTR to reset ESP32 — same as Arduino IDE Serial Monitor.
+    // DTR → EN pin via RC circuit on most ESP32 boards.
+    final configOff = SerialPortConfig()
       ..baudRate = baudRate
       ..bits     = 8
       ..stopBits = 1
       ..parity   = SerialPortParity.none
       ..dtr      = SerialPortDtr.off
       ..rts      = SerialPortRts.on;
+    _port!.config = configOff;
     await Future.delayed(const Duration(milliseconds: 50));
-    _port!.config = config; // DTR back ON → ESP32 resets and starts firmware
+    _port!.config = configOn; // DTR back ON → ESP32 resets
 
-    // Wait for ESP32 bootloader to finish and firmware to start
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    _reader = SerialPortReader(_port!);
-    _reader!.stream.listen(_onData, onError: _onError, cancelOnError: false);
-
-    _connected    = true;
+    _connected     = true;
     _connectedName = target.displayName;
+    // Note: no blind wait here. The ConnectionNotifier probe loop handles
+    // timing based on actual observed data, not hardcoded delays.
   }
 
   void _onData(Uint8List chunk) {
@@ -101,10 +104,28 @@ class DesktopSerialDataSource implements ConnectionDataSource {
   }
 
   @override
-  Future<void> sendCommand(String command) async {
-    if (_port == null || !_connected) return;
-    final bytes = ascii.encode(command);
-    _port!.write(Uint8List.fromList(bytes));
+  Future<bool> sendCommand(String command) async {
+    if (_port == null || !_connected) return false;
+    try {
+      final bytes = Uint8List.fromList(ascii.encode(command));
+      final written = _port!.write(bytes);
+      if (written != bytes.length) return false;
+      // Force OS-level output buffer flush so the byte actually hits the wire
+      // before this future completes. Without this, the 'true' return value
+      // could be a lie (byte is still in the kernel buffer).
+      try { _port!.flush(); } catch (_) {}
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> purgeInput() async {
+    try {
+      _port?.flush(SerialPortBuffer.input);
+    } catch (_) {}
+    _buffer = Uint8List(0);
   }
 
   @override

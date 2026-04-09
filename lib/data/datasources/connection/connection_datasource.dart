@@ -15,7 +15,12 @@ abstract class ConnectionDataSource {
   Future<void> close();
 
   /// Send a command string (e.g., '1' to start, '0' to stop streaming).
-  Future<void> sendCommand(String command);
+  /// Returns true if the bytes were written successfully to the hardware.
+  Future<bool> sendCommand(String command);
+
+  /// Discard any pending/buffered input data. Called between handshake
+  /// retries to ensure we probe against a clean stream.
+  Future<void> purgeInput();
 
   bool get isConnected;
   String? get connectedTargetName;

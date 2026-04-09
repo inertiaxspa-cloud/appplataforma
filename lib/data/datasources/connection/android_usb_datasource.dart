@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:usb_serial/usb_serial.dart';
 import 'connection_datasource.dart';
 
@@ -81,8 +82,21 @@ class AndroidUsbDataSource implements ConnectionDataSource {
   void _onError(Object e) => _lineController.addError(e);
 
   @override
-  Future<void> sendCommand(String command) async {
-    await _port?.write(command.codeUnits.map((c) => c).toList() as dynamic);
+  Future<bool> sendCommand(String command) async {
+    final port = _port;
+    if (port == null || !_connected) return false;
+    try {
+      final bytes = Uint8List.fromList(command.codeUnits);
+      await port.write(bytes);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> purgeInput() async {
+    _lineBuffer = '';
   }
 
   @override
