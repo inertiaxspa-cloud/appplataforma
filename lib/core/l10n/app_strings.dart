@@ -363,6 +363,8 @@ class AppStrings {
       // Account / sync messages
       'account_created_loggedin': '¡Cuenta creada! Sesión iniciada correctamente.',
       'account_created_verify': 'Cuenta creada. Verifica tu email para iniciar sesión.',
+      'fields_required': 'Completa todos los campos',
+      'email_invalid': 'Ingresa un email válido',
       'sync_complete': 'Sincronización completa ({n} sesiones).',
       // Comparison screen (v19)
       'none_selected': '— Sin seleccionar —',
@@ -1084,6 +1086,8 @@ class AppStrings {
       // Account / sync messages
       'account_created_loggedin': 'Account created! Logged in successfully.',
       'account_created_verify': 'Account created. Verify your email to sign in.',
+      'fields_required': 'Please fill in all fields',
+      'email_invalid': 'Enter a valid email address',
       'sync_complete': 'Sync complete ({n} sessions).',
       // Comparison screen (v19)
       'none_selected': '— None selected —',

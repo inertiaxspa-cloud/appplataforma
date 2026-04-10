@@ -138,14 +138,22 @@ class SyncNotifier extends StateNotifier<SyncState> {
       }
       if (mounted) {
         final user = SupabaseService.instance.currentUser;
-        state = state.copyWith(
-          status:         SyncStatus.idle,
-          userEmail:      user?.email,
-          successMessage: user != null
-              ? AppStrings.get('account_created_loggedin')
-              : AppStrings.get('account_created_verify'),
-          clearError: true,
-        );
+        if (user != null) {
+          // Auto-login succeeded — user is authenticated
+          state = state.copyWith(
+            status: SyncStatus.idle,
+            userEmail: user.email,
+            successMessage: AppStrings.get('account_created_loggedin'),
+            clearError: true,
+          );
+        } else {
+          // Email confirmation required — keep login form visible
+          state = state.copyWith(
+            status: SyncStatus.unauthenticated,
+            successMessage: AppStrings.get('account_created_verify'),
+            clearError: true,
+          );
+        }
       }
     } on AuthException catch (e) {
       if (mounted) {

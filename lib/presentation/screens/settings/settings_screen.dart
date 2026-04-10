@@ -1075,6 +1075,13 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                 style: const TextStyle(
                     color: AppColors.danger, fontSize: 11)),
           ],
+          // Success message (e.g., "Account created — verify your email")
+          if (sync.successMessage != null) ...[
+            const SizedBox(height: 8),
+            Text(sync.successMessage!,
+                style: const TextStyle(
+                    color: AppColors.success, fontSize: 11)),
+          ],
 
           const SizedBox(height: 12),
           Row(children: [
@@ -1085,6 +1092,19 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
                     : () {
                         final email = _emailCtrl.text.trim();
                         final pass  = _passCtrl.text;
+                        if (email.isEmpty || pass.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(AppStrings.get('fields_required'))),
+                          );
+                          return;
+                        }
+                        final emailOk = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+                        if (!emailOk) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(AppStrings.get('email_invalid'))),
+                          );
+                          return;
+                        }
                         if (_isSignUp) {
                           notifier.signUp(email, pass);
                         } else {

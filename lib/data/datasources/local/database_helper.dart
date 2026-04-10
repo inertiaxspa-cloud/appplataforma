@@ -34,7 +34,14 @@ class DatabaseHelper {
       // C4 fix: enable FK enforcement so ON DELETE CASCADE actually works.
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
-        await db.execute('PRAGMA journal_mode = WAL');
+        // WAL mode for better crash recovery and concurrent reads.
+        // Wrapped in try-catch because some Android devices with older SQLite
+        // versions may not support WAL or may have it disabled.
+        try {
+          await db.execute('PRAGMA journal_mode = WAL');
+        } catch (e) {
+          debugPrint('[DB] WAL mode not supported on this device: $e');
+        }
       },
       onCreate: _createTables,
       onUpgrade: _migrate,

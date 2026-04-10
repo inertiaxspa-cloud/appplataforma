@@ -20,6 +20,8 @@ class SignalProcessor {
   CellMapping _mappingA;
   CellMapping _mappingB;
   int _platformCount = 0; // 0 = unknown, 1 or 2
+  int _prevPlatformCount = 0;
+  int _transitionCountdown = 0; // grace period after platform count change
 
   // Held B values until platform A arrives
   int _lastRawBML = 0, _lastRawBMR = 0, _lastRawBSL = 0, _lastRawBSR = 0;
@@ -147,16 +149,26 @@ class SignalProcessor {
     // ── Total force & smoothing ─────────────────────────────────────────────
     final forceTotal = forcePlatformA + forcePlatformB;
 
+    // ── Detect platform count transitions ────────────────────────────────────
+    // When platforms connect/disconnect, forceTotal can jump 50-100%.
+    // Reset and prewarm the Butterworth filter to avoid massive overshoot
+    // that would cause spike rejection → data gaps → chart freeze.
+    if (_platformCount != _prevPlatformCount && _prevPlatformCount != 0) {
+      _bw.reset();
+      if (forceTotal > 20) _bw.prewarm(forceTotal);
+      _transitionCountdown = 200; // ~200ms grace period at 1kHz
+    } else if (_prevPlatformCount == 0 && _platformCount > 0) {
+      if (forceTotal > 20) _bw.prewarm(forceTotal);
+    }
+    _prevPlatformCount = _platformCount;
+
     // ── Spike / outlier rejection ────────────────────────────────────────────
-    // At 921600 baud over Android USB-OTG, occasional framing errors produce
-    // corrupted CSV lines whose ADC values are astronomically large.  A single
-    // such sample contaminates the Butterworth state for hundreds of subsequent
-    // samples.  Reject any sample that exceeds the physical maximum for a
-    // human on a force platform (two 100-kg athletes jumping simultaneously
-    // = ~20 kN; set guard at 30 kN to leave ample headroom).
-    // The filter is NOT updated, so its state stays clean.
-    // Dynamic threshold: 20 kN for single platform, 40 kN for dual
-    final maxForceN = _platformCount >= 2 ? 40000.0 : 20000.0;
+    // Dynamic threshold: 20 kN for single platform, 40 kN for dual.
+    // During platform transitions, widen threshold 1.5× for 200 samples
+    // to let the filter settle without dropping valid data.
+    final transitionMul = _transitionCountdown > 0 ? 1.5 : 1.0;
+    if (_transitionCountdown > 0) _transitionCountdown--;
+    final maxForceN = (_platformCount >= 2 ? 40000.0 : 20000.0) * transitionMul;
     if (forceTotal.isNaN || forceTotal.isInfinite || forceTotal > maxForceN || forceTotal < -1000.0) {
       return null;
     }
@@ -206,5 +218,7 @@ class SignalProcessor {
     _lastRawBML = _lastRawBMR = _lastRawBSL = _lastRawBSR = 0;
     _lastBTimestamp = -1;
     _platformCount = 0;
+    _prevPlatformCount = 0;
+    _transitionCountdown = 0;
   }
 }

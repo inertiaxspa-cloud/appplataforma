@@ -154,8 +154,20 @@ class ForceTimeChart extends StatelessWidget {
 
   double _visibleMax(double tStart) {
     double max = 100;
-    for (int i = 0; i < timeS.length && i < forceTotalN.length; i++) {
-      if (timeS[i] >= tStart && forceTotalN[i] > max) max = forceTotalN[i];
+    // When individual channels are shown, scale to max(left, right) so both
+    // channels get good visual resolution. The total force line extends above
+    // the visible area and is clipped cleanly by FlClipData.all().
+    final useChannels = showChannels
+        && forceLeftN != null && forceRightN != null
+        && forceLeftN!.isNotEmpty && forceRightN!.isNotEmpty;
+    for (int i = 0; i < timeS.length; i++) {
+      if (timeS[i] < tStart) continue;
+      if (useChannels) {
+        if (i < forceLeftN!.length && forceLeftN![i] > max) max = forceLeftN![i];
+        if (i < forceRightN!.length && forceRightN![i] > max) max = forceRightN![i];
+      } else {
+        if (i < forceTotalN.length && forceTotalN[i] > max) max = forceTotalN[i];
+      }
     }
     return (max * 1.15).ceilToDouble();
   }
